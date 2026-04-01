@@ -73,7 +73,7 @@ const Chat = () => {
     queryFn: async () => {
       let query = supabase
         .from("messages")
-        .select("*, sender:profiles!messages_sender_id_fkey(full_name)")
+        .select("*")
         .order("created_at", { ascending: true });
 
       if (view.type === "group") {

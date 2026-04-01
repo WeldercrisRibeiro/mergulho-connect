@@ -78,9 +78,9 @@ const Members = () => {
                   </a>
                 )}
                 <div className="flex gap-1 mt-1 flex-wrap">
-                  {member.member_groups?.map((mg: any) => (
-                    <Badge key={mg.group_id} variant="secondary" className="text-xs">
-                      {mg.groups?.name}
+                  {(member as any).groups?.map((name: string) => (
+                    <Badge key={name} variant="secondary" className="text-xs">
+                      {name}
                     </Badge>
                   ))}
                 </div>
