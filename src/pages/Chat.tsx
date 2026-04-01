@@ -35,18 +35,30 @@ const Chat = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("messages")
-        .select("*, sender:profiles!messages_sender_id_fkey(full_name), recipient:profiles!messages_recipient_id_fkey(full_name)")
+        .select("*")
         .or(`sender_id.eq.${user!.id},recipient_id.eq.${user!.id}`)
         .is("group_id", null)
         .order("created_at", { ascending: false });
 
-      // Get unique conversations
+      // Get unique user IDs from conversations
+      const userIds = new Set<string>();
+      data?.forEach((msg) => {
+        if (msg.sender_id !== user!.id) userIds.add(msg.sender_id);
+        if (msg.recipient_id && msg.recipient_id !== user!.id) userIds.add(msg.recipient_id);
+      });
+
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .in("user_id", Array.from(userIds));
+
+      const profileMap = new Map(profiles?.map((p) => [p.user_id, p.full_name]) || []);
+
       const convMap = new Map<string, any>();
       data?.forEach((msg) => {
         const otherId = msg.sender_id === user!.id ? msg.recipient_id : msg.sender_id;
-        const otherName = msg.sender_id === user!.id ? msg.recipient?.full_name : msg.sender?.full_name;
         if (otherId && !convMap.has(otherId)) {
-          convMap.set(otherId, { userId: otherId, name: otherName, lastMessage: msg.content, time: msg.created_at });
+          convMap.set(otherId, { userId: otherId, name: profileMap.get(otherId) || "Membro", lastMessage: msg.content, time: msg.created_at });
         }
       });
       return Array.from(convMap.values());
