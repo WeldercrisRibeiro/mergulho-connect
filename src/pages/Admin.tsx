@@ -265,14 +265,14 @@ const AdminMembers = () => {
               <p className="font-medium">{m.full_name || "Sem nome"}</p>
               <p className="text-xs text-muted-foreground">{m.whatsapp_phone}</p>
               <div className="flex gap-1 mt-1 flex-wrap">
-                {m.user_roles?.map((r: any) => (
+                {(m as any).roles?.map((r: any) => (
                   <Badge key={r.role} variant={r.role === "admin" ? "default" : "secondary"} className="text-xs">
                     {r.role}
                   </Badge>
                 ))}
-                {m.member_groups?.map((mg: any) => (
-                  <Badge key={mg.groups?.name} variant="outline" className="text-xs">
-                    {mg.groups?.name}
+                {(m as any).groups?.map((name: string) => (
+                  <Badge key={name} variant="outline" className="text-xs">
+                    {name}
                   </Badge>
                 ))}
               </div>

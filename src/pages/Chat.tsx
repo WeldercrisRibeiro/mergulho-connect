@@ -219,7 +219,7 @@ const Chat = () => {
                 isMe ? "bg-primary text-primary-foreground" : "bg-muted"
               )}>
                 {!isMe && view.type === "group" && (
-                  <p className="text-xs font-semibold mb-0.5 opacity-70">{msg.sender?.full_name}</p>
+                  <p className="text-xs font-semibold mb-0.5 opacity-70">{(msg as any).senderName || "Membro"}</p>
                 )}
                 <p className="text-sm">{msg.content}</p>
                 <p className={cn("text-xs mt-1", isMe ? "text-primary-foreground/60" : "text-muted-foreground")}>
