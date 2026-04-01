@@ -240,11 +240,19 @@ const AdminMembers = () => {
   const { data: members } = useQuery({
     queryKey: ["admin-members"],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data: profiles } = await supabase
         .from("profiles")
-        .select("*, user_roles(role), member_groups(groups(name))")
+        .select("*")
         .order("full_name");
-      return data || [];
+
+      const { data: roles } = await supabase.from("user_roles").select("user_id, role");
+      const { data: mgs } = await supabase.from("member_groups").select("user_id, groups(name)");
+
+      return (profiles || []).map((p) => ({
+        ...p,
+        roles: (roles || []).filter((r) => r.user_id === p.user_id),
+        groups: (mgs || []).filter((mg) => mg.user_id === p.user_id).map((mg) => (mg.groups as any)?.name).filter(Boolean),
+      }));
     },
   });
 
