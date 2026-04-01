@@ -12,10 +12,21 @@ const Members = () => {
   const { data: members } = useQuery({
     queryKey: ["members"],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data: profiles } = await supabase
         .from("profiles")
-        .select("*, member_groups(group_id, groups(name))");
-      return data || [];
+        .select("*");
+      
+      const { data: memberGroupsData } = await supabase
+        .from("member_groups")
+        .select("user_id, group_id, groups(name)");
+
+      return (profiles || []).map((p) => ({
+        ...p,
+        groups: (memberGroupsData || [])
+          .filter((mg) => mg.user_id === p.user_id)
+          .map((mg) => (mg.groups as any)?.name)
+          .filter(Boolean),
+      }));
     },
   });
 
