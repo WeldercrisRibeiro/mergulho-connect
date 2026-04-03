@@ -8,7 +8,13 @@
   <title>MergulhoApp</title>
   <meta name="description" content="AMAR | CUIDAR | SERVIR">
   <meta name="author" content="Comunidade Cristã Mergulho" />
-  <link rel="icon" type="image/png" href="/idvmergulho/logo-white.png" />
+  <link rel="icon" type="image/png" href="/idvmergulho/logo.png" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#2563eb" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="CC Mergulho" />
+  <link rel="apple-touch-icon" href="/idvmergulho/logo.png" />
 
   <!-- TODO: Update og:title to match your application name -->
 
@@ -30,6 +36,13 @@
 <body>
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      });
+    }
+  </script>
 </body>
 
 </html>

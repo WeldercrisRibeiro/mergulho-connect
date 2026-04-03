@@ -19,7 +19,28 @@ type ChatView =
   | { type: "group"; groupId: string; groupName: string }
   | { type: "direct"; userId: string; userName: string };
 
-// ─── Audio ──────────────────────────────────────────────────────────────────
+// ─── Persistent unread tracking via localStorage ──────────────────────────────
+const LS_READ_KEY = "chat_read_timestamps";
+
+function getReadTimestamps(): Record<string, string> {
+  try { return JSON.parse(localStorage.getItem(LS_READ_KEY) || "{}"); } catch { return {}; }
+}
+
+function markAsRead(convId: string) {
+  const ts = getReadTimestamps();
+  ts[convId] = new Date().toISOString();
+  localStorage.setItem(LS_READ_KEY, JSON.stringify(ts));
+}
+
+function hasUnread(convId: string, lastMsgTime: string | null, lastMsgSenderId: string | null, myUserId: string): boolean {
+  if (!lastMsgTime || !lastMsgSenderId) return false;
+  // Don't show unread for own messages
+  if (lastMsgSenderId === myUserId) return false;
+  const ts = getReadTimestamps();
+  const lastRead = ts[convId];
+  if (!lastRead) return true; // never opened
+  return new Date(lastMsgTime) > new Date(lastRead);
+}
 let sharedAudioCtx: AudioContext | null = null;
 function getAudioCtx(): AudioContext {
   if (!sharedAudioCtx) sharedAudioCtx = new AudioContext();
@@ -131,6 +152,7 @@ const Chat = () => {
             name: profileMap.get(otherId) || "Membro",
             lastMessage: msg.content,
             time: msg.created_at,
+            lastSenderId: msg.sender_id,
           });
         }
       });
@@ -139,6 +161,51 @@ const Chat = () => {
     enabled: !!user,
     refetchInterval: 5000,
   });
+
+  // ─── Group unread counts (from messages table) ────────────────────────────
+
+  const { data: groupLastMessages } = useQuery({
+    queryKey: ["group-last-messages", groups],
+    queryFn: async () => {
+      if (!groups || (groups as any[]).length === 0) return {};
+      const groupIds = (groups as any[]).map((g: any) => g?.id).filter(Boolean);
+      const { data } = await supabase
+        .from("messages")
+        .select("group_id, sender_id, created_at")
+        .in("group_id", groupIds)
+        .neq("sender_id", user!.id)
+        .order("created_at", { ascending: false });
+      // Keep only last message per group
+      const result: Record<string, { time: string; senderId: string }> = {};
+      data?.forEach((m: any) => {
+        if (m.group_id && !result[m.group_id]) {
+          result[m.group_id] = { time: m.created_at, senderId: m.sender_id };
+        }
+      });
+      return result;
+    },
+    enabled: !!user && !!groups && (groups as any[]).length > 0,
+    refetchInterval: 5000,
+  });
+
+  // Merge runtime unread counts with persistent localStorage-based detection
+  const computedUnreads = {
+    ...unreadCounts,
+    // Conversations
+    ...Object.fromEntries(
+      (conversations || []).map((c: any) => [
+        c.userId,
+        unreadCounts[c.userId] || (hasUnread(c.userId, c.time, c.lastSenderId, user!.id) ? 1 : 0),
+      ])
+    ),
+    // Groups
+    ...Object.fromEntries(
+      Object.entries(groupLastMessages || {}).map(([gid, info]: [string, any]) => [
+        gid,
+        unreadCounts[gid] || (hasUnread(gid, info.time, info.senderId, user!.id) ? 1 : 0),
+      ])
+    ),
+  };
 
   const chatId =
     view.type === "group" ? view.groupId
@@ -182,6 +249,7 @@ const Chat = () => {
   // Mark current chat as read when entering
   useEffect(() => {
     if (view.type === "list" || !chatId) return;
+    markAsRead(chatId);
     setUnreadCounts((prev) => ({ ...prev, [chatId]: 0 }));
   }, [chatId, view.type]);
 
@@ -234,6 +302,7 @@ const Chat = () => {
               altText="Abrir conversa"
               onClick={() => {
                 setView(snapTargetView);
+                markAsRead(snapConvId);
                 setUnreadCounts((prev) => ({ ...prev, [snapConvId]: 0 }));
               }}
             >
@@ -326,7 +395,11 @@ const Chat = () => {
     (m.full_name || "").toLowerCase().includes(memberSearch.toLowerCase())
   );
 
-  // ─── List View ────────────────────────────────────────────────────────────
+  const openConv = (id: string, target: ChatView) => {
+    setView(target);
+    markAsRead(id);
+    setUnreadCounts((prev) => ({ ...prev, [id]: 0 }));
+  };
 
   if (view.type === "list") {
     return (
@@ -348,15 +421,12 @@ const Chat = () => {
           </h3>
           <div className="space-y-2">
             {(groups as any[])?.map((g: any) => {
-              const count = unreadCounts[g.id] || 0;
+              const count = computedUnreads[g.id] || 0;
               return (
                 <Card
                   key={g.id}
                   className="neo-shadow-sm border-0 cursor-pointer hover:scale-[1.01] transition-transform"
-                  onClick={() => {
-                    setView({ type: "group", groupId: g.id, groupName: g.name });
-                    setUnreadCounts((prev) => ({ ...prev, [g.id]: 0 }));
-                  }}
+                  onClick={() => openConv(g.id, { type: "group", groupId: g.id, groupName: g.name })}
                 >
                   <CardContent className="flex items-center gap-3 p-4">
                     <div className="relative">
@@ -392,15 +462,12 @@ const Chat = () => {
           </h3>
           <div className="space-y-2">
             {conversations?.map((conv: any) => {
-              const count = unreadCounts[conv.userId] || 0;
+              const count = computedUnreads[conv.userId] || 0;
               return (
                 <Card
                   key={conv.userId}
                   className="neo-shadow-sm border-0 cursor-pointer hover:scale-[1.01] transition-transform"
-                  onClick={() => {
-                    setView({ type: "direct", userId: conv.userId, userName: conv.name || "Membro" });
-                    setUnreadCounts((prev) => ({ ...prev, [conv.userId]: 0 }));
-                  }}
+                  onClick={() => openConv(conv.userId, { type: "direct", userId: conv.userId, userName: conv.name || "Membro" })}
                 >
                   <CardContent className="flex items-center gap-3 p-4">
                     <div className="relative shrink-0">
