@@ -130,20 +130,22 @@ const Members = () => {
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      const email = editUsername.trim().toLowerCase().replace(/\s+/g, ".") + "@mergulhoconnect.com";
+      const cleanUsername = editUsername.trim().toLowerCase().replace(/\s+/g, ".");
+      const email = cleanUsername + "@mergulhoconnect.com";
       const { data, error } = await supabase.rpc("admin_manage_user" as any, {
-        email, password: "123456", raw_user_meta_data: { full_name: editName, whatsapp_phone: editPhone }
+        email,
+        password: "123456",
+        raw_user_meta_data: { full_name: editName, whatsapp_phone: editPhone, username: cleanUsername }
       });
       if (error) throw error;
       const newUserId = data as any as string;
       
-      // Aguarda o trigger criar o perfil, depois atualiza username e dados
-      await new Promise(resolve => setTimeout(resolve, 500));
-      await supabase.from("profiles").update({ 
-        username: editUsername,
+      const { error: profileError } = await supabase.from("profiles").update({ 
+        username: cleanUsername,
         full_name: editName,
         whatsapp_phone: editPhone 
       } as any).eq("user_id", newUserId);
+      if (profileError) throw profileError;
 
       if (editRole === "admin") {
         await supabase.from("user_roles").insert({ user_id: newUserId, role: "admin" } as any);
