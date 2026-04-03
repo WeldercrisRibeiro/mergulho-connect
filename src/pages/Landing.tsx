@@ -82,8 +82,8 @@ const Landing = () => {
           {/* Nav Links (Desktop) */}
           <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-muted-foreground">
             <a href="#inicio" className="hover:text-primary transition-colors">Início</a>
-            <a href="#servicos" className="hover:text-primary transition-colors">Estrutura</a>
             <a href="#sobre" className="hover:text-primary transition-colors">Sobre Nós</a>
+            <a href="#servicos" className="hover:text-primary transition-colors">Estrutura</a>
             <a href="#projetos" className="hover:text-primary transition-colors">Projetos</a>
             <a href="#contato" className="hover:text-primary transition-colors">Contato</a>
           </nav>
@@ -94,7 +94,7 @@ const Landing = () => {
               Área de Membros
             </Link>
             <Button asChild className="rounded-full px-6 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white border-0 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 transition-all hover:-translate-y-0.5">
-              <Link to="/auth?request=true">Participar</Link>
+              <Link to="/auth?request=true">Seja um Membro!</Link>
             </Button>
           </div>
         </div>
@@ -108,7 +108,7 @@ const Landing = () => {
 
         <div className="mx-auto max-w-4xl flex flex-col items-center relative z-10">
           <div className="mb-10 relative group w-full flex justify-center">
-            <img src="/idvmergulho/logo-horizontal-azul.png" alt="Logo Comunidade Cristã Mergulho" className="h-32 md:h-48 w-auto object-contain drop-shadow-xl transition-transform duration-500 hover:scale-105" />
+            <img src="/idvmergulho/logo-horizontal-azul.png" alt="Logo CC Mergulho" className="h-32 md:h-48 w-auto object-contain drop-shadow-xl transition-transform duration-500 hover:scale-105" />
           </div>
 
           <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight mb-4">
