@@ -136,8 +136,13 @@ const Members = () => {
       if (error) throw error;
       const newUserId = data as any as string;
       
-      // Sincroniza username no perfil (usando cast 'as any' para aceitar nova coluna)
-      await supabase.from("profiles").update({ username: editUsername } as any).eq("user_id", newUserId);
+      // Aguarda o trigger criar o perfil, depois atualiza username e dados
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await supabase.from("profiles").update({ 
+        username: editUsername,
+        full_name: editName,
+        whatsapp_phone: editPhone 
+      } as any).eq("user_id", newUserId);
 
       if (editRole === "admin") {
         await supabase.from("user_roles").insert({ user_id: newUserId, role: "admin" } as any);
