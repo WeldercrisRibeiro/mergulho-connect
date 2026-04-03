@@ -82,13 +82,14 @@ const Members = () => {
     mutationFn: async () => {
       if (!editingMember) return;
       
-      const email = (editUsername || "").trim().toLowerCase().replace(/\s+/g, ".") + "@mergulhoconnect.com";
+      const cleanUsername = (editUsername || "").trim().toLowerCase().replace(/\s+/g, ".");
+      const email = cleanUsername + "@mergulhoconnect.com";
       
-      // 1. Sincroniza com Auth via RPC (Atualiza email/proxy se o username mudar)
+      // 1. Sincroniza com Auth via RPC sem trocar a senha atual
       const { error: rpcErr } = await supabase.rpc("admin_manage_user" as any, {
-        email, 
-        password: "123456", 
-        raw_user_meta_data: { full_name: editName, whatsapp_phone: editPhone },
+        email,
+        password: null,
+        raw_user_meta_data: { full_name: editName, whatsapp_phone: editPhone, username: cleanUsername },
         target_user_id: editingMember.user_id
       });
       if (rpcErr) throw rpcErr;
