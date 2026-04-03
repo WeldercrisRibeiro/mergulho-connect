@@ -16,6 +16,7 @@ const Landing = () => {
   const [formData, setFormData] = useState({ name: "", phone: "", subject: "Quero me tornar Membro", message: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { theme, toggleTheme } = useTheme();
 
   const { data: photos } = useQuery({
     queryKey: ["landing-photos-pub"],
