@@ -51,17 +51,17 @@ const DesktopSidebar = () => {
         {/* Logo */}
         <div className={cn("flex items-center p-4 border-b border-sidebar-border", collapsed ? "justify-center" : "gap-3")}>
           {collapsed ? (
-            <img 
-              src={theme === "dark" ? "/idvmergulho/logo-white.png" : "/idvmergulho/logo.png"} 
-              alt="Logo" 
-              className="h-9 w-9 object-contain" 
+            <img
+              src={theme === "dark" ? "/idvmergulho/logo-white.png" : "/idvmergulho/logo.png"}
+              alt="Logo"
+              className="h-9 w-9 object-contain"
             />
           ) : (
             <>
-              <img 
-                src={theme === "dark" ? "/idvmergulho/logo horizontal.png" : "/idvmergulho/logo horizontal azul.png"} 
-                alt="Logo CC Mergulho" 
-                className="h-10 w-auto object-contain" 
+              <img
+                src={theme === "dark" ? "/idvmergulho/logo-horizontal.png" : "/idvmergulho/logo-horizontal azul.png"}
+                alt="Logo CC Mergulho"
+                className="h-10 w-auto object-contain"
               />
             </>
           )}

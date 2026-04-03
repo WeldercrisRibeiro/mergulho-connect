@@ -42,8 +42,8 @@ const Landing = () => {
     },
   });
 
-  const whatsappUrl = siteSettings?.whatsapp_number 
-    ? `https://wa.me/${siteSettings.whatsapp_number.replace(/\D/g, "")}` 
+  const whatsappUrl = siteSettings?.whatsapp_number
+    ? `https://wa.me/${siteSettings.whatsapp_number.replace(/\D/g, "")}`
     : "#";
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -108,7 +108,7 @@ const Landing = () => {
 
         <div className="mx-auto max-w-4xl flex flex-col items-center relative z-10">
           <div className="mb-10 relative group w-full flex justify-center">
-            <img src="/idvmergulho/logo horizontal azul.png" alt="Logo Comunidade Cristã Mergulho" className="h-32 md:h-48 w-auto object-contain drop-shadow-xl transition-transform duration-500 hover:scale-105" />
+            <img src="/idvmergulho/logo-horizontal-azul.png" alt="Logo Comunidade Cristã Mergulho" className="h-32 md:h-48 w-auto object-contain drop-shadow-xl transition-transform duration-500 hover:scale-105" />
           </div>
 
           <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight mb-4">
@@ -294,9 +294,9 @@ const Landing = () => {
 
       {/* Floating WhatsApp Button */}
       {siteSettings?.whatsapp_number && (
-        <a 
-          href={whatsappUrl} 
-          target="_blank" 
+        <a
+          href={whatsappUrl}
+          target="_blank"
           rel="noreferrer"
           className="fixed bottom-6 right-6 z-[60] bg-emerald-500 text-white p-4 rounded-full shadow-2xl hover:bg-emerald-600 hover:scale-110 transition-all duration-300 group flex items-center gap-2"
         >

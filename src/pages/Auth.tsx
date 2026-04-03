@@ -58,11 +58,11 @@ const Auth = () => {
 
     try {
       const cleanUsername = username.trim().toLowerCase();
-      
+
       // Tenta login com formato de username
       const loginEmail = cleanUsername.replace(/\s+/g, ".") + "@mergulhoconnect.com";
       const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
-      
+
       if (error) {
         // Se falhou e parece um número, tenta o formato de telefone (para usuários antigos/aprovados via contato)
         const phoneFormat = cleanUsername.replace(/\D/g, "");
@@ -74,7 +74,7 @@ const Auth = () => {
           throw error;
         }
       }
-      
+
       navigate("/home");
     } catch (error: any) {
       toast({
@@ -95,38 +95,38 @@ const Auth = () => {
       const cleanUsername = username.trim().toLowerCase();
       const loginEmail = cleanUsername.replace(/\s+/g, ".") + "@mergulhoconnect.com";
       const phoneEmail = cleanUsername.replace(/\D/g, "") + "@mergulhoconnect.com";
-      
+
       // 1. Tenta verificar a senha atual com o formato de username
-      let { error: signInError } = await supabase.auth.signInWithPassword({ 
-        email: loginEmail, 
-        password 
+      let { error: signInError } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password
       });
-      
+
       // 2. Se falhar, tenta com o formato de telefone
       if (signInError && cleanUsername.replace(/\D/g, "").length >= 8) {
-        const { error: phoneSignInError } = await supabase.auth.signInWithPassword({ 
-          email: phoneEmail, 
-          password 
+        const { error: phoneSignInError } = await supabase.auth.signInWithPassword({
+          email: phoneEmail,
+          password
         });
         signInError = phoneSignInError;
       }
-      
+
       if (signInError) {
         throw new Error("Senha atual incorreta. Se você nunca trocou a senha, tente o padrão '123456'.");
       }
 
       // 2. Com o usuário logado, atualiza para a nova senha
-      const { error: updateError } = await supabase.auth.updateUser({ 
-        password: newPassword 
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword
       });
-      
+
       if (updateError) throw updateError;
 
-      toast({ 
-        title: "Sucesso!", 
-        description: "Sua senha foi alterada. Você já pode acessar o sistema." 
+      toast({
+        title: "Sucesso!",
+        description: "Sua senha foi alterada. Você já pode acessar o sistema."
       });
-      
+
       // Volta para o login
       setIsChangingPass(false);
       setPassword("");
@@ -167,12 +167,12 @@ const Auth = () => {
           <CardHeader className="text-center pb-8">
             {/* Logo para telas pequenas, já que a esquerda vai sumir */}
             <div className="lg:hidden flex justify-center mb-6 relative">
-              <img 
-                src={theme === "dark" ? "/idvmergulho/logo horizontal.png" : "/idvmergulho/logo horizontal azul.png"} 
-                alt="Logo" 
-                className="h-16 w-auto" 
+              <img
+                src={theme === "dark" ? "/idvmergulho/logo-horizontal.png" : "/idvmergulho/logo-horizontal azul.png"}
+                alt="Logo"
+                className="h-16 w-auto"
               />
-              <button 
+              <button
                 onClick={toggleTheme}
                 className="absolute -right-4 -top-4 p-2 rounded-full bg-muted hover:bg-muted/80 transition-colors"
                 title="Alternar Tema"
@@ -182,7 +182,7 @@ const Auth = () => {
             </div>
 
             <div className="hidden lg:block absolute top-[5%] right-[5%] z-20">
-              <button 
+              <button
                 onClick={toggleTheme}
                 className="p-3 rounded-full bg-card/50 backdrop-blur-md shadow-lg border hover:bg-card/80 transition-all transform hover:rotate-12"
                 title="Alternar Tema"
@@ -271,8 +271,8 @@ const Auth = () => {
                 <div className="space-y-2 text-left">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="password">Senha</Label>
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={() => setIsChangingPass(true)}
                       className="text-xs text-primary hover:underline font-medium"
                     >
