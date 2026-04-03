@@ -180,13 +180,17 @@ const SettingsPage = () => {
 
   const approveContactMutation = useMutation({
     mutationFn: async (m: any) => {
-      const email = m.phone.replace(/\D/g, "") + "@mergulhoconnect.com";
+      // Usa o telefone se existir, senão usa o nome slugificado
+      const phoneDigits = m.phone?.replace(/\D/g, "");
+      const nameSlug = m.name?.trim().toLowerCase().replace(/\s+/g, ".");
+      const loginPrefix = phoneDigits && phoneDigits.length >= 8 ? phoneDigits : nameSlug;
+      
+      const email = loginPrefix + "@mergulhoconnect.com";
       const { data, error } = await supabase.rpc("admin_manage_user" as any, {
         email, password: "123456", raw_user_meta_data: { full_name: m.name, whatsapp_phone: m.phone }
       });
       if (error) throw error;
       const newUserId = data as any as string;
-      await supabase.from("user_roles").insert({ user_id: newUserId, role: "member" } as any);
       await (supabase as any).from("contact_messages").delete().eq("id", m.id);
     },
     onSuccess: () => {
@@ -199,12 +203,20 @@ const SettingsPage = () => {
 
   const archiveContactMutation = useMutation({
     mutationFn: async (id: string) => {
-      await (supabase as any).from("contact_messages").delete().eq("id", id);
+      const { error } = await (supabase as any).from("contact_messages").delete().eq("id", id);
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contact-messages"] });
       toast({ title: "Mensagem arquivada!" });
-    }
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Erro ao arquivar",
+        description: err.message,
+        variant: "destructive",
+      });
+    },
   });
 
   const prev = () => setCarouselIdx(i => (i - 1 + (photos?.length || 1)) % (photos?.length || 1));

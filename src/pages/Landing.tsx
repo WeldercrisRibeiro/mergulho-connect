@@ -78,7 +78,11 @@ const Landing = () => {
         <div className="container mx-auto flex items-center justify-between px-6 py-4">
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <img src="/idvmergulho/logo.png" alt="Logo" className="h-10 w-auto hover:opacity-80 transition-opacity" />
+            <img 
+              src={theme === "dark" ? "/idvmergulho/logo-white.png" : "/idvmergulho/logo.png"} 
+              alt="Logo" 
+              className="h-10 w-auto hover:opacity-80 transition-opacity" 
+            />
           </div>
 
           {/* Nav Links (Desktop) */}
@@ -118,7 +122,11 @@ const Landing = () => {
 
         <div className="mx-auto max-w-4xl flex flex-col items-center relative z-10">
           <div className="mb-10 relative group w-full flex justify-center">
-            <img src="/idvmergulho/logo-horizontal-azul.png" alt="Logo CC Mergulho" className="h-32 md:h-48 w-auto object-contain drop-shadow-xl transition-transform duration-500 hover:scale-105" />
+            <img 
+              src={theme === "dark" ? "/idvmergulho/logo-horizontal.png" : "/idvmergulho/logo-horizontal-azul.png"} 
+              alt="Logo CC Mergulho" 
+              className="h-32 md:h-48 w-auto object-contain drop-shadow-xl transition-transform duration-500 hover:scale-105" 
+            />
           </div>
 
           <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight mb-4">

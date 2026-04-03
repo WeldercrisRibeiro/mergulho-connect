@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
-import { Moon, Sun, KeyRound, AlertCircle, ArrowLeft } from "lucide-react";
+import { Moon, Sun, KeyRound, AlertCircle, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/components/ThemeProvider";
@@ -22,6 +22,7 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const { toast } = useToast();
 
@@ -59,17 +60,31 @@ const Auth = () => {
     try {
       const cleanUsername = username.trim().toLowerCase();
 
-      // Tenta login com formato de username
-      const loginEmail = cleanUsername.replace(/\s+/g, ".") + "@mergulhoconnect.com";
+      // Se já for um e-mail completo, usa ele. Se não, adiciona o domínio padrão.
+      const loginEmail = cleanUsername.includes("@") 
+        ? cleanUsername 
+        : cleanUsername.replace(/\s+/g, ".") + "@mergulhoconnect.com";
+
       const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
 
       if (error) {
         // Se falhou e parece um número, tenta o formato de telefone (para usuários antigos/aprovados via contato)
-        const phoneFormat = cleanUsername.replace(/\D/g, "");
-        if (phoneFormat.length >= 8) {
-          const phoneEmail = phoneFormat + "@mergulhoconnect.com";
+        const phoneDigits = cleanUsername.replace(/\D/g, "");
+        if (phoneDigits.length >= 8) {
+          // Tenta com os dígitos exatos (pode ter 55 ou não)
+          const phoneEmail = phoneDigits + "@mergulhoconnect.com";
           const { error: phoneError } = await supabase.auth.signInWithPassword({ email: phoneEmail, password });
-          if (phoneError) throw error; // Lança o erro original se o de telefone também falhar
+          
+          if (phoneError) {
+            // Se falhou, e NÃO começa com 55, tenta adicionar 55 (padrão Brasil)
+            if (!phoneDigits.startsWith("55")) {
+              const phoneEmail55 = "55" + phoneDigits + "@mergulhoconnect.com";
+              const { error: phoneError55 } = await supabase.auth.signInWithPassword({ email: phoneEmail55, password });
+              if (phoneError55) throw error; // Lança o erro original
+            } else {
+              throw error; // Lança o erro original
+            }
+          }
         } else {
           throw error;
         }
@@ -77,9 +92,10 @@ const Auth = () => {
 
       navigate("/home");
     } catch (error: any) {
+      console.error("Login error details:", error);
       toast({
         title: "Erro de Acesso",
-        description: "Usuário ou senha incorretos. Verifique se digitou o usuário (ex: welder) ou seu telefone corretamente.",
+        description: error.message || "Usuário ou senha incorretos. Verifique se digitou o usuário (ex: welder) ou seu telefone corretamente.",
         variant: "destructive",
       });
     } finally {
@@ -94,25 +110,36 @@ const Auth = () => {
     try {
       const cleanUsername = username.trim().toLowerCase();
       const loginEmail = cleanUsername.replace(/\s+/g, ".") + "@mergulhoconnect.com";
-      const phoneEmail = cleanUsername.replace(/\D/g, "") + "@mergulhoconnect.com";
+      const phoneDigits = cleanUsername.replace(/\D/g, "");
+      const phoneEmail = phoneDigits + "@mergulhoconnect.com";
+      const phoneEmail55 = "55" + phoneDigits + "@mergulhoconnect.com";
 
       // 1. Tenta verificar a senha atual com o formato de username
       let { error: signInError } = await supabase.auth.signInWithPassword({
         email: loginEmail,
-        password
+        password: password.trim()
       });
 
-      // 2. Se falhar, tenta com o formato de telefone
-      if (signInError && cleanUsername.replace(/\D/g, "").length >= 8) {
-        const { error: phoneSignInError } = await supabase.auth.signInWithPassword({
+      // 2. Se falhar, tenta com formato de telefone (exato)
+      if (signInError && phoneDigits.length >= 8) {
+        const { error: phoneError } = await supabase.auth.signInWithPassword({
           email: phoneEmail,
-          password
+          password: password.trim()
         });
-        signInError = phoneSignInError;
+        signInError = phoneError;
+
+        // 3. Se falhou e não tem 55, tenta com 55
+        if (signInError && !phoneDigits.startsWith("55")) {
+          const { error: phoneError55 } = await supabase.auth.signInWithPassword({
+            email: phoneEmail55,
+            password: password.trim()
+          });
+          signInError = phoneError55;
+        }
       }
 
       if (signInError) {
-        throw new Error("Senha atual incorreta. Se você nunca trocou a senha, tente o padrão '123456'.");
+        throw new Error(signInError.message || "Senha atual incorreta ou usuário não encontrado.");
       }
 
       // 2. Com o usuário logado, atualiza para a nova senha
@@ -223,11 +250,26 @@ const Auth = () => {
               <form onSubmit={handleRequestAccess} className="space-y-5">
                 <div className="space-y-2 text-left">
                   <Label htmlFor="name">Nome completo</Label>
-                  <Input id="name" className="bg-card h-12" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Seu nome completo" required />
+                  <Input 
+                    id="name" 
+                    className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium" 
+                    value={fullName} 
+                    onChange={(e) => setFullName(e.target.value)} 
+                    placeholder="Seu nome completo" 
+                    required 
+                  />
                 </div>
                 <div className="space-y-2 text-left">
                   <Label htmlFor="reqPhone">WhatsApp com DDD</Label>
-                  <Input id="reqPhone" type="tel" className="bg-card h-12" value={reqPhone} onChange={(e) => setReqPhone(e.target.value)} placeholder="Seu melhor contato" required />
+                  <Input 
+                    id="reqPhone" 
+                    type="tel" 
+                    className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium" 
+                    value={reqPhone} 
+                    onChange={(e) => setReqPhone(e.target.value)} 
+                    placeholder="Seu melhor contato" 
+                    required 
+                  />
                 </div>
                 <Button type="submit" className="w-full h-12 bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 text-white rounded-xl shadow-md hover:shadow-lg transition-all text-base mt-4" disabled={loading}>
                   {loading ? "Enviando..." : "Enviar Solicitação"}
@@ -242,15 +284,57 @@ const Auth = () => {
               <form onSubmit={handleChangePassword} className="space-y-5">
                 <div className="space-y-2 text-left">
                   <Label htmlFor="ch-username">Seu Nome de Usuário</Label>
-                  <Input id="ch-username" className="bg-card h-12" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="usuário" required />
+                  <Input 
+                    id="ch-username" 
+                    className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium" 
+                    value={username} 
+                    onChange={(e) => setUsername(e.target.value)} 
+                    placeholder="usuário ou telefone" 
+                    required 
+                  />
                 </div>
                 <div className="space-y-2 text-left">
                   <Label htmlFor="ch-oldpass">Senha Atual</Label>
-                  <Input id="ch-oldpass" type="password" className="bg-card h-12" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Sua senha atual" required />
+                  <div className="relative">
+                    <Input
+                      id="ch-oldpass"
+                      type={showPassword ? "text" : "password"}
+                      className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium pr-10"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Sua senha atual"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors p-1 rounded-md"
+                    >
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
                 </div>
                 <div className="space-y-2 text-left">
                   <Label htmlFor="ch-newpass">Nova Senha</Label>
-                  <Input id="ch-newpass" type="password" className="bg-card h-12" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Mínimo 6 caracteres" required minLength={6} />
+                  <div className="relative">
+                    <Input
+                      id="ch-newpass"
+                      type={showPassword ? "text" : "password"}
+                      className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium pr-10"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Mínimo 6 caracteres"
+                      required
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors p-1 rounded-md"
+                    >
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
                 </div>
                 <Button type="submit" className="w-full h-12 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl shadow-md hover:shadow-lg transition-all text-base mt-4" disabled={loading}>
                   {loading ? "Processando..." : "Alterar Senha"}
@@ -268,7 +352,7 @@ const Auth = () => {
                   <Input
                     id="username"
                     type="text"
-                    className="bg-card h-12"
+                    className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="Seu usuário definido pelo ADM"
@@ -287,16 +371,25 @@ const Auth = () => {
                       Trocar Senha?
                     </button>
                   </div>
-                  <Input
-                    id="password"
-                    type="password"
-                    className="bg-card h-12"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    required
-                    minLength={6}
-                  />
+                  <div className="relative group/password">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Senha"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium pr-10"
+                      required
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors p-1 rounded-md"
+                    >
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
                 </div>
                 <Button type="submit" className="w-full h-12 bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 text-white rounded-xl shadow-md hover:shadow-lg transition-all text-base mt-4" disabled={loading}>
                   {loading ? "Aguarde..." : "Entrar na Comunidade"}
