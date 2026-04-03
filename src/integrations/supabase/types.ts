@@ -369,8 +369,8 @@ export type Database = {
       admin_manage_user: {
         Args: {
           email: string
-          password: string
-          raw_user_meta_data: Json
+          password?: string
+          raw_user_meta_data?: Json
           target_user_id?: string
         }
         Returns: string
