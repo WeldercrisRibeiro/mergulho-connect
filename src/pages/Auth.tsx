@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { Moon, Sun, KeyRound, AlertCircle } from "lucide-react";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { Moon, Sun, KeyRound, AlertCircle, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/components/ThemeProvider";
@@ -143,7 +143,15 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex w-full bg-background">
+    <div className="min-h-screen flex w-full bg-background relative">
+      {/* Botão voltar à Landing */}
+      <Link
+        to="/landing"
+        className="absolute top-4 left-4 z-30 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Voltar
+      </Link>
 
       {/* Left Column (Brand/Image) - Hidden on small screens */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-primary/90 to-primary/60 overflow-hidden items-center justify-center p-12">
