@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Home, Calendar, BookOpen, MessageCircle, User, Users, LogOut, ChevronLeft, ChevronRight, Bell, BellOff, Shield, Settings, Sun, Moon } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "./ThemeProvider";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { supabase } from "@/integrations/supabase/client";
 
 const navItems = [
   { path: "/home", icon: Home, label: "Início" },
@@ -20,12 +21,72 @@ const navItems = [
 
 const DesktopSidebar = () => {
   const location = useLocation();
-  const { isAdmin, signOut, profile } = useAuth();
+  const { isAdmin, signOut, profile, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [collapsed, setCollapsed] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(
     typeof window !== "undefined" && Notification.permission === "granted"
   );
+  const [totalUnread, setTotalUnread] = useState(0);
+
+  // Poll for unread counts from localStorage + messages
+  useEffect(() => {
+    if (!user) return;
+    const check = async () => {
+      try {
+        const LS_READ_KEY = "chat_read_timestamps";
+        const readTs: Record<string, string> = JSON.parse(localStorage.getItem(LS_READ_KEY) || "{}");
+
+        // Check direct messages
+        const { data: directMsgs } = await supabase
+          .from("messages")
+          .select("sender_id, created_at, recipient_id")
+          .eq("recipient_id", user.id)
+          .order("created_at", { ascending: false });
+
+        const directUnread = new Set<string>();
+        directMsgs?.forEach((m: any) => {
+          if (m.sender_id === user.id) return;
+          const lastRead = readTs[m.sender_id];
+          if (!lastRead || new Date(m.created_at) > new Date(lastRead)) {
+            directUnread.add(m.sender_id);
+          }
+        });
+
+        // Check group messages
+        const { data: memberGroups } = await supabase
+          .from("member_groups")
+          .select("group_id")
+          .eq("user_id", user.id);
+        const groupIds = memberGroups?.map((mg: any) => mg.group_id) || [];
+
+        let groupUnread = 0;
+        if (groupIds.length > 0) {
+          const { data: groupMsgs } = await supabase
+            .from("messages")
+            .select("group_id, sender_id, created_at")
+            .in("group_id", groupIds)
+            .neq("sender_id", user.id)
+            .order("created_at", { ascending: false });
+
+          const seen = new Set<string>();
+          groupMsgs?.forEach((m: any) => {
+            if (seen.has(m.group_id)) return;
+            seen.add(m.group_id);
+            const lastRead = readTs[m.group_id];
+            if (!lastRead || new Date(m.created_at) > new Date(lastRead)) {
+              groupUnread++;
+            }
+          });
+        }
+
+        setTotalUnread(directUnread.size + groupUnread);
+      } catch (_) {}
+    };
+    check();
+    const interval = setInterval(check, 10000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   const handleNotificationToggle = async () => {
     if (!notificationsEnabled) {
@@ -86,15 +147,27 @@ const DesktopSidebar = () => {
                 key={path}
                 to={path}
                 className={cn(
-                  "flex items-center rounded-lg px-2 py-2.5 text-sm transition-colors",
+                  "flex items-center rounded-lg px-2 py-2.5 text-sm transition-colors relative",
                   collapsed ? "justify-center" : "gap-3 px-3",
                   active
                     ? "bg-sidebar-accent text-sidebar-primary font-semibold"
                     : "text-sidebar-foreground hover:bg-sidebar-accent/50"
                 )}
               >
-                <Icon className="h-5 w-5 shrink-0" />
+                <div className="relative">
+                  <Icon className="h-5 w-5 shrink-0" />
+                  {path === "/chat" && totalUnread > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center animate-pulse">
+                      {totalUnread > 9 ? "9+" : totalUnread}
+                    </span>
+                  )}
+                </div>
                 {!collapsed && <span>{label}</span>}
+                {!collapsed && path === "/chat" && totalUnread > 0 && (
+                  <span className="ml-auto h-5 w-5 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center">
+                    {totalUnread > 9 ? "9+" : totalUnread}
+                  </span>
+                )}
               </Link>
             );
 
