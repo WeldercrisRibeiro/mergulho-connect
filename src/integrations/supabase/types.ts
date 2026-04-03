@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      contact_messages: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string | null
+          name: string
+          phone: string | null
+          subject: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          name: string
+          phone?: string | null
+          subject?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          name?: string
+          phone?: string | null
+          subject?: string | null
+        }
+        Relationships: []
+      }
       devotionals: {
         Row: {
           author_id: string | null
@@ -156,6 +183,51 @@ export type Database = {
         }
         Relationships: []
       }
+      landing_photos: {
+        Row: {
+          caption: string | null
+          created_at: string | null
+          id: string
+          url: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string | null
+          id?: string
+          url: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string | null
+          id?: string
+          url?: string
+        }
+        Relationships: []
+      }
+      landing_testimonials: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          role: string | null
+          text: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          role?: string | null
+          text: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          role?: string | null
+          text?: string
+        }
+        Relationships: []
+      }
       member_groups: {
         Row: {
           group_id: string
@@ -228,6 +300,7 @@ export type Database = {
           id: string
           updated_at: string
           user_id: string
+          username: string | null
           whatsapp_phone: string | null
         }
         Insert: {
@@ -237,6 +310,7 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id: string
+          username?: string | null
           whatsapp_phone?: string | null
         }
         Update: {
@@ -246,7 +320,26 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
+          username?: string | null
           whatsapp_phone?: string | null
+        }
+        Relationships: []
+      }
+      site_settings: {
+        Row: {
+          id: string
+          updated_at: string | null
+          value: string | null
+        }
+        Insert: {
+          id: string
+          updated_at?: string | null
+          value?: string | null
+        }
+        Update: {
+          id?: string
+          updated_at?: string | null
+          value?: string | null
         }
         Relationships: []
       }
@@ -273,6 +366,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_manage_user: {
+        Args: {
+          email: string
+          password: string
+          raw_user_meta_data: Json
+          target_user_id?: string
+        }
+        Returns: string
+      }
+      admin_remove_user: {
+        Args: { target_user_id: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
