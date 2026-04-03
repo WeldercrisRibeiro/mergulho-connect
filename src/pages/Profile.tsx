@@ -16,6 +16,7 @@ const Profile = () => {
   const queryClient = useQueryClient();
   const [fullName, setFullName] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
 
   useEffect(() => {
     if (profile) {
@@ -50,6 +51,20 @@ const Profile = () => {
     },
   });
 
+  const updatePasswordMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setNewPassword("");
+      toast({ title: "Senha atualizada com sucesso!" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Erro ao atualizar senha", description: err.message, variant: "destructive" });
+    }
+  });
+
   return (
     <div className="p-4 md:p-8 max-w-lg mx-auto space-y-6">
       <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -67,7 +82,7 @@ const Profile = () => {
             </div>
             <div>
               <CardTitle>{fullName || "Membro"}</CardTitle>
-              <p className="text-sm text-muted-foreground">{user?.email}</p>
+              <p className="text-sm text-muted-foreground">{whatsapp || "Sem telefone configurado"}</p>
             </div>
           </div>
         </CardHeader>
@@ -92,9 +107,28 @@ const Profile = () => {
             </div>
           )}
 
-          <div className="flex gap-2 pt-2">
+          <div className="space-y-2 mt-4 pt-4 border-t border-border/50">
+            <Label>Redefinir Senha</Label>
+            <div className="flex gap-2">
+              <Input 
+                type="password" 
+                placeholder="Nova senha (mín. 6 caracteres)" 
+                value={newPassword} 
+                onChange={(e) => setNewPassword(e.target.value)} 
+              />
+              <Button 
+                variant="secondary" 
+                onClick={() => updatePasswordMutation.mutate()} 
+                disabled={newPassword.length < 6 || updatePasswordMutation.isPending}
+              >
+                {updatePasswordMutation.isPending ? "Alterando..." : "Alterar"}
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-4">
             <Button onClick={() => updateMutation.mutate()} className="flex-1">
-              <Save className="h-4 w-4 mr-2" /> Salvar
+              <Save className="h-4 w-4 mr-2" /> Salvar Perfil
             </Button>
             <Button variant="outline" onClick={signOut}>
               <LogOut className="h-4 w-4 mr-2" /> Sair

@@ -29,7 +29,8 @@ const HomePage = () => {
       const { data } = await supabase
         .from("devotionals")
         .select("*")
-        .eq("status", "published")
+        .in("status", ["published", "scheduled"])
+        .lte("publish_date", new Date().toISOString())
         .order("publish_date", { ascending: false })
         .limit(1)
         .single();
