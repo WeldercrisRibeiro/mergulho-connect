@@ -238,7 +238,14 @@ const Members = () => {
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="font-medium truncate">{member.full_name}</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-medium truncate">{member.full_name}</p>
+                  {member.username && (
+                    <span className="text-xs text-muted-foreground font-normal bg-muted/50 px-1.5 py-0.5 rounded">
+                      @{member.username}
+                    </span>
+                  )}
+                </div>
                 {member.whatsapp_phone && (
                   <a
                     href={`https://wa.me/${member.whatsapp_phone.replace(/\D/g, "")}`}

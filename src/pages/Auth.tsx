@@ -176,7 +176,7 @@ const Auth = () => {
             {/* Logo para telas pequenas, já que a esquerda vai sumir */}
             <div className="lg:hidden flex justify-center mb-6 relative">
               <img
-                src={theme === "dark" ? "/idvmergulho/logo-horizontal.png" : "/idvmergulho/logo-horizontal azul.png"}
+                src={theme === "dark" ? "/idvmergulho/logo-horizontal.png" : "/idvmergulho/logo-horizontal-azul.png"}
                 alt="Logo"
                 className="h-16 w-auto"
               />

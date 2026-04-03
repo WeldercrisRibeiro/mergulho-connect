@@ -59,7 +59,7 @@ const DesktopSidebar = () => {
           ) : (
             <>
               <img
-                src={theme === "dark" ? "/idvmergulho/logo-horizontal.png" : "/idvmergulho/logo-horizontal azul.png"}
+                src={theme === "dark" ? "/idvmergulho/logo-horizontal.png" : "/idvmergulho/logo-horizontal-azul.png"}
                 alt="Logo CC Mergulho"
                 className="h-10 w-auto object-contain"
               />
