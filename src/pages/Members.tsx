@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { Users, Search, Phone, Edit2, Trash2, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -27,6 +28,7 @@ const Members = () => {
   const [editPhone, setEditPhone] = useState("");
   const [editRole, setEditRole] = useState("member");
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
+  const [deletingMember, setDeletingMember] = useState<any>(null);
 
   if (!isAdmin) {
     return <Navigate to="/home" replace />;
@@ -79,13 +81,36 @@ const Members = () => {
   const updateMutation = useMutation({
     mutationFn: async () => {
       if (!editingMember) return;
-      await supabase.from("profiles").update({ full_name: editName, whatsapp_phone: editPhone }).eq("id", editingMember.id);
-      const hasRole = editingMember.roles?.length > 0;
-      if (hasRole) {
+      
+      const email = (editUsername || "").trim().toLowerCase().replace(/\s+/g, ".") + "@mergulhoconnect.com";
+      
+      // 1. Sincroniza com Auth via RPC (Atualiza email/proxy se o username mudar)
+      const { error: rpcErr } = await supabase.rpc("admin_manage_user" as any, {
+        email, 
+        password: "123456", 
+        raw_user_meta_data: { full_name: editName, whatsapp_phone: editPhone },
+        target_user_id: editingMember.user_id
+      });
+      if (rpcErr) throw rpcErr;
+
+      // 2. Atualiza perfil local (incluindo username para busca/exibição)
+      const { error: profErr } = await supabase.from("profiles").update({ 
+        full_name: editName, 
+        whatsapp_phone: editPhone,
+        username: editUsername 
+      } as any).eq("user_id", editingMember.user_id);
+      
+      if (profErr) throw profErr;
+
+      // 3. Atualiza Role
+      const userRole = editingMember.roles?.[0]?.role;
+      if (userRole) {
         await supabase.from("user_roles").update({ role: editRole as any }).eq("user_id", editingMember.user_id);
       } else {
         await supabase.from("user_roles").insert({ user_id: editingMember.user_id, role: editRole as any });
       }
+
+      // 4. Atualiza Grupos
       await supabase.from("member_groups").delete().eq("user_id", editingMember.user_id);
       if (selectedGroups.length > 0) {
         const inserts = selectedGroups.map(gid => ({ user_id: editingMember.user_id, group_id: gid }));
@@ -95,21 +120,25 @@ const Members = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["members"] });
       setEditingMember(null);
-      toast({ title: "Membro atualizado!" });
+      toast({ title: "Membro atualizado!", description: "Dados e acesso sincronizados." });
     },
     onError: (err: any) => {
-      toast({ title: "Erro", description: err.message, variant: "destructive" });
+      toast({ title: "Erro ao atualizar", description: err.message, variant: "destructive" });
     }
   });
 
   const createMutation = useMutation({
     mutationFn: async () => {
       const email = editUsername.trim().toLowerCase().replace(/\s+/g, ".") + "@mergulhoconnect.com";
-      const { data, error } = await supabase.rpc("admin_create_user" as any, {
+      const { data, error } = await supabase.rpc("admin_manage_user" as any, {
         email, password: "123456", raw_user_meta_data: { full_name: editName, whatsapp_phone: editPhone }
       });
       if (error) throw error;
       const newUserId = data as any as string;
+      
+      // Sincroniza username no perfil (usando cast 'as any' para aceitar nova coluna)
+      await supabase.from("profiles").update({ username: editUsername } as any).eq("user_id", newUserId);
+
       if (editRole === "admin") {
         await supabase.from("user_roles").insert({ user_id: newUserId, role: "admin" } as any);
       }
@@ -121,7 +150,7 @@ const Members = () => {
       queryClient.invalidateQueries({ queryKey: ["members"] });
       setCreatingMember(false);
       setEditName(""); setEditUsername(""); setEditPhone(""); setEditRole("member"); setSelectedGroups([]);
-      toast({ title: "Membro criado!", description: `Usuário: ${editUsername} | Senha: 123456` });
+      toast({ title: "Membro criado!", description: `Usuário (Login): ${editUsername} | Senha: 123456` });
     },
     onError: (err: any) => {
       toast({ title: "Erro ao criar", description: err.message, variant: "destructive" });
@@ -130,17 +159,19 @@ const Members = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (m: any) => {
+      const { error } = await supabase.rpc("admin_remove_user" as any, { target_user_id: m.user_id });
+      if (error) throw error;
       await supabase.from("member_groups").delete().eq("user_id", m.user_id);
       await supabase.from("user_roles").delete().eq("user_id", m.user_id);
-      await supabase.from("profiles").delete().eq("id", m.id);
+      await supabase.from("profiles").delete().eq("user_id", m.user_id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["members"] });
-      toast({ title: "Membro removido!" });
+      setDeletingMember(null);
+      toast({ title: "Membro removido definitivamente!" });
     },
-    onError: () => {
-      queryClient.invalidateQueries({ queryKey: ["members"] });
-      toast({ title: "Perfil removido", description: "Conta de acesso pode precisar ser removida manualmente no Supabase." });
+    onError: (err: any) => {
+      toast({ title: "Erro ao excluir", description: err.message, variant: "destructive" });
     }
   });
 
@@ -227,11 +258,7 @@ const Members = () => {
                   <Edit2 className="h-4 w-4 text-primary" />
                 </Button>
                 <Button variant="ghost" size="icon"
-                  onClick={() => {
-                    if (window.confirm(`Excluir ${member.full_name || "este membro"}?`)) {
-                      deleteMutation.mutate(member);
-                    }
-                  }}
+                  onClick={() => setDeletingMember(member)}
                   disabled={deleteMutation.isPending}
                 >
                   <Trash2 className="h-4 w-4 text-destructive" />
@@ -246,28 +273,47 @@ const Members = () => {
         <p className="text-center text-muted-foreground py-8">Nenhum membro encontrado</p>
       )}
 
+      {/* Confirm Delete */}
+      <ConfirmDialog
+        open={!!deletingMember}
+        title="Excluir Membro"
+        description={`Tem certeza que deseja excluir ${deletingMember?.full_name || "este membro"}? Esta ação removerá o acesso e todos os dados vinculados.`}
+        confirmLabel="Excluir"
+        variant="danger"
+        onConfirm={() => deleteMutation.mutate(deletingMember)}
+        onCancel={() => setDeletingMember(null)}
+      />
+
       {/* Edit Dialog */}
       <Dialog open={!!editingMember} onOpenChange={(val) => !val && setEditingMember(null)}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader><DialogTitle>Editar Membro</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Nome Completo</Label>
-              <Input value={editName} onChange={e => setEditName(e.target.value)} />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Nome Completo</Label>
+                <Input value={editName} onChange={e => setEditName(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Nome de Usuário (Login)</Label>
+                <Input value={editUsername} onChange={e => setEditUsername(e.target.value)} placeholder="ex: joao.silva" />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>WhatsApp (apenas exibição)</Label>
-              <Input value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="(11) 99999-9999" />
-            </div>
-            <div className="space-y-2">
-              <Label>Permissão</Label>
-              <Select value={editRole} onValueChange={setEditRole}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="member">Membro</SelectItem>
-                  <SelectItem value="admin">Administrador</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>WhatsApp</Label>
+                <Input value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="(11) 99999-9999" />
+              </div>
+              <div className="space-y-2">
+                <Label>Permissão</Label>
+                <Select value={editRole} onValueChange={setEditRole}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="member">Membro</SelectItem>
+                    <SelectItem value="admin">Administrador</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Grupos</Label>

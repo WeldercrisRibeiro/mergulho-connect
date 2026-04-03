@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, MapPin, Phone, Instagram, Facebook, Youtube, Quote } from "lucide-react";
+import { Heart, MapPin, Phone, Instagram, Facebook, Youtube, Quote, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -24,6 +24,16 @@ const Landing = () => {
     },
   });
 
+  const { data: siteSettings } = useQuery({
+    queryKey: ["site-settings-pub"],
+    queryFn: async () => {
+      const { data } = await (supabase as any).from("site_settings").select("*");
+      const settings: Record<string, string> = {};
+      (data || []).forEach((s: any) => { settings[s.id] = s.value; });
+      return settings;
+    },
+  });
+
   const { data: testimonials } = useQuery({
     queryKey: ["landing-testimonials-pub"],
     queryFn: async () => {
@@ -31,6 +41,10 @@ const Landing = () => {
       return data || [];
     },
   });
+
+  const whatsappUrl = siteSettings?.whatsapp_number 
+    ? `https://wa.me/${siteSettings.whatsapp_number.replace(/\D/g, "")}` 
+    : "#";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,7 +76,7 @@ const Landing = () => {
         <div className="container mx-auto flex items-center justify-between px-6 py-4">
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <img src="/idvmergulho/logo horizontal azul.png" alt="Logo" className="h-10 w-auto hover:opacity-80 transition-opacity" />
+            <img src="/idvmergulho/logo.png" alt="Logo" className="h-10 w-auto hover:opacity-80 transition-opacity" />
           </div>
 
           {/* Nav Links (Desktop) */}
@@ -122,25 +136,14 @@ const Landing = () => {
           <h3 className="text-3xl md:text-4xl font-extrabold text-foreground">Momentos que nos unem</h3>
         </div>
 
-        {/* Photo Gallery */}
+        {/* Auto-slide Carousel */}
         {photos && photos.length > 0 && (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-16">
-            {photos.map((p: any) => (
-              <div key={p.id} className="group relative rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 aspect-video bg-muted">
-                <img src={p.url} alt={p.caption || ""} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                {p.caption && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                    <p className="text-white text-sm font-medium">{p.caption}</p>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+          <PhotoCarousel photos={photos} />
         )}
 
         {/* Testimonials */}
         {testimonials && testimonials.length > 0 && (
-          <div>
+          <div className="mt-16">
             <h3 className="text-center text-xl font-bold mb-8 text-muted-foreground">O que dizem nossos membros</h3>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {testimonials.map((t: any) => (
@@ -264,17 +267,20 @@ const Landing = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold">Contato</h4>
-                    <p className="text-sm text-muted-foreground mt-1">(00) 00000-0000</p>
+                    <p className="text-sm text-muted-foreground mt-1">{siteSettings?.whatsapp_number || "85 99776-3630"}</p>
                   </div>
                 </div>
               </div>
 
               <div className="flex items-center gap-4 pt-4 border-t">
                 <span className="font-medium">Redes Sociais:</span>
-                <a href="#" className="rounded-full bg-primary/5 p-2 hover:bg-primary/20 text-primary transition-colors inline-flex">
+                <a href={whatsappUrl} target="_blank" rel="noreferrer" className="rounded-full bg-emerald-500/10 p-2 hover:bg-emerald-500/20 text-emerald-600 transition-colors inline-flex">
+                  <Phone className="h-5 w-5" />
+                </a>
+                <a href={siteSettings?.instagram_url || "#"} target="_blank" rel="noreferrer" className="rounded-full bg-primary/5 p-2 hover:bg-primary/20 text-primary transition-colors inline-flex">
                   <Instagram className="h-5 w-5" />
                 </a>
-                <a href="#" className="rounded-full bg-primary/5 p-2 hover:bg-primary/20 text-primary transition-colors inline-flex">
+                <a href={siteSettings?.facebook_url || "#"} target="_blank" rel="noreferrer" className="rounded-full bg-primary/5 p-2 hover:bg-primary/20 text-primary transition-colors inline-flex">
                   <Facebook className="h-5 w-5" />
                 </a>
                 <a href="#" className="rounded-full bg-primary/5 p-2 hover:bg-primary/20 text-primary transition-colors inline-flex">
@@ -286,12 +292,108 @@ const Landing = () => {
         </div>
       </section>
 
+      {/* Floating WhatsApp Button */}
+      {siteSettings?.whatsapp_number && (
+        <a 
+          href={whatsappUrl} 
+          target="_blank" 
+          rel="noreferrer"
+          className="fixed bottom-6 right-6 z-[60] bg-emerald-500 text-white p-4 rounded-full shadow-2xl hover:bg-emerald-600 hover:scale-110 transition-all duration-300 group flex items-center gap-2"
+        >
+          <Phone className="h-6 w-6 fill-current" />
+          <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-500 font-bold whitespace-nowrap">Fale Conosco</span>
+        </a>
+      )}
+
       {/* Footer */}
       <footer className="border-t py-8">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
           <p>© {new Date().getFullYear()} Comunidade Cristã Mergulho. Todos os direitos reservados.</p>
         </div>
       </footer>
+    </div>
+  );
+};
+
+const PhotoCarousel = ({ photos }: { photos: any[] }) => {
+  const [idx, setIdx] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setIdx((current) => (current + 1) % photos.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [photos.length]);
+
+  const prev = () => setIdx((i) => (i - 1 + photos.length) % photos.length);
+  const next = () => setIdx((i) => (i + 1) % photos.length);
+
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    if (isLeftSwipe) next();
+    if (isRightSwipe) prev();
+  };
+
+  return (
+    <div
+      className="relative w-full max-w-5xl mx-auto rounded-3xl overflow-hidden bg-black/5 border border-white/10 shadow-2xl group h-[300px] md:h-[500px]"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
+      <div className="absolute inset-0 flex items-center justify-center">
+        <img
+          key={photos[idx]?.id}
+          src={photos[idx]?.url}
+          alt={photos[idx]?.caption || ""}
+          className="w-full h-full object-contain animate-fade-in transition-all duration-700"
+        />
+      </div>
+
+      {photos[idx]?.caption && (
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6 pt-12 text-white">
+          <p className="text-lg font-medium drop-shadow-md">{photos[idx].caption}</p>
+        </div>
+      )}
+
+      {/* Navigation arrows */}
+      {photos.length > 1 && (
+        <>
+          <button onClick={prev} className="absolute left-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-black/20 hover:bg-black/50 text-white backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+            <ChevronLeft className="h-6 w-6" />
+          </button>
+          <button onClick={next} className="absolute right-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-black/20 hover:bg-black/50 text-white backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+            <ChevronRight className="h-6 w-6" />
+          </button>
+
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+            {photos.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setIdx(i)}
+                className={`h-1.5 rounded-full transition-all ${i === idx ? "w-6 bg-white" : "w-1.5 bg-white/40"}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 };

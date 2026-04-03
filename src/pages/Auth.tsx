@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { Moon, Sun, KeyRound, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/components/ThemeProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,9 +17,12 @@ const Auth = () => {
   const [fullName, setFullName] = useState("");
   const [reqPhone, setReqPhone] = useState("");
   const [isRequesting, setIsRequesting] = useState(searchParams.get("request") === "true");
+  const [isChangingPass, setIsChangingPass] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -52,15 +57,83 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      // Username vira proxy email: username@mergulhoconnect.com
-      const loginEmail = username.trim().toLowerCase().replace(/\s+/g, ".") + "@mergulhoconnect.com";
-
+      const cleanUsername = username.trim().toLowerCase();
+      
+      // Tenta login com formato de username
+      const loginEmail = cleanUsername.replace(/\s+/g, ".") + "@mergulhoconnect.com";
       const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
-      if (error) throw error;
+      
+      if (error) {
+        // Se falhou e parece um número, tenta o formato de telefone (para usuários antigos/aprovados via contato)
+        const phoneFormat = cleanUsername.replace(/\D/g, "");
+        if (phoneFormat.length >= 8) {
+          const phoneEmail = phoneFormat + "@mergulhoconnect.com";
+          const { error: phoneError } = await supabase.auth.signInWithPassword({ email: phoneEmail, password });
+          if (phoneError) throw error; // Lança o erro original se o de telefone também falhar
+        } else {
+          throw error;
+        }
+      }
+      
       navigate("/home");
     } catch (error: any) {
       toast({
-        title: "Erro",
+        title: "Erro de Acesso",
+        description: "Usuário ou senha incorretos. Verifique se digitou o usuário (ex: welder) ou seu telefone corretamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const cleanUsername = username.trim().toLowerCase();
+      const loginEmail = cleanUsername.replace(/\s+/g, ".") + "@mergulhoconnect.com";
+      const phoneEmail = cleanUsername.replace(/\D/g, "") + "@mergulhoconnect.com";
+      
+      // 1. Tenta verificar a senha atual com o formato de username
+      let { error: signInError } = await supabase.auth.signInWithPassword({ 
+        email: loginEmail, 
+        password 
+      });
+      
+      // 2. Se falhar, tenta com o formato de telefone
+      if (signInError && cleanUsername.replace(/\D/g, "").length >= 8) {
+        const { error: phoneSignInError } = await supabase.auth.signInWithPassword({ 
+          email: phoneEmail, 
+          password 
+        });
+        signInError = phoneSignInError;
+      }
+      
+      if (signInError) {
+        throw new Error("Senha atual incorreta. Se você nunca trocou a senha, tente o padrão '123456'.");
+      }
+
+      // 2. Com o usuário logado, atualiza para a nova senha
+      const { error: updateError } = await supabase.auth.updateUser({ 
+        password: newPassword 
+      });
+      
+      if (updateError) throw updateError;
+
+      toast({ 
+        title: "Sucesso!", 
+        description: "Sua senha foi alterada. Você já pode acessar o sistema." 
+      });
+      
+      // Volta para o login
+      setIsChangingPass(false);
+      setPassword("");
+      setNewPassword("");
+    } catch (error: any) {
+      toast({
+        title: "Erro ao trocar senha",
         description: error.message,
         variant: "destructive",
       });
@@ -76,13 +149,13 @@ const Auth = () => {
       <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-primary/90 to-primary/60 overflow-hidden items-center justify-center p-12">
         <div className="absolute inset-0 bg-black/10"></div>
         {/* Usando a logo grandona à esquerda */}
-        <div className="z-10 bg-white/10 backdrop-blur-md p-10 rounded-[2rem] shadow-2xl border border-white/20 flex flex-col items-center max-w-lg w-full transform transition-transform hover:scale-105 duration-500">
+        <div className="z-10 bg-white/10 backdrop-blur-md p-10 rounded-[2rem] shadow-2xl border border-white/20 flex flex-col items-center max-w-lg w-full transform transition-transform hover:scale-105 duration-500 text-white">
           <img
-            src="/idvmergulho/logo horizontal.png"
+            src="/idvmergulho/logo-white.png"
             alt="Logo CC Mergulho"
-            className="w-full h-auto drop-shadow-xl mb-6 mix-blend-multiply"
+            className="w-full h-auto drop-shadow-xl mb-6"
           />
-          <p className="text-white text-center text-lg md:text-xl font-medium leading-relaxed drop-shadow-md">
+          <p className="text-center text-lg md:text-xl font-medium leading-relaxed drop-shadow-md">
             AMAR | CUIDAR | SERVIR
           </p>
         </div>
@@ -93,15 +166,48 @@ const Auth = () => {
         <Card className="w-full max-w-md border-0 shadow-none bg-transparent">
           <CardHeader className="text-center pb-8">
             {/* Logo para telas pequenas, já que a esquerda vai sumir */}
-            <div className="lg:hidden flex justify-center mb-6">
-              <img src="/idvmergulho/logo horizontal azul.png" alt="Logo" className="h-16 w-auto" />
+            <div className="lg:hidden flex justify-center mb-6 relative">
+              <img 
+                src={theme === "dark" ? "/idvmergulho/logo horizontal.png" : "/idvmergulho/logo horizontal azul.png"} 
+                alt="Logo" 
+                className="h-16 w-auto" 
+              />
+              <button 
+                onClick={toggleTheme}
+                className="absolute -right-4 -top-4 p-2 rounded-full bg-muted hover:bg-muted/80 transition-colors"
+                title="Alternar Tema"
+              >
+                {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
+              </button>
             </div>
 
-            <CardTitle className="text-3xl font-bold tracking-tight text-foreground">
-              {isRequesting ? "Solicitar Acesso" : "Acesso ao Sistema"}
+            <div className="hidden lg:block absolute top-[5%] right-[5%] z-20">
+              <button 
+                onClick={toggleTheme}
+                className="p-3 rounded-full bg-card/50 backdrop-blur-md shadow-lg border hover:bg-card/80 transition-all transform hover:rotate-12"
+                title="Alternar Tema"
+              >
+                {theme === "light" ? <Moon size={20} className="text-slate-700" /> : <Sun size={20} className="text-yellow-400" />}
+              </button>
+            </div>
+
+            <CardTitle className="text-3xl font-bold tracking-tight text-foreground flex items-center justify-center gap-2">
+              {isRequesting ? (
+                <>Solicitar Acesso</>
+              ) : isChangingPass ? (
+                <> <KeyRound className="h-7 w-7 text-primary" /> Trocar Senha</>
+              ) : (
+                <>Acesso ao Sistema</>
+              )}
             </CardTitle>
             <CardDescription className="text-base mt-2">
-              {isRequesting ? "Preencha seus dados para receber o acesso." : "Entre na sua conta para acessar a comunidade."}
+              {isRequesting ? (
+                "Preencha seus dados para receber o acesso."
+              ) : isChangingPass ? (
+                "Informe sua senha atual e a nova senha que deseja usar."
+              ) : (
+                "Entre na sua conta para acessar a comunidade."
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -124,6 +230,29 @@ const Auth = () => {
                   </button>
                 </div>
               </form>
+            ) : isChangingPass ? (
+              <form onSubmit={handleChangePassword} className="space-y-5">
+                <div className="space-y-2 text-left">
+                  <Label htmlFor="ch-username">Seu Nome de Usuário</Label>
+                  <Input id="ch-username" className="bg-card h-12" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="usuário" required />
+                </div>
+                <div className="space-y-2 text-left">
+                  <Label htmlFor="ch-oldpass">Senha Atual</Label>
+                  <Input id="ch-oldpass" type="password" className="bg-card h-12" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Sua senha atual" required />
+                </div>
+                <div className="space-y-2 text-left">
+                  <Label htmlFor="ch-newpass">Nova Senha</Label>
+                  <Input id="ch-newpass" type="password" className="bg-card h-12" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Mínimo 6 caracteres" required minLength={6} />
+                </div>
+                <Button type="submit" className="w-full h-12 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl shadow-md hover:shadow-lg transition-all text-base mt-4" disabled={loading}>
+                  {loading ? "Processando..." : "Alterar Senha"}
+                </Button>
+                <div className="mt-8 text-center text-sm">
+                  <button type="button" onClick={() => setIsChangingPass(false)} className="text-muted-foreground hover:text-primary transition-colors font-medium border-b border-transparent hover:border-primary pb-0.5">
+                    Voltar para o Login
+                  </button>
+                </div>
+              </form>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="space-y-2 text-left">
@@ -140,7 +269,16 @@ const Auth = () => {
                   />
                 </div>
                 <div className="space-y-2 text-left">
-                  <Label htmlFor="password">Senha</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password">Senha</Label>
+                    <button 
+                      type="button" 
+                      onClick={() => setIsChangingPass(true)}
+                      className="text-xs text-primary hover:underline font-medium"
+                    >
+                      Trocar Senha?
+                    </button>
+                  </div>
                   <Input
                     id="password"
                     type="password"

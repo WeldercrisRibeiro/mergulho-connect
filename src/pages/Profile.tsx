@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/components/ThemeProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const Profile = () => {
   const { user, profile, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [fullName, setFullName] = useState("");
@@ -106,6 +108,23 @@ const Profile = () => {
               </div>
             </div>
           )}
+
+          <div className="space-y-4 mt-2 pt-4 border-t border-border/50">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Tema do Aplicativo</Label>
+                <p className="text-xs text-muted-foreground">Escolha entre modo claro ou escuro</p>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={toggleTheme}
+                className="gap-2"
+              >
+                {theme === "light" ? "Modo Escuro" : "Modo Claro"}
+              </Button>
+            </div>
+          </div>
 
           <div className="space-y-2 mt-4 pt-4 border-t border-border/50">
             <Label>Redefinir Senha</Label>

@@ -1,6 +1,7 @@
 import { ReactNode, useEffect } from "react";
 import BottomNav from "./BottomNav";
 import DesktopSidebar from "./DesktopSidebar";
+import DevotionalWelcome from "./DevotionalWelcome";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -19,7 +20,7 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
         if (msg.sender_id === user.id) return;
 
         let shouldNotify = false;
-        
+
         if (msg.recipient_id === user.id) {
           shouldNotify = true;
         } else if (msg.group_id) {
@@ -32,9 +33,7 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
         }
 
         if (shouldNotify && !window.location.pathname.includes("/chat")) {
-          // get sender name
           const { data: sender } = await supabase.from("profiles").select("full_name").eq("user_id", msg.sender_id).single();
-
           toast({
             title: `Nova mensagem de ${sender?.full_name || "Membro"}`,
             description: msg.content.substring(0, 50) + (msg.content.length > 50 ? "..." : ""),
@@ -55,6 +54,7 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
         {children}
       </main>
       <BottomNav />
+      <DevotionalWelcome />
     </div>
   );
 };

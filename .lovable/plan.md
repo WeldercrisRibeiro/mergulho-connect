@@ -10,7 +10,7 @@
 ---
 
 ### Phase 1: Landing Page & Auth
-1. **Landing Page** with hero section ("Bem-vindo à CC Mergulho"), about section, features overview, and CTA to login/register
+1. **Landing Page** with hero section ("Bem-vindo ao MergulhoApp"), about section, features overview, and CTA to login/register
 2. **Authentication** via Lovable Cloud — email/password signup and login
 3. **User profiles table** with name, phone (WhatsApp), avatar photo, and role (member/admin)
 4. **Role system** — separate `user_roles` table for admin/member distinction

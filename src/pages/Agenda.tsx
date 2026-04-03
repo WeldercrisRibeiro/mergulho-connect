@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Calendar, MapPin, Check, X, Share2, Plus, Edit2, Trash2, Users } from "lucide-react";
@@ -23,6 +24,7 @@ const Agenda = () => {
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [creatingEvent, setCreatingEvent] = useState(false);
   const [rsvpViewEvent, setRsvpViewEvent] = useState<any>(null);
+  const [deletingEvent, setDeletingEvent] = useState<any>(null);
 
   // Form state
   const [title, setTitle] = useState("");
@@ -134,48 +136,6 @@ const Agenda = () => {
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
   };
 
-  const EventForm = () => (
-    <div className="space-y-4 py-4">
-      <div className="space-y-2">
-        <Label>Título</Label>
-        <Input placeholder="Título do evento" value={title} onChange={e => setTitle(e.target.value)} />
-      </div>
-      <div className="space-y-2">
-        <Label>Descrição</Label>
-        <Textarea placeholder="Descrição" value={desc} onChange={e => setDesc(e.target.value)} />
-      </div>
-      <div className="space-y-2">
-        <Label>Data e Hora</Label>
-        <Input type="datetime-local" value={date} onChange={e => setDate(e.target.value)} />
-      </div>
-      <div className="space-y-2">
-        <Label>Local</Label>
-        <Input placeholder="Local" value={location} onChange={e => setLocation(e.target.value)} />
-      </div>
-      <div className="space-y-2">
-        <Label>Tipo</Label>
-        <Select value={isGeneral} onValueChange={setIsGeneral}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="true">Evento Geral</SelectItem>
-            <SelectItem value="false">Evento de Grupo</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      {isGeneral === "false" && (
-        <div className="space-y-2">
-          <Label>Grupo</Label>
-          <Select value={groupId} onValueChange={setGroupId}>
-            <SelectTrigger><SelectValue placeholder="Selecione o grupo" /></SelectTrigger>
-            <SelectContent>
-              {groups?.map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-    </div>
-  );
-
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
@@ -233,9 +193,7 @@ const Agenda = () => {
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(event)}>
                           <Edit2 className="h-4 w-4 text-primary" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => {
-                          if (window.confirm("Excluir este evento?")) deleteMutation.mutate(event.id);
-                        }}>
+                        <Button variant="ghost" size="icon" onClick={() => setDeletingEvent(event)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </>
@@ -280,9 +238,17 @@ const Agenda = () => {
 
       {/* Create Dialog */}
       <Dialog open={creatingEvent} onOpenChange={val => !val && setCreatingEvent(false)}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[700px]">
           <DialogHeader><DialogTitle>Novo Evento</DialogTitle></DialogHeader>
-          <EventForm />
+          <EventForm 
+            title={title} setTitle={setTitle}
+            desc={desc} setDesc={setDesc}
+            date={date} setDate={setDate}
+            location={location} setLocation={setLocation}
+            isGeneral={isGeneral} setIsGeneral={setIsGeneral}
+            groupId={groupId} setGroupId={setGroupId}
+            groups={groups}
+          />
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreatingEvent(false)}>Cancelar</Button>
             <Button onClick={() => saveMutation.mutate()} disabled={!title || !date || saveMutation.isPending}>
@@ -292,11 +258,31 @@ const Agenda = () => {
         </DialogContent>
       </Dialog>
 
+
+      {/* Confirm Delete */}
+      <ConfirmDialog
+        open={!!deletingEvent}
+        title="Excluir Evento"
+        description={`Deseja realmente excluir o evento "${deletingEvent?.title}"?`}
+        confirmLabel="Excluir"
+        variant="danger"
+        onConfirm={() => deleteMutation.mutate(deletingEvent?.id)}
+        onCancel={() => setDeletingEvent(null)}
+      />
+
       {/* Edit Dialog */}
       <Dialog open={!!editingEvent} onOpenChange={val => !val && setEditingEvent(null)}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[700px]">
           <DialogHeader><DialogTitle>Editar Evento</DialogTitle></DialogHeader>
-          <EventForm />
+          <EventForm 
+            title={title} setTitle={setTitle}
+            desc={desc} setDesc={setDesc}
+            date={date} setDate={setDate}
+            location={location} setLocation={setLocation}
+            isGeneral={isGeneral} setIsGeneral={setIsGeneral}
+            groupId={groupId} setGroupId={setGroupId}
+            groups={groups}
+          />
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingEvent(null)}>Cancelar</Button>
             <Button onClick={() => saveMutation.mutate()} disabled={!title || !date || saveMutation.isPending}>
@@ -370,3 +356,50 @@ const RsvpList = ({ event }: { event: any }) => {
 };
 
 export default Agenda;
+
+const EventForm = ({ title, setTitle, desc, setDesc, date, setDate, location, setLocation, isGeneral, setIsGeneral, groupId, setGroupId, groups }: any) => (
+  <div className="space-y-4 py-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="space-y-4 font-semibold uppercase tracking-tight text-xs text-muted-foreground border-b pb-2 col-span-full">Informações Básicas</div>
+      <div className="space-y-2">
+        <Label>Título</Label>
+        <Input placeholder="Título do evento" value={title} onChange={e => setTitle(e.target.value)} />
+      </div>
+      <div className="space-y-2">
+        <Label>Local</Label>
+        <Input placeholder="Onde será o evento?" value={location} onChange={e => setLocation(e.target.value)} />
+      </div>
+      <div className="space-y-2 col-span-full">
+        <Label>Descrição</Label>
+        <Textarea placeholder="Breve descritivo..." value={desc} onChange={e => setDesc(e.target.value)} rows={3} />
+      </div>
+
+      <div className="space-y-4 font-semibold uppercase tracking-tight text-xs text-muted-foreground border-b pb-2 col-span-full mt-4">Configurações e Data</div>
+      <div className="space-y-2">
+        <Label>Data e Hora</Label>
+        <Input type="datetime-local" value={date} onChange={e => setDate(e.target.value)} />
+      </div>
+      <div className="space-y-2">
+        <Label>Tipo</Label>
+        <Select value={isGeneral} onValueChange={setIsGeneral}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="true">Evento Geral</SelectItem>
+            <SelectItem value="false">Evento de Grupo</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      {isGeneral === "false" && (
+        <div className="space-y-2 col-span-full">
+          <Label>Grupo</Label>
+          <Select value={groupId} onValueChange={setGroupId}>
+            <SelectTrigger><SelectValue placeholder="Selecione o grupo" /></SelectTrigger>
+            <SelectContent>
+              {groups?.map((gAny: any) => <SelectItem key={gAny.id} value={gAny.id}>{gAny.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+    </div>
+  </div>
+);

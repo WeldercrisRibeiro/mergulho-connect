@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Home, Calendar, BookOpen, MessageCircle, User, Users, LogOut, ChevronLeft, ChevronRight, Bell, BellOff, Shield, Settings } from "lucide-react";
+import { Home, Calendar, BookOpen, MessageCircle, User, Users, LogOut, ChevronLeft, ChevronRight, Bell, BellOff, Shield, Settings, Sun, Moon } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "./ThemeProvider";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -20,6 +21,7 @@ const navItems = [
 const DesktopSidebar = () => {
   const location = useLocation();
   const { isAdmin, signOut, profile } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [collapsed, setCollapsed] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(
     typeof window !== "undefined" && Notification.permission === "granted"
@@ -49,10 +51,18 @@ const DesktopSidebar = () => {
         {/* Logo */}
         <div className={cn("flex items-center p-4 border-b border-sidebar-border", collapsed ? "justify-center" : "gap-3")}>
           {collapsed ? (
-            <img src="/idvmergulho/logo.png" alt="Logo" className="h-9 w-9 object-contain" />
+            <img 
+              src={theme === "dark" ? "/idvmergulho/logo-white.png" : "/idvmergulho/logo.png"} 
+              alt="Logo" 
+              className="h-9 w-9 object-contain" 
+            />
           ) : (
             <>
-              <img src="/idvmergulho/logo horizontal azul.png" alt="Logo CC Mergulho" className="h-10 w-auto object-contain" />
+              <img 
+                src={theme === "dark" ? "/idvmergulho/logo horizontal.png" : "/idvmergulho/logo horizontal azul.png"} 
+                alt="Logo CC Mergulho" 
+                className="h-10 w-auto object-contain" 
+              />
             </>
           )}
         </div>
@@ -121,6 +131,28 @@ const DesktopSidebar = () => {
               </Button>
             </TooltipTrigger>
             {collapsed && <TooltipContent side="right">Notificações: {notificationsEnabled ? "ativas" : "desativadas"}</TooltipContent>}
+          </Tooltip>
+
+          {/* Theme Toggle */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size={collapsed ? "icon" : "sm"}
+                className={cn("transition-colors", !collapsed && "w-full justify-start")}
+                onClick={toggleTheme}
+              >
+                {theme === "light" ? (
+                  <Moon className="h-4 w-4 text-slate-700 shrink-0" />
+                ) : (
+                  <Sun className="h-4 w-4 text-yellow-400 shrink-0" />
+                )}
+                {!collapsed && (
+                  <span className="ml-2 text-xs">{theme === "light" ? "Tema Escuro" : "Tema Claro"}</span>
+                )}
+              </Button>
+            </TooltipTrigger>
+            {collapsed && <TooltipContent side="right">Alternar Tema</TooltipContent>}
           </Tooltip>
 
           {/* User + Logout */}

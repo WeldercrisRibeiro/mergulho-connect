@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { Shield, Plus, Edit2, Trash2, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -25,6 +26,7 @@ const Groups = () => {
   const [groupDesc, setGroupDesc] = useState("");
   const [groupIcon, setGroupIcon] = useState("🌊");
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [deletingGroup, setDeletingGroup] = useState<any>(null);
 
   if (!isAdmin) return <Navigate to="/home" replace />;
 
@@ -117,23 +119,6 @@ const Groups = () => {
     setGroupIcon(g.icon || "🌊");
   };
 
-  const GroupForm = () => (
-    <div className="space-y-4 py-4">
-      <div className="space-y-2">
-        <Label>Ícone (emoji)</Label>
-        <Input value={groupIcon} onChange={e => setGroupIcon(e.target.value)} placeholder="🌊" className="w-20" />
-      </div>
-      <div className="space-y-2">
-        <Label>Nome do Grupo</Label>
-        <Input value={groupName} onChange={e => setGroupName(e.target.value)} placeholder="Nome do grupo" />
-      </div>
-      <div className="space-y-2">
-        <Label>Descrição (opcional)</Label>
-        <Input value={groupDesc} onChange={e => setGroupDesc(e.target.value)} placeholder="Descrição breve" />
-      </div>
-    </div>
-  );
-
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
@@ -169,9 +154,7 @@ const Groups = () => {
                 <Button variant="ghost" size="icon" onClick={() => handleEdit(g)}>
                   <Edit2 className="h-4 w-4 text-primary" />
                 </Button>
-                <Button variant="ghost" size="icon" onClick={() => {
-                  if (window.confirm(`Excluir grupo "${g.name}"?`)) deleteMutation.mutate(g.id);
-                }}>
+                <Button variant="ghost" size="icon" onClick={() => setDeletingGroup(g)}>
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
               </div>
@@ -187,7 +170,11 @@ const Groups = () => {
       <Dialog open={creatingGroup} onOpenChange={val => !val && setCreatingGroup(false)}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader><DialogTitle>Novo Grupo</DialogTitle></DialogHeader>
-          <GroupForm />
+          <GroupForm 
+            groupIcon={groupIcon} setGroupIcon={setGroupIcon}
+            groupName={groupName} setGroupName={setGroupName}
+            groupDesc={groupDesc} setGroupDesc={setGroupDesc}
+          />
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreatingGroup(false)}>Cancelar</Button>
             <Button onClick={() => saveMutation.mutate()} disabled={!groupName || saveMutation.isPending}>
@@ -197,11 +184,26 @@ const Groups = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Confirm Delete */}
+      <ConfirmDialog
+        open={!!deletingGroup}
+        title="Excluir Grupo"
+        description={`Deseja realmente excluir o grupo "${deletingGroup?.name}"? Isso removerá o vínculo de todos os membros deste grupo.`}
+        confirmLabel="Excluir"
+        variant="danger"
+        onConfirm={() => deleteMutation.mutate(deletingGroup?.id)}
+        onCancel={() => setDeletingGroup(null)}
+      />
+
       {/* Edit Dialog */}
       <Dialog open={!!editingGroup} onOpenChange={val => !val && setEditingGroup(null)}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader><DialogTitle>Editar Grupo</DialogTitle></DialogHeader>
-          <GroupForm />
+          <GroupForm 
+            groupIcon={groupIcon} setGroupIcon={setGroupIcon}
+            groupName={groupName} setGroupName={setGroupName}
+            groupDesc={groupDesc} setGroupDesc={setGroupDesc}
+          />
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingGroup(null)}>Cancelar</Button>
             <Button onClick={() => saveMutation.mutate()} disabled={!groupName || saveMutation.isPending}>
@@ -250,3 +252,20 @@ const Groups = () => {
 };
 
 export default Groups;
+
+const GroupForm = ({ groupIcon, setGroupIcon, groupName, setGroupName, groupDesc, setGroupDesc }: any) => (
+  <div className="space-y-4 py-4">
+    <div className="space-y-2">
+      <Label>Ícone (emoji)</Label>
+      <Input value={groupIcon} onChange={e => setGroupIcon(e.target.value)} placeholder="🌊" className="w-20" />
+    </div>
+    <div className="space-y-2">
+      <Label>Nome do Grupo</Label>
+      <Input value={groupName} onChange={e => setGroupName(e.target.value)} placeholder="Nome do grupo" />
+    </div>
+    <div className="space-y-2">
+      <Label>Descrição (opcional)</Label>
+      <Input value={groupDesc} onChange={e => setGroupDesc(e.target.value)} placeholder="Descrição breve" />
+    </div>
+  </div>
+);

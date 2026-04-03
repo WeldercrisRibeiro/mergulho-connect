@@ -32,6 +32,9 @@
     --input: 200 20% 90%;
     --ring: 205 90% 40%;
 
+    --neo-shadow-dark: 200 20% 85%;
+    --neo-shadow-light: 0 0% 100%;
+
     --radius: 0.75rem;
 
     --sidebar-background: 200 33% 96%;
@@ -73,6 +76,9 @@
     --input: 210 30% 18%;
     --ring: 205 90% 50%;
 
+    --neo-shadow-dark: 210 40% 4%;
+    --neo-shadow-light: 210 40% 12%;
+
     --sidebar-background: 210 40% 8%;
     --sidebar-foreground: 200 33% 96%;
     --sidebar-primary: 205 90% 50%;
@@ -96,12 +102,12 @@
 
 @layer utilities {
   .neo-shadow {
-    box-shadow: 6px 6px 12px hsl(200, 20%, 85%), -6px -6px 12px hsl(0, 0%, 100%);
+    box-shadow: 6px 6px 12px hsl(var(--neo-shadow-dark)), -6px -6px 12px hsl(var(--neo-shadow-light));
   }
   .neo-shadow-sm {
-    box-shadow: 3px 3px 6px hsl(200, 20%, 87%), -3px -3px 6px hsl(0, 0%, 100%);
+    box-shadow: 3px 3px 6px hsl(var(--neo-shadow-dark)), -3px -3px 6px hsl(var(--neo-shadow-light));
   }
   .neo-inset {
-    box-shadow: inset 3px 3px 6px hsl(200, 20%, 87%), inset -3px -3px 6px hsl(0, 0%, 100%);
+    box-shadow: inset 3px 3px 6px hsl(var(--neo-shadow-dark)), inset -3px -3px 6px hsl(var(--neo-shadow-light));
   }
 }

@@ -2,23 +2,28 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { MessageCircle, Send, Users, ArrowLeft, Plus } from "lucide-react";
+import { MessageCircle, Send, Users, ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, isToday, isYesterday } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 type ChatView = { type: "list" } | { type: "group"; groupId: string; groupName: string } | { type: "direct"; userId: string; userName: string };
 
 const Chat = () => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [view, setView] = useState<ChatView>({ type: "list" });
   const [message, setMessage] = useState("");
   const [newChatOpen, setNewChatOpen] = useState(false);
   const [memberSearch, setMemberSearch] = useState("");
+  const [clearingChat, setClearingChat] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { data: groups } = useQuery({
@@ -144,6 +149,34 @@ const Chat = () => {
     sendMutation.mutate(message.trim());
   };
 
+  const clearChatMutation = useMutation({
+    mutationFn: async () => {
+      if (view.type !== "group") return;
+      const { error } = await supabase.from("messages").delete().eq("group_id", view.groupId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["messages", chatId] });
+      setClearingChat(false);
+      toast({ title: "Histórico de mensagens removido para todos!" });
+    },
+    onError: (err: any) => toast({ title: "Erro ao limpar", description: err.message, variant: "destructive" }),
+  });
+
+  const renderDateSeparator = (date: Date) => {
+    let label = format(date, "d 'de' MMMM", { locale: ptBR });
+    if (isToday(date)) label = "Hoje";
+    else if (isYesterday(date)) label = "Ontem";
+
+    return (
+      <div key={`sep-${date.getTime()}`} className="flex justify-center my-6">
+        <span className="px-3 py-1 bg-muted rounded-full text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80 shadow-sm border border-border/50">
+          {label}
+        </span>
+      </div>
+    );
+  };
+
   const filteredMembers = allMembers?.filter(m =>
     (m.full_name || "").toLowerCase().includes(memberSearch.toLowerCase())
   );
@@ -248,7 +281,12 @@ const Chat = () => {
         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
           {view.type === "group" ? <Users className="h-4 w-4 text-primary" /> : <span className="text-primary font-bold text-sm">{chatName.charAt(0)}</span>}
         </div>
-        <span className="font-semibold">{chatName}</span>
+        <span className="font-semibold flex-1">{chatName}</span>
+        {isAdmin && view.type === "group" && (
+          <Button variant="ghost" size="icon" onClick={() => setClearingChat(true)} className="text-muted-foreground hover:text-destructive">
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       {/* Messages */}
@@ -256,24 +294,41 @@ const Chat = () => {
         {(!messages || messages.length === 0) && (
           <p className="text-center text-sm text-muted-foreground py-8">Nenhuma mensagem ainda. Diga olá! 👋</p>
         )}
-        {messages?.map((msg) => {
+        {messages?.map((msg, index) => {
           const isMe = msg.sender_id === user?.id;
+          const msgDate = new Date(msg.created_at);
+          const prevMsg = index > 0 ? messages[index - 1] : null;
+          const showDateSeparator = !prevMsg || format(new Date(prevMsg.created_at), "yyyy-MM-dd") !== format(msgDate, "yyyy-MM-dd");
+
           return (
-            <div key={msg.id} className={cn("flex", isMe ? "justify-end" : "justify-start")}>
-              <div className={cn("max-w-[75%] rounded-2xl px-4 py-2", isMe ? "bg-primary text-primary-foreground" : "bg-muted")}>
-                {!isMe && view.type === "group" && (
-                  <p className="text-xs font-semibold mb-0.5 opacity-70">{(msg as any).senderName || "Membro"}</p>
-                )}
-                <p className="text-sm">{msg.content}</p>
-                <p className={cn("text-xs mt-1", isMe ? "text-primary-foreground/60" : "text-muted-foreground")}>
-                  {format(new Date(msg.created_at), "HH:mm")}
-                </p>
+            <div key={msg.id} className="space-y-3">
+              {showDateSeparator && renderDateSeparator(msgDate)}
+              <div className={cn("flex", isMe ? "justify-end" : "justify-start")}>
+                <div className={cn("max-w-[75%] rounded-2xl px-4 py-2 shadow-sm", isMe ? "bg-primary text-primary-foreground" : "bg-card border border-border/50")}>
+                  {!isMe && view.type === "group" && (
+                    <p className="text-[10px] font-bold uppercase tracking-tight text-primary mb-1">{(msg as any).senderName || "Membro"}</p>
+                  )}
+                  <p className="text-sm leading-relaxed">{msg.content}</p>
+                  <p className={cn("text-[10px] mt-1 text-right", isMe ? "text-primary-foreground/60" : "text-muted-foreground/60")}>
+                    {format(msgDate, "HH:mm")}
+                  </p>
+                </div>
               </div>
             </div>
           );
         })}
         <div ref={messagesEndRef} />
       </div>
+
+      <ConfirmDialog
+        open={clearingChat}
+        title="Limpar Histórico"
+        description="Isso apagará TODAS as mensagens deste grupo para TODOS os membros. Esta ação não pode ser desfeita."
+        confirmLabel="Limpar Tudo"
+        variant="danger"
+        onConfirm={() => clearChatMutation.mutate()}
+        onCancel={() => setClearingChat(false)}
+      />
 
       {/* Input */}
       <form onSubmit={handleSend} className="p-4 border-t bg-card flex gap-2">
