@@ -9,9 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { HandHeart, Plus, Trash2, User } from "lucide-react";
+import { HandHeart, Plus, Trash2, User, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -38,7 +38,7 @@ const Volunteers = () => {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [availability, setAvailability] = useState("");
-  const [interestArea, setInterestArea] = useState("");
+  const [interestAreas, setInterestAreas] = useState<string[]>([]);
 
   const { data: volunteers } = useQuery({
     queryKey: ["volunteers"],
@@ -57,14 +57,15 @@ const Volunteers = () => {
         full_name: fullName.trim(),
         phone: phone.trim() || null,
         availability: availability.trim() || null,
-        interest_area: interestArea || null,
+        interest_areas: interestAreas,
+        interest_area: interestAreas[0] || null, // Backwards compatibility
       });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["volunteers"] });
       setCreating(false);
-      setFullName(""); setPhone(""); setAvailability(""); setInterestArea("");
+      setFullName(""); setPhone(""); setAvailability(""); setInterestAreas([]);
       toast({ title: "Inscrição realizada! 🙌" });
     },
     onError: (err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" }),
@@ -85,7 +86,7 @@ const Volunteers = () => {
     setFullName(profile?.full_name || "");
     setPhone(profile?.whatsapp_phone || "");
     setAvailability("");
-    setInterestArea("");
+    setInterestAreas([]);
     setCreating(true);
   };
 
@@ -123,8 +124,20 @@ const Volunteers = () => {
                     <User className="h-4 w-4 text-primary" /> {v.full_name}
                   </p>
                   {v.phone && <p className="text-xs text-muted-foreground">📱 {v.phone}</p>}
-                  {v.interest_area && <Badge variant="secondary" className="text-xs">{v.interest_area}</Badge>}
-                  {v.availability && <p className="text-xs text-muted-foreground mt-1">Disponibilidade: {v.availability}</p>}
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {v.interest_areas && v.interest_areas.length > 0 ? (
+                      v.interest_areas.map((area: string) => (
+                        <Badge key={area} variant="secondary" className="text-[10px] uppercase font-bold">
+                          {area}
+                        </Badge>
+                      ))
+                    ) : v.interest_area ? (
+                      <Badge variant="secondary" className="text-[10px] uppercase font-bold">
+                        {v.interest_area}
+                      </Badge>
+                    ) : null}
+                  </div>
+                  {v.availability && <p className="text-xs text-muted-foreground mt-2">Disponibilidade: {v.availability}</p>}
                   <p className="text-[10px] text-muted-foreground">
                     Inscrito em {format(new Date(v.created_at), "dd/MM/yyyy", { locale: ptBR })}
                   </p>
@@ -160,14 +173,28 @@ const Volunteers = () => {
               <Label>Telefone / WhatsApp</Label>
               <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="(00) 00000-0000" />
             </div>
-            <div className="space-y-2">
-              <Label>Área de Interesse</Label>
-              <Select value={interestArea} onValueChange={setInterestArea}>
-                <SelectTrigger><SelectValue placeholder="Selecione uma área" /></SelectTrigger>
-                <SelectContent>
-                  {INTEREST_AREAS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
-                </SelectContent>
-              </Select>
+            <div className="space-y-3">
+              <Label className="text-sm font-bold">Áreas de Interesse (Selecione uma ou mais)</Label>
+              <div className="grid grid-cols-2 gap-3 p-3 bg-muted/30 rounded-xl border">
+                {INTEREST_AREAS.map((area) => (
+                  <div key={area} className="flex items-center space-x-2">
+                    <Checkbox 
+                      id={`area-${area}`} 
+                      checked={interestAreas.includes(area)}
+                      onCheckedChange={(checked) => {
+                        if (checked) setInterestAreas([...interestAreas, area]);
+                        else setInterestAreas(interestAreas.filter(a => a !== area));
+                      }}
+                    />
+                    <label 
+                      htmlFor={`area-${area}`} 
+                      className="text-xs font-medium leading-none cursor-pointer peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      {area}
+                    </label>
+                  </div>
+                ))}
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Disponibilidade</Label>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Home, Calendar, BookOpen, MessageCircle, User, Users, LogOut, ChevronLeft, ChevronRight, Bell, BellOff, Shield, Settings, Sun, Moon, HandHeart, BarChart3 } from "lucide-react";
+import { Home, Calendar, BookOpen, MessageCircle, User, Users, LogOut, ChevronLeft, ChevronRight, Bell, BellOff, Shield, Settings, Sun, Moon, HandHeart, BarChart3, Archive } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,15 +15,16 @@ const navItems = [
   { path: "/voluntarios", icon: HandHeart, label: "Voluntários" },
   { path: "/departamentos", icon: Shield, label: "Departamentos", adminOnly: true },
   { path: "/membros", icon: Users, label: "Membros", adminOnly: true },
-  { path: "/relatorios", icon: BarChart3, label: "Relatórios", adminOnly: true },
+  { path: "/relatorios", icon: BarChart3, label: "Relatórios", managerAccess: true },
   { path: "/chat", icon: MessageCircle, label: "Chat" },
+  { path: "/arquivos", icon: Archive, label: "Arquivos", adminOnly: true },
   { path: "/configuracoes", icon: Settings, label: "Configurações", adminOnly: true },
   { path: "/perfil", icon: User, label: "Perfil" },
 ];
 
 const DesktopSidebar = () => {
   const location = useLocation();
-  const { isAdmin, signOut, profile, user } = useAuth();
+  const { isAdmin, isGerente, signOut, profile, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [collapsed, setCollapsed] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(
@@ -142,7 +143,11 @@ const DesktopSidebar = () => {
 
         {/* Nav */}
         <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-          {navItems.filter(item => !('adminOnly' in item) || !item.adminOnly || isAdmin).map(({ path, icon: Icon, label }) => {
+          {navItems.filter(item => {
+            if (item.adminOnly && !isAdmin) return false;
+            if (item.managerAccess && !isAdmin && !isGerente) return false;
+            return true;
+          }).map(({ path, icon: Icon, label }) => {
             const active = location.pathname === path;
             const linkEl = (
               <Link
@@ -236,7 +241,13 @@ const DesktopSidebar = () => {
               <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                 <User className="h-4 w-4 text-primary" />
               </div>
-              <span className="text-xs font-medium truncate flex-1">{profile?.full_name || "Membro"}</span>
+              <span className="text-xs font-medium truncate flex-1 leading-tight">
+                {profile?.full_name || "Membro"}
+                <br />
+                <span className="text-[9px] text-muted-foreground uppercase tracking-tighter">
+                  {isAdmin ? "Administrador" : isGerente ? "Gerente" : "Membro"}
+                </span>
+              </span>
             </div>
           )}
 

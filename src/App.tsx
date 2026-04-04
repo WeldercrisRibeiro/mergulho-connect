@@ -19,6 +19,7 @@ import Groups from "./pages/Groups";
 import Settings from "./pages/Settings";
 import Volunteers from "./pages/Volunteers";
 import Reports from "./pages/Reports";
+import ArchivedChats from "./pages/ArchivedChats";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,6 +57,7 @@ const App = () => (
               <Route path="/configuracoes" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/voluntarios" element={<ProtectedRoute><Volunteers /></ProtectedRoute>} />
               <Route path="/relatorios" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+              <Route path="/arquivos" element={<ProtectedRoute><ArchivedChats /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>

@@ -88,6 +88,41 @@
     --sidebar-border: 210 30% 18%;
     --sidebar-ring: 205 90% 50%;
   }
+
+  /* Youth Theme (Jovens) - Stylish & Modern */
+  .theme-youth {
+    --primary: 270 90% 60%;
+    --sidebar-primary: 270 90% 60%;
+    --ring: 270 90% 60%;
+    --accent: 280 80% 90%;
+    --accent-foreground: 270 90% 30%;
+  }
+
+  .dark .theme-youth {
+    --primary: 270 100% 70%;
+    --sidebar-primary: 270 100% 70%;
+    --ring: 270 100% 70%;
+    --accent: 270 50% 20%;
+    --accent-foreground: 270 100% 90%;
+  }
+
+  /* Kids Theme - Playful & Lively */
+  .theme-kids {
+    --primary: 190 90% 50%;
+    --sidebar-primary: 190 90% 50%;
+    --ring: 190 90% 50%;
+    --accent: 45 100% 90%;
+    --accent-foreground: 45 100% 20%;
+    --radius: 1.5rem;
+  }
+
+  .dark .theme-kids {
+    --primary: 195 100% 60%;
+    --sidebar-primary: 195 100% 60%;
+    --ring: 195 100% 60%;
+    --accent: 45 50% 20%;
+    --accent-foreground: 45 100% 90%;
+  }
 }
 
 @layer base {

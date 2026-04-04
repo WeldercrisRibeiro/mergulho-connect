@@ -1,11 +1,14 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 type Theme = "light" | "dark";
+type Skin = "default" | "youth" | "kids";
 
 interface ThemeContextType {
   theme: Theme;
+  skin: Skin;
   toggleTheme: () => void;
   setTheme: (theme: Theme) => void;
+  setSkin: (skin: Skin) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -16,6 +19,11 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     return (saved as Theme) || "light";
   });
 
+  const [skin, setSkinState] = useState<Skin>(() => {
+    const saved = localStorage.getItem("app-skin");
+    return (saved as Skin) || "default";
+  });
+
   useEffect(() => {
     const root = window.document.documentElement;
     root.classList.remove("light", "dark");
@@ -23,14 +31,24 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     localStorage.setItem("app-theme", theme);
   }, [theme]);
 
+  useEffect(() => {
+    const root = window.document.documentElement;
+    // Remove all possible skin classes
+    root.classList.remove("theme-youth", "theme-kids");
+    if (skin === "youth") root.classList.add("theme-youth");
+    if (skin === "kids") root.classList.add("theme-kids");
+    localStorage.setItem("app-skin", skin);
+  }, [skin]);
+
   const toggleTheme = () => {
     setThemeState((prev) => (prev === "light" ? "dark" : "light"));
   };
 
   const setTheme = (t: Theme) => setThemeState(t);
+  const setSkin = (s: Skin) => setSkinState(s);
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
+    <ThemeContext.Provider value={{ theme, skin, toggleTheme, setTheme, setSkin }}>
       {children}
     </ThemeContext.Provider>
   );

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -39,6 +39,8 @@ const Agenda = () => {
   const [deletingEvent, setDeletingEvent] = useState<any>(null);
   const [registrationViewEvent, setRegistrationViewEvent] = useState<any>(null);
   const [pixDialogEvent, setPixDialogEvent] = useState<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
 
   // Form state
   const [title, setTitle] = useState("");
@@ -124,6 +126,29 @@ const Agenda = () => {
   const resetForm = () => {
     setTitle(""); setDesc(""); setDate(""); setLocation(""); setIsGeneral("true"); setGroupId("");
     setEventType("simple"); setBannerUrl(""); setSpeakers(""); setPrice(0); setPixKey(""); setPixQrcodeUrl(""); setMapUrl("");
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const fileName = `event-${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("landing-photos")
+        .upload(fileName, file, { upsert: true });
+      
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from("landing-photos").getPublicUrl(fileName);
+      setBannerUrl(urlData.publicUrl);
+      toast({ title: "Banner carregado com sucesso!" });
+    } catch (err: any) {
+      toast({ title: "Erro no upload", description: err.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleEdit = (ev: any) => {
@@ -320,26 +345,30 @@ const Agenda = () => {
                       </Button>
                     )}
                   </div>
-                  <div className="flex gap-2 flex-wrap">
-                    {/* RSVP buttons */}
-                    <Button
-                      size="sm"
-                      variant={userRsvp?.status === "confirmed" ? "default" : "outline"}
-                      disabled={userRsvp?.status === "confirmed"}
-                      onClick={() => rsvpMutation.mutate({ eventId: event.id, status: "confirmed" })}
-                    >
-                      <Check className="h-4 w-4 mr-1" />
-                      {userRsvp?.status === "confirmed" ? "Confirmado" : "Vou"}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={userRsvp?.status === "declined" ? "destructive" : "outline"}
-                      disabled={userRsvp?.status === "declined"}
-                      onClick={() => rsvpMutation.mutate({ eventId: event.id, status: "declined" })}
-                    >
-                      <X className="h-4 w-4 mr-1" />
-                      Não vou
-                    </Button>
+                    <div className="flex gap-2 flex-wrap">
+                      {/* RSVP buttons: Only for non-conferences */}
+                      {event.event_type !== "conference" && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant={userRsvp?.status === "confirmed" ? "default" : "outline"}
+                            disabled={userRsvp?.status === "confirmed"}
+                            onClick={() => rsvpMutation.mutate({ eventId: event.id, status: "confirmed" })}
+                          >
+                            <Check className="h-4 w-4 mr-1" />
+                            {userRsvp?.status === "confirmed" ? "Confirmado" : "Vou"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant={userRsvp?.status === "declined" ? "destructive" : "outline"}
+                            disabled={userRsvp?.status === "declined"}
+                            onClick={() => rsvpMutation.mutate({ eventId: event.id, status: "declined" })}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Não vou
+                          </Button>
+                        </>
+                      )}
 
                     {/* Paid event: PIX/registration */}
                     {isPaid && event.pix_key && (
@@ -406,8 +435,14 @@ const Agenda = () => {
                 <Textarea placeholder="Breve descritivo..." value={desc} onChange={e => setDesc(e.target.value)} rows={3} />
               </div>
               <div className="space-y-2 col-span-full">
-                <Label>URL do Banner (opcional)</Label>
-                <Input placeholder="https://..." value={bannerUrl} onChange={e => setBannerUrl(e.target.value)} />
+                <Label>Banner do Evento</Label>
+                <div className="flex gap-2">
+                  <Input placeholder="URL da imagem..." value={bannerUrl} onChange={e => setBannerUrl(e.target.value)} className="flex-1" />
+                  <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
+                  <Button variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+                    {uploading ? "..." : "Upload"}
+                  </Button>
+                </div>
               </div>
 
               {(eventType === "course" || eventType === "conference") && (

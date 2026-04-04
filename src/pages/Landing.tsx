@@ -318,7 +318,7 @@ const Landing = () => {
       {/* Footer */}
       <footer className="border-t py-8">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} Comunidade Cristã Mergulho. Todos os direitos reservados.</p>
+          <p>© {new Date().getFullYear()} CC Mergulho. Todos os direitos reservados.</p>
         </div>
       </footer>
     </div>

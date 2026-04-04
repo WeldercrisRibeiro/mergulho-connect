@@ -31,16 +31,26 @@ const Reports = () => {
   const [totalAttendees, setTotalAttendees] = useState(0);
   const [childrenCount, setChildrenCount] = useState(0);
   const [monitorsCount, setMonitorsCount] = useState(0);
+  const [youthCount, setYouthCount] = useState(0);
+  const [publicCount, setPublicCount] = useState(0);
   const [totalOfferings, setTotalOfferings] = useState(0);
+  const [tithesAmount, setTithesAmount] = useState(0);
   const [tithers, setTithers] = useState<string[]>([]);
   const [newTither, setNewTither] = useState("");
   const [notes, setNotes] = useState("");
   const [eventId, setEventId] = useState<string | null>(null);
+  const [groupId, setGroupId] = useState<string | null>(null);
+
+  const { isGerente, managedGroupIds } = useAuth();
 
   const { data: reports } = useQuery({
-    queryKey: ["event-reports"],
+    queryKey: ["event-reports", managedGroupIds, isAdmin],
     queryFn: async () => {
-      const { data } = await (supabase as any).from("event_reports").select("*").order("report_date", { ascending: false });
+      let query = (supabase as any).from("event_reports").select("*, groups(name)").order("report_date", { ascending: false });
+      if (!isAdmin && managedGroupIds.length > 0) {
+        query = query.in("group_id", managedGroupIds);
+      }
+      const { data } = await query;
       return data || [];
     },
   });
@@ -53,17 +63,29 @@ const Reports = () => {
     },
   });
 
+  const { data: groups } = useQuery({
+    queryKey: ["groups-for-reports"],
+    queryFn: async () => {
+      const { data } = await supabase.from("groups").select("id, name");
+      return data || [];
+    },
+  });
+
   const resetForm = () => {
     setReportDate(new Date().toISOString().slice(0, 10));
     setReportType("culto");
     setTotalAttendees(0);
     setChildrenCount(0);
     setMonitorsCount(0);
+    setYouthCount(0);
+    setPublicCount(0);
     setTotalOfferings(0);
+    setTithesAmount(0);
     setTithers([]);
     setNewTither("");
     setNotes("");
     setEventId(null);
+    setGroupId(null);
   };
 
   const handleEdit = (r: any) => {
@@ -73,10 +95,14 @@ const Reports = () => {
     setTotalAttendees(r.total_attendees || 0);
     setChildrenCount(r.children_count || 0);
     setMonitorsCount(r.monitors_count || 0);
+    setYouthCount(r.youth_count || 0);
+    setPublicCount(r.public_count || 0);
     setTotalOfferings(r.total_offerings || 0);
+    setTithesAmount(r.tithes_amount || 0);
     setTithers(r.tithers || []);
     setNotes(r.notes || "");
     setEventId(r.event_id || null);
+    setGroupId(r.group_id || null);
   };
 
   const saveMutation = useMutation({
@@ -87,10 +113,14 @@ const Reports = () => {
         total_attendees: totalAttendees,
         children_count: childrenCount,
         monitors_count: monitorsCount,
+        youth_count: youthCount,
+        public_count: publicCount,
         total_offerings: totalOfferings,
+        tithes_amount: tithesAmount,
         tithers,
         notes: notes.trim() || null,
         event_id: eventId || null,
+        group_id: groupId || null,
         created_by: user?.id,
       };
       if (editing) {
@@ -133,10 +163,10 @@ const Reports = () => {
     setTithers(prev => prev.filter((_, i) => i !== idx));
   };
 
-  if (!isAdmin) {
+  if (!isAdmin && !isGerente) {
     return (
       <div className="p-8 text-center text-muted-foreground">
-        Acesso restrito a administradores.
+        Acesso restrito a administradores e líderes de departamento.
       </div>
     );
   }
@@ -185,11 +215,41 @@ const Reports = () => {
         <Card className="neo-shadow-sm border-0">
           <CardContent className="p-4 text-center">
             <DollarSign className="h-5 w-5 mx-auto text-emerald-600 mb-1" />
-            <p className="text-2xl font-bold text-emerald-600">R$ {totalOfferingSum.toFixed(2)}</p>
-            <p className="text-xs text-muted-foreground">Total Arrecadado</p>
+            <p className="text-2xl font-bold text-emerald-600">R$ {(totalOfferingSum + (reports?.reduce((s: number, r: any) => s + (r.tithes_amount || 0), 0) || 0)).toFixed(2)}</p>
+            <p className="text-xs text-muted-foreground">Total Arrecadado (O+D)</p>
           </CardContent>
         </Card>
       </div>
+
+      {isAdmin && (
+        <div className="bg-primary/5 p-4 rounded-2xl border border-primary/20">
+          <h2 className="text-sm font-bold text-primary uppercase tracking-wider mb-3">Visão Macro (Consolidado)</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase">Presentes</p>
+              <p className="text-xl font-bold">{totalPeople}</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase">Crianças+Jovens</p>
+              <p className="text-xl font-bold">
+                {(reports?.reduce((s: number, r: any) => s + (r.children_count || 0) + (r.youth_count || 0), 0) || 0)}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase">Dízimos</p>
+              <p className="text-xl font-bold text-emerald-600">
+                R$ {(reports?.reduce((s: number, r: any) => s + (r.tithes_amount || 0), 0) || 0).toFixed(2)}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase">Ofertas</p>
+              <p className="text-xl font-bold text-emerald-600">
+                R$ {totalOfferingSum.toFixed(2)}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Reports list */}
       <div className="space-y-3">
@@ -208,23 +268,28 @@ const Reports = () => {
                     <span className="text-sm font-semibold">
                       {format(new Date(r.report_date + "T12:00:00"), "dd/MM/yyyy", { locale: ptBR })}
                     </span>
+                    {r.groups?.name && <Badge variant="outline" className="text-[10px]">{r.groups.name}</Badge>}
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2 text-xs">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-2 text-xs">
                     <div className="bg-muted/50 rounded-lg p-2 text-center">
                       <p className="font-bold text-lg">{r.total_attendees}</p>
-                      <p className="text-muted-foreground">Presentes</p>
+                      <p className="text-muted-foreground">Frequência</p>
                     </div>
                     <div className="bg-muted/50 rounded-lg p-2 text-center">
-                      <p className="font-bold text-lg">{r.children_count}</p>
-                      <p className="text-muted-foreground">Crianças</p>
+                      <p className="font-bold text-lg">{r.children_count || 0}</p>
+                      <p className="text-muted-foreground">Kids</p>
                     </div>
                     <div className="bg-muted/50 rounded-lg p-2 text-center">
-                      <p className="font-bold text-lg">{r.monitors_count}</p>
-                      <p className="text-muted-foreground">Monitores</p>
+                      <p className="font-bold text-lg">{r.youth_count || 0}</p>
+                      <p className="text-muted-foreground">Jovens</p>
                     </div>
                     <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-lg p-2 text-center">
-                      <p className="font-bold text-lg text-emerald-600">R$ {(r.total_offerings || 0).toFixed(2)}</p>
-                      <p className="text-muted-foreground">Ofertas</p>
+                      <p className="font-bold text-sm text-emerald-600">R$ {(r.tithes_amount || 0).toFixed(2)}</p>
+                      <p className="text-[10px] text-muted-foreground">Dízimos</p>
+                    </div>
+                    <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-lg p-2 text-center">
+                      <p className="font-bold text-sm text-emerald-600">R$ {(r.total_offerings || 0).toFixed(2)}</p>
+                      <p className="text-[10px] text-muted-foreground">Ofertas</p>
                     </div>
                   </div>
                   {r.tithers && (r.tithers as string[]).length > 0 && (
@@ -278,6 +343,20 @@ const Reports = () => {
                 </Select>
               </div>
               <div className="space-y-2">
+                <Label>Departamento/Grupo (obrigatório)</Label>
+                <Select value={groupId || ""} onValueChange={v => setGroupId(v)}>
+                  <SelectTrigger><SelectValue placeholder="Selecione o depto" /></SelectTrigger>
+                  <SelectContent>
+                    {isAdmin 
+                      ? (groups?.map((g: any) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>))
+                      : (groups?.filter((g: any) => managedGroupIds.includes(g.id)).map((g: any) => (
+                          <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                        )))
+                    }
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <Label>Evento Vinculado (opcional)</Label>
                 <Select value={eventId || "none"} onValueChange={v => setEventId(v === "none" ? null : v)}>
                   <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
@@ -292,9 +371,9 @@ const Reports = () => {
             </div>
 
             <div className="font-semibold uppercase tracking-tight text-xs text-muted-foreground border-b pb-2 mt-4">Público</div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="space-y-2">
-                <Label>Total Presentes</Label>
+                <Label>Total Geral</Label>
                 <Input type="number" min={0} value={totalAttendees} onChange={e => setTotalAttendees(Number(e.target.value))} />
               </div>
               <div className="space-y-2">
@@ -302,15 +381,29 @@ const Reports = () => {
                 <Input type="number" min={0} value={childrenCount} onChange={e => setChildrenCount(Number(e.target.value))} />
               </div>
               <div className="space-y-2">
-                <Label>Monitores/Tios</Label>
+                <Label>Jovens (opcional)</Label>
+                <Input type="number" min={0} value={youthCount} onChange={e => setYouthCount(Number(e.target.value))} />
+              </div>
+              <div className="space-y-2">
+                <Label>Público Geral</Label>
+                <Input type="number" min={0} value={publicCount} onChange={e => setPublicCount(Number(e.target.value))} />
+              </div>
+              <div className="space-y-2">
+                <Label>Monitores / Tios</Label>
                 <Input type="number" min={0} value={monitorsCount} onChange={e => setMonitorsCount(Number(e.target.value))} />
               </div>
             </div>
 
             <div className="font-semibold uppercase tracking-tight text-xs text-muted-foreground border-b pb-2 mt-4">Financeiro</div>
-            <div className="space-y-2">
-              <Label>Total Arrecadado (Ofertas + Dízimos) R$</Label>
-              <Input type="number" min={0} step={0.01} value={totalOfferings} onChange={e => setTotalOfferings(Number(e.target.value))} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Total Dízimos (R$)</Label>
+                <Input type="number" min={0} step={0.01} value={tithesAmount} onChange={e => setTithesAmount(Number(e.target.value))} />
+              </div>
+              <div className="space-y-2">
+                <Label>Total Ofertas (R$)</Label>
+                <Input type="number" min={0} step={0.01} value={totalOfferings} onChange={e => setTotalOfferings(Number(e.target.value))} />
+              </div>
             </div>
 
             <div className="font-semibold uppercase tracking-tight text-xs text-muted-foreground border-b pb-2 mt-4">Dizimistas do Dia</div>
