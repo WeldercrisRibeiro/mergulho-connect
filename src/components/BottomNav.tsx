@@ -1,4 +1,4 @@
-import { Home, Calendar, BookOpen, MessageCircle, User, ShieldCheck, Users, Settings, Target } from "lucide-react";
+import { Home, Calendar, BookOpen, MessageCircle, User, ShieldCheck, Users, Settings, Target, HandHeart, BarChart3 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
