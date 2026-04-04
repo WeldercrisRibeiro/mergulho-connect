@@ -41,12 +41,43 @@ export type Database = {
         }
         Relationships: []
       }
+      devotional_likes: {
+        Row: {
+          created_at: string
+          devotional_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          devotional_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          devotional_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "devotional_likes_devotional_id_fkey"
+            columns: ["devotional_id"]
+            isOneToOne: false
+            referencedRelation: "devotionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       devotionals: {
         Row: {
           author_id: string | null
           content: string
           created_at: string
+          expiration_date: string | null
           id: string
+          is_active: boolean
           media_url: string | null
           publish_date: string
           status: string
@@ -57,7 +88,9 @@ export type Database = {
           author_id?: string | null
           content: string
           created_at?: string
+          expiration_date?: string | null
           id?: string
+          is_active?: boolean
           media_url?: string | null
           publish_date?: string
           status?: string
@@ -68,7 +101,9 @@ export type Database = {
           author_id?: string | null
           content?: string
           created_at?: string
+          expiration_date?: string | null
           id?: string
+          is_active?: boolean
           media_url?: string | null
           publish_date?: string
           status?: string
@@ -182,6 +217,38 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      hidden_conversations: {
+        Row: {
+          group_id: string | null
+          hidden_at: string
+          id: string
+          target_user_id: string | null
+          user_id: string
+        }
+        Insert: {
+          group_id?: string | null
+          hidden_at?: string
+          id?: string
+          target_user_id?: string | null
+          user_id: string
+        }
+        Update: {
+          group_id?: string | null
+          hidden_at?: string
+          id?: string
+          target_user_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hidden_conversations_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       landing_photos: {
         Row: {
