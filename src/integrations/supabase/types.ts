@@ -112,6 +112,94 @@ export type Database = {
         }
         Relationships: []
       }
+      event_registrations: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          payment_status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          payment_status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          payment_status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_registrations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_reports: {
+        Row: {
+          children_count: number | null
+          created_at: string
+          created_by: string | null
+          event_id: string | null
+          id: string
+          monitors_count: number | null
+          notes: string | null
+          report_date: string
+          report_type: string
+          tithers: Json | null
+          total_attendees: number | null
+          total_offerings: number | null
+          updated_at: string
+        }
+        Insert: {
+          children_count?: number | null
+          created_at?: string
+          created_by?: string | null
+          event_id?: string | null
+          id?: string
+          monitors_count?: number | null
+          notes?: string | null
+          report_date?: string
+          report_type?: string
+          tithers?: Json | null
+          total_attendees?: number | null
+          total_offerings?: number | null
+          updated_at?: string
+        }
+        Update: {
+          children_count?: number | null
+          created_at?: string
+          created_by?: string | null
+          event_id?: string | null
+          id?: string
+          monitors_count?: number | null
+          notes?: string | null
+          report_date?: string
+          report_type?: string
+          tithers?: Json | null
+          total_attendees?: number | null
+          total_offerings?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_reports_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_rsvps: {
         Row: {
           created_at: string
@@ -146,38 +234,59 @@ export type Database = {
       }
       events: {
         Row: {
+          banner_url: string | null
           created_at: string
           created_by: string | null
           description: string | null
           event_date: string
+          event_type: string
           group_id: string | null
           id: string
           is_general: boolean
           location: string | null
+          map_url: string | null
+          pix_key: string | null
+          pix_qrcode_url: string | null
+          price: number | null
+          speakers: string | null
           title: string
           updated_at: string
         }
         Insert: {
+          banner_url?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           event_date: string
+          event_type?: string
           group_id?: string | null
           id?: string
           is_general?: boolean
           location?: string | null
+          map_url?: string | null
+          pix_key?: string | null
+          pix_qrcode_url?: string | null
+          price?: number | null
+          speakers?: string | null
           title: string
           updated_at?: string
         }
         Update: {
+          banner_url?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           event_date?: string
+          event_type?: string
           group_id?: string | null
           id?: string
           is_general?: boolean
           location?: string | null
+          map_url?: string | null
+          pix_key?: string | null
+          pix_qrcode_url?: string | null
+          price?: number | null
+          speakers?: string | null
           title?: string
           updated_at?: string
         }
@@ -424,6 +533,36 @@ export type Database = {
         Update: {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      volunteers: {
+        Row: {
+          availability: string | null
+          created_at: string
+          full_name: string
+          id: string
+          interest_area: string | null
+          phone: string | null
+          user_id: string
+        }
+        Insert: {
+          availability?: string | null
+          created_at?: string
+          full_name: string
+          id?: string
+          interest_area?: string | null
+          phone?: string | null
+          user_id: string
+        }
+        Update: {
+          availability?: string | null
+          created_at?: string
+          full_name?: string
+          id?: string
+          interest_area?: string | null
+          phone?: string | null
           user_id?: string
         }
         Relationships: []

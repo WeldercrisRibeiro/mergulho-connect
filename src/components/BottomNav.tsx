@@ -1,4 +1,4 @@
-import { Home, Calendar, BookOpen, MessageCircle, User, ShieldCheck, Users, Settings, Target } from "lucide-react";
+import { Home, Calendar, BookOpen, MessageCircle, User, ShieldCheck, Users, Settings, Target, HandHeart, BarChart3 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -66,6 +66,18 @@ const BottomNav = () => {
                     <Users className="h-6 w-6" />
                   </div>
                   <span className="text-xs font-semibold">Membros</span>
+                </Link>
+                <Link to="/voluntarios" onClick={() => setOpen(false)} className="flex flex-col items-center gap-2 text-muted-foreground hover:text-primary">
+                  <div className="h-12 w-12 rounded-2xl bg-secondary/50 flex items-center justify-center">
+                    <HandHeart className="h-6 w-6" />
+                  </div>
+                  <span className="text-xs font-semibold">Voluntários</span>
+                </Link>
+                <Link to="/relatorios" onClick={() => setOpen(false)} className="flex flex-col items-center gap-2 text-muted-foreground hover:text-primary">
+                  <div className="h-12 w-12 rounded-2xl bg-secondary/50 flex items-center justify-center">
+                    <BarChart3 className="h-6 w-6" />
+                  </div>
+                  <span className="text-xs font-semibold">Relatórios</span>
                 </Link>
                 <Link to="/configuracoes" onClick={() => setOpen(false)} className="flex flex-col items-center gap-2 text-muted-foreground hover:text-primary">
                   <div className="h-12 w-12 rounded-2xl bg-secondary/50 flex items-center justify-center">

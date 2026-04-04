@@ -38,9 +38,8 @@ const Devotionals = () => {
   const { data: devotionals } = useQuery({
     queryKey: ["devotionals", isAdmin],
     queryFn: async () => {
-      let query = supabase.from("devotionals").select("*").order("publish_date", { ascending: false });
+      let query = supabase.from("devotionals").select("*").order("publish_date", { ascending: false }) as any;
       if (!isAdmin) {
-        // Members see: published + active + not expired
         const now = new Date().toISOString();
         query = query
           .eq("status", "published")
