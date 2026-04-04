@@ -50,20 +50,39 @@ function getAudioCtx(): AudioContext {
 function playNotificationSound() {
   try {
     const ctx = getAudioCtx();
-    const doPlay = () => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(660, ctx.currentTime + 0.15);
-      gain.gain.setValueAtTime(0.4, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.5);
+    // Ensure context is running - some browsers need it resumed on every attempt
+    const ensureResume = async () => {
+      if (ctx.state === "suspended") {
+        try {
+          await ctx.resume();
+        } catch (e) {
+          console.error("Audio resume failed", e);
+        }
+      }
     };
-    ctx.state === "suspended" ? ctx.resume().then(doPlay) : doPlay();
+
+    const doPlay = async () => {
+      await ensureResume();
+      const playBeep = (startTime: number, freq: number) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, startTime);
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(0.4, startTime + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
+        osc.start(startTime);
+        osc.stop(startTime + 0.3);
+      };
+
+      // Distinct double beep: lower then higher
+      playBeep(ctx.currentTime, 660);
+      playBeep(ctx.currentTime + 0.2, 880);
+    };
+
+    doPlay();
   } catch (_) { /* ignore */ }
 }
 
@@ -87,7 +106,7 @@ const Chat = () => {
   // Unlock AudioContext on first user interaction
   useEffect(() => {
     const unlock = () => {
-      try { if (getAudioCtx().state === "suspended") getAudioCtx().resume(); } catch (_) {}
+      try { if (getAudioCtx().state === "suspended") getAudioCtx().resume(); } catch (_) { }
     };
     window.addEventListener("click", unlock, { once: true });
     window.addEventListener("keydown", unlock, { once: true });
@@ -106,7 +125,7 @@ const Chat = () => {
         .from("member_groups")
         .select("group_id, groups(id, name, icon)")
         .eq("user_id", user!.id);
-      return memberGroups?.map((mg) => mg.groups) || [];
+      return memberGroups?.map((mg) => mg.groups).filter(Boolean) || [];
     },
     enabled: !!user,
   });
@@ -120,8 +139,17 @@ const Chat = () => {
     enabled: !!user,
   });
 
+  const { data: hiddenConvs } = useQuery({
+    queryKey: ["hidden-conversations"],
+    queryFn: async () => {
+      const { data } = await (supabase as any).from("hidden_conversations").select("*").eq("user_id", user?.id);
+      return (data as any[]) || [];
+    },
+    enabled: !!user,
+  });
+
   const { data: conversations } = useQuery({
-    queryKey: ["conversations"],
+    queryKey: ["conversations", hiddenConvs],
     queryFn: async () => {
       const { data } = await supabase
         .from("messages")
@@ -147,18 +175,23 @@ const Chat = () => {
       data?.forEach((msg) => {
         const otherId = msg.sender_id === user!.id ? msg.recipient_id : msg.sender_id;
         if (otherId && !convMap.has(otherId)) {
+          const hidden = hiddenConvs?.find(h => h.target_user_id === otherId);
+          // Only include if message is after hidden date (if not admin/if regular user)
+          if (!isAdmin && hidden && new Date(msg.created_at) <= new Date(hidden.hidden_at)) return;
+
           convMap.set(otherId, {
             userId: otherId,
             name: profileMap.get(otherId) || "Membro",
             lastMessage: msg.content,
             time: msg.created_at,
             lastSenderId: msg.sender_id,
+            isHiddenForMe: !!hidden,
           });
         }
       });
       return Array.from(convMap.values());
     },
-    enabled: !!user,
+    enabled: !!user && !!hiddenConvs,
     refetchInterval: 5000,
   });
 
@@ -209,11 +242,11 @@ const Chat = () => {
 
   const chatId =
     view.type === "group" ? view.groupId
-    : view.type === "direct" ? view.userId
-    : null;
+      : view.type === "direct" ? view.userId
+        : null;
 
   const { data: messages } = useQuery({
-    queryKey: ["messages", chatId],
+    queryKey: ["messages", chatId, hiddenConvs],
     queryFn: async () => {
       let query = supabase
         .from("messages")
@@ -233,16 +266,35 @@ const Chat = () => {
       const { data } = await query;
       if (!data) return [];
 
-      const uids = new Set(data.map((m: any) => m.sender_id));
-      const { data: profs } = await supabase
-        .from("profiles")
-        .select("user_id, full_name")
-        .in("user_id", Array.from(uids));
-      const map = new Map(profs?.map((p: any) => [p.user_id, p.full_name]) || []);
+      const currentHidden = hiddenConvs?.find(h =>
+        (view.type === "group" && h.group_id === view.groupId) ||
+        (view.type === "direct" && h.target_user_id === view.userId)
+      );
 
-      return data.map((m: any) => ({ ...m, senderName: map.get(m.sender_id) }));
+      // Filtering for regular users
+      let filteredData = data;
+      if (!isAdmin && currentHidden) {
+        filteredData = data.filter(m => new Date(m.created_at) > new Date(currentHidden.hidden_at));
+      }
+
+      const uids = new Set(filteredData.map((m: any) => m.sender_id));
+
+      let map = new Map();
+      if (uids.size > 0) {
+        const { data: profs } = await supabase
+          .from("profiles")
+          .select("user_id, full_name")
+          .in("user_id", Array.from(uids));
+        map = new Map(profs?.map((p: any) => [p.user_id, p.full_name]) || []);
+      }
+
+      return filteredData.map((m: any) => ({
+        ...m,
+        senderName: map.get(m.sender_id),
+        isVisuallyHidden: currentHidden && new Date(m.created_at) <= new Date(currentHidden.hidden_at)
+      }));
     },
-    enabled: view.type !== "list" && !!user,
+    enabled: view.type !== "list" && !!user && !!hiddenConvs,
     refetchInterval: 3000,
   });
 
@@ -294,13 +346,33 @@ const Chat = () => {
         const snapTargetView = targetView;
         const snapConvId = convId;
 
+        // Dispara notificação nativa se o usuário estiver fora da aba e tiver permitido
+        if (document.hidden && "Notification" in window && Notification.permission === "granted") {
+          const notif = new Notification(`💬 ${convName}`, {
+            body: msg.content?.substring(0, 80) || "Nova mensagem",
+            icon: "/idvmergulho/logo.png"
+          });
+          notif.onclick = () => {
+            window.focus();
+            setView(snapTargetView);
+            markAsRead(snapConvId);
+            setUnreadCounts((prev) => ({ ...prev, [snapConvId]: 0 }));
+          };
+        }
+
         toast({
           title: `💬 ${convName}`,
           description: msg.content?.substring(0, 80) || "Nova mensagem",
+          onClick: () => {
+            setView(snapTargetView);
+            markAsRead(snapConvId);
+            setUnreadCounts((prev) => ({ ...prev, [snapConvId]: 0 }));
+          },
           action: snapTargetView ? (
             <ToastAction
               altText="Abrir conversa"
               onClick={() => {
+                // Already handled in root onClick, but good for redundancy
                 setView(snapTargetView);
                 markAsRead(snapConvId);
                 setUnreadCounts((prev) => ({ ...prev, [snapConvId]: 0 }));
@@ -355,8 +427,41 @@ const Chat = () => {
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim() || sendMutation.isPending) return;
+
+    // Explicitly resume audio context on user gesture
+    try {
+      const ctx = getAudioCtx();
+      if (ctx.state === "suspended") ctx.resume();
+    } catch (_) { }
+
     sendMutation.mutate(message.trim());
   };
+
+  const hideConversationMutation = useMutation({
+    mutationFn: async ({ targetUserId, groupId }: { targetUserId?: string; groupId?: string }) => {
+      const payload: any = { user_id: user!.id, hidden_at: new Date().toISOString() };
+      if (targetUserId) payload.target_user_id = targetUserId;
+      if (groupId) payload.group_id = groupId;
+
+      const { error } = await (supabase as any)
+        .from("hidden_conversations")
+        .upsert(payload, { onConflict: targetUserId ? "user_id,target_user_id" : "user_id,group_id" });
+
+      if (error) throw error;
+    },
+    onSuccess: (data, variables) => {
+      const convId = variables.targetUserId || variables.groupId;
+      if (convId) {
+        setUnreadCounts((prev) => ({ ...prev, [convId]: 0 }));
+        unreadMap[convId] = 0;
+      }
+      queryClient.invalidateQueries({ queryKey: ["hidden-conversations"] });
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      queryClient.invalidateQueries({ queryKey: ["messages"] });
+      toast({ title: "Conversa apagada visualmente!" });
+    },
+    onError: (err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" }),
+  });
 
   const clearChatMutation = useMutation({
     mutationFn: async () => {
@@ -417,14 +522,15 @@ const Chat = () => {
         {/* Group Chats */}
         <div>
           <h3 className="text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
-            Grupos
+            Departamentos
           </h3>
           <div className="space-y-2">
-            {(groups as any[])?.map((g: any) => {
-              const count = computedUnreads[g.id] || 0;
+            {groups?.map((g: any) => {
+              if (!g) return null;
+              const count = unreadCounts[g.id] || 0;
               return (
                 <Card
-                  key={g.id}
+                  key={`group-${g.id}`}
                   className="neo-shadow-sm border-0 cursor-pointer hover:scale-[1.01] transition-transform"
                   onClick={() => openConv(g.id, { type: "group", groupId: g.id, groupName: g.name })}
                 >
@@ -440,11 +546,17 @@ const Chat = () => {
                       )}
                     </div>
                     <span className={cn("font-medium flex-1", count > 0 && "font-bold")}>{g.name}</span>
-                    {count > 0 && (
-                      <span className="text-xs text-rose-500 font-semibold">
-                        {count} não lida{count > 1 ? "s" : ""}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {count > 0 && (
+                        <span className="text-xs text-rose-500 font-semibold">
+                          {count}
+                        </span>
+                      )}
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground/40 hover:text-destructive"
+                        onClick={(e) => { e.stopPropagation(); hideConversationMutation.mutate({ groupId: g.id }); }}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               );
@@ -488,11 +600,17 @@ const Chat = () => {
                         {conv.lastMessage}
                       </p>
                     </div>
-                    {count > 0 && (
-                      <span className="h-5 w-5 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
-                        {count > 9 ? "9+" : count}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {count > 0 && (
+                        <span className="h-5 w-5 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                          {count > 9 ? "9+" : count}
+                        </span>
+                      )}
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground/40 hover:text-destructive"
+                        onClick={(e) => { e.stopPropagation(); hideConversationMutation.mutate({ targetUserId: conv.userId }); }}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               );
@@ -563,16 +681,32 @@ const Chat = () => {
           )}
         </div>
         <span className="font-semibold flex-1">{chatName}</span>
-        {isAdmin && view.type === "group" && (
+        <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setClearingChat(true)}
+            onClick={() => {
+              if (view.type === "group") hideConversationMutation.mutate({ groupId: view.groupId });
+              else if (view.type === "direct") hideConversationMutation.mutate({ targetUserId: view.userId });
+              setView({ type: "list" });
+            }}
             className="text-muted-foreground hover:text-destructive"
+            title="Apagar conversa (visual)"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
-        )}
+          {isAdmin && view.type === "group" && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setClearingChat(true)}
+              className="text-muted-foreground hover:text-destructive"
+              title="Limpar Histórico (Todos)"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Messages */}
@@ -603,7 +737,10 @@ const Chat = () => {
                       {msg.senderName || "Membro"}
                     </p>
                   )}
-                  <p className="text-sm leading-relaxed">{msg.content}</p>
+                  <p className={cn("text-sm leading-relaxed", msg.isVisuallyHidden && "italic text-muted-foreground/60")}>
+                    {msg.content}
+                    {msg.isVisuallyHidden && <span className="ml-1 text-[9px] font-normal">(apagada)</span>}
+                  </p>
                   <p
                     className={cn(
                       "text-[10px] mt-1 text-right",

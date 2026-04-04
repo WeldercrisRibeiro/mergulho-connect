@@ -32,7 +32,7 @@ const Admin = () => {
 
       <Tabs defaultValue="groups">
         <TabsList className="w-full justify-start overflow-x-auto">
-          <TabsTrigger value="groups">Grupos</TabsTrigger>
+          <TabsTrigger value="groups">departamentos</TabsTrigger>
           <TabsTrigger value="events">Eventos</TabsTrigger>
           <TabsTrigger value="devotionals">Devocionais</TabsTrigger>
           <TabsTrigger value="members">Membros</TabsTrigger>
@@ -119,7 +119,7 @@ const AdminEvents = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
-  
+
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
@@ -196,7 +196,7 @@ const AdminEvents = () => {
     setLocation(ev.location || "");
     setIsGeneral(ev.is_general ? "true" : "false");
     setGroupId(ev.group_id || "");
-    
+
     if (ev.event_date) {
       const d = new Date(ev.event_date);
       d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
@@ -318,7 +318,7 @@ const AdminDevotionals = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
-  
+
   const [editingDev, setEditingDev] = useState<any>(null);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -382,7 +382,7 @@ const AdminDevotionals = () => {
     setContent(dev.content);
     setMediaUrl(dev.media_url || "");
     setStatus(dev.status);
-    
+
     // adjust date for local input
     if (dev.publish_date) {
       const d = new Date(dev.publish_date);
@@ -496,12 +496,12 @@ const AdminDevotionals = () => {
 const AdminMembers = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  
+
   const [editingMember, setEditingMember] = useState<any>(null);
   const [creatingMember, setCreatingMember] = useState(false);
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
-  const [editRole, setEditRole] = useState("member");
+  const [editRole, setEditRole] = useState("membro");
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
 
   const { data: allGroups } = useQuery({
@@ -536,7 +536,7 @@ const AdminMembers = () => {
     setEditingMember(m);
     setEditName(m.full_name || "");
     setEditPhone(m.whatsapp_phone || "");
-    setEditRole(m.roles?.[0]?.role || "member");
+    setEditRole(m.roles?.[0]?.role || "membro");
     setSelectedGroups(m.group_ids || []);
   };
 
@@ -578,7 +578,7 @@ const AdminMembers = () => {
       await supabase.from("user_roles").delete().eq("user_id", m.user_id);
       await supabase.from("profiles").delete().eq("id", m.id);
       // Try to delete from auth profile only (auth user deletion requires service_role)
-      try { await (supabase.rpc("admin_create_user" as any, { _delete: true, user_id: m.user_id }) as any); } catch(_) {}
+      try { await (supabase.rpc("admin_create_user" as any, { _delete: true, user_id: m.user_id }) as any); } catch (_) { }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-members"] });
@@ -601,7 +601,7 @@ const AdminMembers = () => {
 
       const { data, error } = await supabase.rpc("admin_create_user" as any, payload);
       if (error) throw error;
-      
+
       const newUserId = data as any as string;
 
       // Update role & groups for new user
@@ -629,7 +629,7 @@ const AdminMembers = () => {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">Membros</CardTitle>
           <Button onClick={() => {
-            setEditName(""); setEditPhone(""); setEditRole("member"); setSelectedGroups([]); setCreatingMember(true);
+            setEditName(""); setEditPhone(""); setEditRole("membro"); setSelectedGroups([]); setCreatingMember(true);
           }} size="sm">
             <Plus className="h-4 w-4 mr-1" /> Novo Membro
           </Button>
@@ -644,38 +644,38 @@ const AdminMembers = () => {
                 <p className="font-medium">{m.full_name || "Sem nome"}</p>
                 <p className="text-xs text-muted-foreground">{m.whatsapp_phone}</p>
                 <div className="flex gap-1 mt-1 flex-wrap">
-                {(m as any).roles?.map((r: any) => (
-                  <Badge key={r.role} variant={r.role === "admin" ? "default" : "secondary"} className="text-xs">
-                    {r.role}
-                  </Badge>
-                ))}
-                {(m as any).groups?.map((name: string) => (
-                  <Badge key={name} variant="outline" className="text-xs">
-                    {name}
-                  </Badge>
-                ))}
+                  {(m as any).roles?.map((r: any) => (
+                    <Badge key={r.role} variant={r.role === "admin" ? "default" : "secondary"} className="text-xs">
+                      {r.role}
+                    </Badge>
+                  ))}
+                  {(m as any).groups?.map((name: string) => (
+                    <Badge key={name} variant="outline" className="text-xs">
+                      {name}
+                    </Badge>
+                  ))}
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" onClick={() => handleEdit(m)}>
-                <Edit2 className="h-4 w-4 text-primary" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => {
-                  if (window.confirm(`Tem certeza que deseja excluir ${m.full_name || 'este membro'}?`)) {
-                    deleteMemberMutation.mutate(m);
-                  }
-                }}
-                disabled={deleteMemberMutation.isPending}
-              >
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" onClick={() => handleEdit(m)}>
+                  <Edit2 className="h-4 w-4 text-primary" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    if (window.confirm(`Tem certeza que deseja excluir ${m.full_name || 'este membro'}?`)) {
+                      deleteMemberMutation.mutate(m);
+                    }
+                  }}
+                  disabled={deleteMemberMutation.isPending}
+                >
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       <Dialog open={!!editingMember} onOpenChange={(val) => !val && setEditingMember(null)}>
@@ -697,18 +697,18 @@ const AdminMembers = () => {
               <Select value={editRole} onValueChange={setEditRole}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="member">Membro / Usuário Comum</SelectItem>
+                  <SelectItem value="membro">Membro / Usuário Comum</SelectItem>
                   <SelectItem value="admin">Administrador</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Grupos</Label>
+              <Label>departamentos</Label>
               <div className="grid grid-cols-2 gap-2 mt-2">
                 {allGroups?.map(g => (
                   <div key={g.id} className="flex items-center space-x-2">
-                    <Checkbox 
-                      id={`group-${g.id}`} 
+                    <Checkbox
+                      id={`group-${g.id}`}
                       checked={selectedGroups.includes(g.id)}
                       onCheckedChange={(checked) => {
                         if (checked) setSelectedGroups([...selectedGroups, g.id]);
@@ -731,7 +731,7 @@ const AdminMembers = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       <Dialog open={creatingMember} onOpenChange={(val) => !val && setCreatingMember(false)}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -754,18 +754,18 @@ const AdminMembers = () => {
               <Select value={editRole} onValueChange={setEditRole}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="member">Membro / Usuário Comum</SelectItem>
+                  <SelectItem value="membro">Membro / Usuário Comum</SelectItem>
                   <SelectItem value="admin">Administrador</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Grupos (Opcional)</Label>
+              <Label>departamentos (Opcional)</Label>
               <div className="grid grid-cols-2 gap-2 mt-2">
                 {allGroups?.map(g => (
                   <div key={g.id} className="flex items-center space-x-2">
-                    <Checkbox 
-                      id={`gcreate-${g.id}`} 
+                    <Checkbox
+                      id={`gcreate-${g.id}`}
                       checked={selectedGroups.includes(g.id)}
                       onCheckedChange={(checked) => {
                         if (checked) setSelectedGroups([...selectedGroups, g.id]);
@@ -815,12 +815,12 @@ const AdminMessages = () => {
 
       const { data, error } = await supabase.rpc("admin_create_user" as any, payload);
       if (error) throw error;
-      
+
       const newUserId = data as any as string;
-      
+
       // Definy default role
-      await supabase.from("user_roles").insert({ user_id: newUserId, role: "member" } as any);
-      
+      await supabase.from("user_roles").insert({ user_id: newUserId, role: "membro" } as any);
+
       // Deleta a mensagem
       const { error: delErr } = await supabase.from("contact_messages" as any).delete().eq("id", m.id);
       if (delErr) throw delErr;

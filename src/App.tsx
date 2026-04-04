@@ -50,7 +50,7 @@ const App = () => (
               <Route path="/membros" element={<ProtectedRoute><Members /></ProtectedRoute>} />
               <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
               <Route path="/perfil" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="/grupos" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
+              <Route path="/departamentos" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
               <Route path="/configuracoes" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>

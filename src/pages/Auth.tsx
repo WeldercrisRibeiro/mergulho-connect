@@ -171,14 +171,6 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex w-full bg-background relative">
-      {/* Botão voltar à Landing */}
-      <Link
-        to="/landing"
-        className="absolute top-4 left-4 z-30 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Voltar
-      </Link>
 
       {/* Left Column (Brand/Image) - Hidden on small screens */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-primary/90 to-primary/60 overflow-hidden items-center justify-center p-12">
@@ -190,14 +182,19 @@ const Auth = () => {
             alt="Logo CC Mergulho"
             className="w-full h-auto drop-shadow-xl mb-6"
           />
-          <p className="text-center text-lg md:text-xl font-medium leading-relaxed drop-shadow-md">
-            AMAR | CUIDAR | SERVIR
-          </p>
         </div>
       </div>
 
       {/* Right Column (Form) */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center px-4 py-12 bg-background/50">
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-4 py-12 bg-background/50 relative">
+        {/* Botão voltar à Landing */}
+        <Link
+          to="/landing"
+          className="absolute top-6 left-6 z-30 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Voltar
+        </Link>
         <Card className="w-full max-w-md border-0 shadow-none bg-transparent">
           <CardHeader className="text-center pb-8">
             {/* Logo para telas pequenas, já que a esquerda vai sumir */}

@@ -15,6 +15,8 @@ import { BookOpen, Plus, Edit2, Trash2, Heart, Users } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
+import { Switch } from "@/components/ui/switch";
+import { Calendar as CalendarIcon } from "lucide-react";
 
 const Devotionals = () => {
   const { isAdmin, user } = useAuth();
@@ -29,14 +31,22 @@ const Devotionals = () => {
   const [content, setContent] = useState("");
   const [mediaUrl, setMediaUrl] = useState("");
   const [publishDate, setPublishDate] = useState("");
+  const [expirationDate, setExpirationDate] = useState("");
   const [status, setStatus] = useState("published");
+  const [isActive, setIsActive] = useState(true);
 
   const { data: devotionals } = useQuery({
-    queryKey: ["devotionals"],
+    queryKey: ["devotionals", isAdmin],
     queryFn: async () => {
       let query = supabase.from("devotionals").select("*").order("publish_date", { ascending: false });
       if (!isAdmin) {
-        query = query.in("status", ["published", "scheduled"]).lte("publish_date", new Date().toISOString());
+        // Members see: published + active + not expired
+        const now = new Date().toISOString();
+        query = query
+          .eq("status", "published")
+          .eq("is_active", true)
+          .lte("publish_date", now)
+          .or(`expiration_date.is.null,expiration_date.gt.${now}`);
       }
       const { data } = await query;
       return data || [];
@@ -104,7 +114,7 @@ const Devotionals = () => {
   });
 
   const resetForm = () => {
-    setTitle(""); setContent(""); setMediaUrl(""); setPublishDate(""); setStatus("published");
+    setTitle(""); setContent(""); setMediaUrl(""); setPublishDate(""); setExpirationDate(""); setStatus("published"); setIsActive(true);
   };
 
   const handleEdit = (dev: any) => {
@@ -113,10 +123,18 @@ const Devotionals = () => {
     setContent(dev.content || "");
     setMediaUrl(dev.media_url || "");
     setStatus(dev.status || "published");
+    setIsActive(dev.is_active !== false);
     if (dev.publish_date) {
       const d = new Date(dev.publish_date);
       d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
       setPublishDate(d.toISOString().slice(0, 16));
+    }
+    if (dev.expiration_date) {
+      const d = new Date(dev.expiration_date);
+      d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+      setExpirationDate(d.toISOString().slice(0, 16));
+    } else {
+      setExpirationDate("");
     }
   };
 
@@ -126,7 +144,9 @@ const Devotionals = () => {
         title, content,
         media_url: mediaUrl || null,
         status,
+        is_active: isActive,
         publish_date: publishDate ? new Date(publishDate).toISOString() : new Date().toISOString(),
+        expiration_date: expirationDate ? new Date(expirationDate).toISOString() : null,
       };
       if (editingDev) {
         const { error } = await supabase.from("devotionals").update(payload).eq("id", editingDev.id);
@@ -184,9 +204,17 @@ const Devotionals = () => {
                         {dev.publish_date && format(new Date(dev.publish_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
                       </p>
                       {isAdmin && (
-                        <Badge variant={dev.status === "published" ? "default" : "secondary"} className="text-[10px]">
-                          {dev.status}
-                        </Badge>
+                        <div className="flex gap-1">
+                          <Badge variant={dev.status === "published" ? "default" : "secondary"} className="text-[10px]">
+                            {dev.status}
+                          </Badge>
+                          {!dev.is_active && (
+                            <Badge variant="destructive" className="text-[10px]">Inativo</Badge>
+                          )}
+                          {dev.expiration_date && new Date(dev.expiration_date) < new Date() && (
+                            <Badge variant="outline" className="text-[10px] text-orange-500 border-orange-500">Expirado</Badge>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -248,6 +276,8 @@ const Devotionals = () => {
             content={content} setContent={setContent}
             status={status} setStatus={setStatus}
             publishDate={publishDate} setPublishDate={setPublishDate}
+            expirationDate={expirationDate} setExpirationDate={setExpirationDate}
+            isActive={isActive} setIsActive={setIsActive}
             mediaUrl={mediaUrl} setMediaUrl={setMediaUrl}
           />
           <DialogFooter>
@@ -268,6 +298,8 @@ const Devotionals = () => {
             content={content} setContent={setContent}
             status={status} setStatus={setStatus}
             publishDate={publishDate} setPublishDate={setPublishDate}
+            expirationDate={expirationDate} setExpirationDate={setExpirationDate}
+            isActive={isActive} setIsActive={setIsActive}
             mediaUrl={mediaUrl} setMediaUrl={setMediaUrl}
           />
           <DialogFooter>
@@ -314,8 +346,16 @@ const Devotionals = () => {
   );
 };
 
-const DevForm = ({ title, setTitle, content, setContent, status, setStatus, publishDate, setPublishDate, mediaUrl, setMediaUrl }: any) => (
+const DevForm = ({ title, setTitle, content, setContent, status, setStatus, publishDate, setPublishDate, expirationDate, setExpirationDate, isActive, setIsActive, mediaUrl, setMediaUrl }: any) => (
   <div className="space-y-4 py-4">
+    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-dashed">
+      <div className="space-y-0.5">
+        <Label>Devocional Ativo</Label>
+        <p className="text-[10px] text-muted-foreground">Define se o devocional será visível para os membros</p>
+      </div>
+      <Switch checked={isActive} onCheckedChange={setIsActive} />
+    </div>
+
     <div className="space-y-2">
       <Label>Título</Label>
       <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Título do devocional" />
@@ -336,12 +376,20 @@ const DevForm = ({ title, setTitle, content, setContent, status, setStatus, publ
           </SelectContent>
         </Select>
       </div>
-      {status === "scheduled" && (
+      {(status === "scheduled" || status === "published") && (
         <div className="space-y-2">
           <Label>Data de Publicação</Label>
           <Input type="datetime-local" value={publishDate} onChange={e => setPublishDate(e.target.value)} />
         </div>
       )}
+    </div>
+    <div className="space-y-2">
+      <Label className="flex items-center gap-2">
+        Data de Expiração
+        <CalendarIcon className="h-3 w-3 text-muted-foreground" />
+      </Label>
+      <Input type="datetime-local" value={expirationDate} onChange={e => setExpirationDate(e.target.value)} />
+      <p className="text-[10px] text-muted-foreground">Opcional. O devocional deixará de aparecer para membros após esta data.</p>
     </div>
     <div className="space-y-2">
       <Label>URL de Mídia (YouTube / Imagem)</Label>

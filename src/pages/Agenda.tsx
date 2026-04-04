@@ -34,12 +34,30 @@ const Agenda = () => {
   const [isGeneral, setIsGeneral] = useState("true");
   const [groupId, setGroupId] = useState("");
 
-  const { data: groups } = useQuery({
-    queryKey: ["groups"],
+  const { data: userGroups } = useQuery({
+    queryKey: ["user-groups", user?.id],
+    enabled: !!user && !isAdmin,
     queryFn: async () => {
-      const { data } = await supabase.from("groups").select("*");
+      const { data } = await supabase
+        .from("member_groups")
+        .select("group_id")
+        .eq("user_id", user?.id);
+      return data?.map(m => m.group_id) || [];
+    },
+  });
+
+  const { data: groups } = useQuery({
+    queryKey: ["groups", isAdmin, userGroups],
+    queryFn: async () => {
+      const query = supabase.from("groups").select("*");
+      if (!isAdmin && userGroups) {
+        if (userGroups.length === 0) return [];
+        query.in("id", userGroups);
+      }
+      const { data } = await query;
       return data || [];
     },
+    enabled: !!user && (isAdmin || !!userGroups),
   });
 
   const { data: events } = useQuery({
@@ -58,6 +76,8 @@ const Agenda = () => {
       return data || [];
     },
   });
+
+  const showFilters = isAdmin || (groups && groups.length > 1);
 
   const rsvpMutation = useMutation({
     mutationFn: async ({ eventId, status }: { eventId: string; status: string }) => {
@@ -100,6 +120,7 @@ const Agenda = () => {
         location,
         is_general: isGeneral === "true",
         group_id: isGeneral === "false" && groupId ? groupId : null,
+        created_by: user?.id,
       };
 
       if (editingEvent) {
@@ -151,17 +172,27 @@ const Agenda = () => {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-2 pb-2">
-        <Button variant={filter === "all" ? "default" : "outline"} size="sm" onClick={() => setFilter("all")}>Todos</Button>
-        {groups?.map(g => (
-          <Button key={g.id} variant={filter === g.id ? "default" : "outline"} size="sm" onClick={() => setFilter(g.id)}>
-            {g.name}
-          </Button>
-        ))}
-      </div>
+      {showFilters && (
+        <div className="flex flex-wrap gap-2 pb-2">
+          <Button variant={filter === "all" ? "default" : "outline"} size="sm" onClick={() => setFilter("all")}>Todos</Button>
+          {groups?.map(g => (
+            <Button key={g.id} variant={filter === g.id ? "default" : "outline"} size="sm" onClick={() => setFilter(g.id)}>
+              {g.name}
+            </Button>
+          ))}
+        </div>
+      )}
+
 
       {/* Events */}
       <div className="space-y-4">
+        {events?.length === 0 && (
+          <Card className="border-0 bg-muted/30">
+            <CardContent className="p-6 text-center text-muted-foreground">
+              Nenhum evento programado para o seu grupo no momento.
+            </CardContent>
+          </Card>
+        )}
         {events?.map((event) => {
           const userRsvp = event.event_rsvps?.find((r: any) => r.user_id === user?.id);
           const confirmed = event.event_rsvps?.filter((r: any) => r.status === "confirmed").length || 0;
@@ -204,23 +235,37 @@ const Agenda = () => {
               <CardContent>
                 {event.description && <p className="text-sm text-muted-foreground mb-3">{event.description}</p>}
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    <span className="text-emerald-600 font-medium">{confirmed} confirmados</span>
-                    <span className="text-rose-500 font-medium">{declined} não vão</span>
+                  <div className="flex items-center gap-3 text-[10px] sm:text-xs">
+                    <div className="flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full font-semibold border border-emerald-100 dark:border-emerald-900/50">
+                      <Check className="h-3 w-3" /> {confirmed}
+                    </div>
+                    <div className="flex items-center gap-1 bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 px-2 py-0.5 rounded-full font-semibold border border-rose-100 dark:border-rose-900/50">
+                      <X className="h-3 w-3" /> {declined}
+                    </div>
                     {isAdmin && (
                       <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setRsvpViewEvent(event)}>
-                        <Users className="h-3 w-3 mr-1" /> Ver lista
+                        <Users className="h-3 w-3 mr-1" /> Lista Completa
                       </Button>
                     )}
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" variant={userRsvp?.status === "confirmed" ? "default" : "outline"}
-                      onClick={() => rsvpMutation.mutate({ eventId: event.id, status: "confirmed" })}>
-                      <Check className="h-4 w-4 mr-1" /> Vou
+                    <Button 
+                      size="sm" 
+                      variant={userRsvp?.status === "confirmed" ? "default" : "outline"}
+                      disabled={userRsvp?.status === "confirmed"}
+                      onClick={() => rsvpMutation.mutate({ eventId: event.id, status: "confirmed" })}
+                    >
+                      <Check className="h-4 w-4 mr-1" /> 
+                      {userRsvp?.status === "confirmed" ? "Confirmado" : "Vou"}
                     </Button>
-                    <Button size="sm" variant={userRsvp?.status === "declined" ? "destructive" : "outline"}
-                      onClick={() => rsvpMutation.mutate({ eventId: event.id, status: "declined" })}>
-                      <X className="h-4 w-4 mr-1" /> Não vou
+                    <Button 
+                      size="sm" 
+                      variant={userRsvp?.status === "declined" ? "destructive" : "outline"}
+                      disabled={userRsvp?.status === "declined"}
+                      onClick={() => rsvpMutation.mutate({ eventId: event.id, status: "declined" })}
+                    >
+                      <X className="h-4 w-4 mr-1" /> 
+                      {userRsvp?.status === "declined" ? "Não vou" : "Não vou"}
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => shareWhatsApp(event)}>
                       <Share2 className="h-4 w-4" />
@@ -294,13 +339,13 @@ const Agenda = () => {
 
       {/* RSVP List Dialog (Admin only) */}
       <Dialog open={!!rsvpViewEvent} onOpenChange={val => !val && setRsvpViewEvent(null)}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader><DialogTitle>Confirmações: {rsvpViewEvent?.title}</DialogTitle></DialogHeader>
-          <div className="space-y-4 py-2 max-h-[400px] overflow-y-auto">
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader><DialogTitle>Controle de Presença: {rsvpViewEvent?.title}</DialogTitle></DialogHeader>
+          <div className="py-2 max-h-[500px] overflow-y-auto pr-2">
             <RsvpList event={rsvpViewEvent} />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRsvpViewEvent(null)}>Fechar</Button>
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => setRsvpViewEvent(null)}>Fechar Painel</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -309,47 +354,93 @@ const Agenda = () => {
 };
 
 const RsvpList = ({ event }: { event: any }) => {
-  const { data: rsvpDetails } = useQuery({
-    queryKey: ["rsvp-details", event?.id],
+  const { data: usersData, isLoading } = useQuery({
+    queryKey: ["rsvp-full-list", event?.id],
     queryFn: async () => {
       if (!event) return [];
-      // Get all RSVPs with profile names
+      
+      // 1. Get all RSVPs for this event
       const { data: rsvps } = await supabase
         .from("event_rsvps")
-        .select("*")
+        .select("user_id, status")
         .eq("event_id", event.id);
+
+      // 2. Get relevant profiles
+      let relevantProfiles: any[] = [];
+      if (event.is_general) {
+        // All profiles
+        const { data } = await supabase.from("profiles").select("user_id, full_name").order("full_name");
+        relevantProfiles = data || [];
+      } else if (event.group_id) {
+        // Only profiles in the group
+        const { data: groupMembers } = await supabase
+          .from("member_groups")
+          .select("user_id, profiles(full_name)")
+          .eq("group_id", event.group_id);
+        relevantProfiles = groupMembers?.map(m => ({ user_id: m.user_id, full_name: (m.profiles as any)?.full_name || "Membro" })) || [];
+      }
+
+      const rsvpMap = new Map(rsvps?.map(r => [r.user_id, r.status]));
       
-      if (!rsvps || rsvps.length === 0) return [];
-      
-      const uids = rsvps.map(r => r.user_id);
-      const { data: profiles } = await supabase.from("profiles").select("user_id, full_name").in("user_id", uids);
-      const map = new Map(profiles?.map(p => [p.user_id, p.full_name]) || []);
-      
-      return rsvps.map(r => ({ ...r, name: map.get(r.user_id) || "Membro" }));
+      return relevantProfiles.map(p => ({
+        user_id: p.user_id,
+        name: p.full_name,
+        status: rsvpMap.get(p.user_id) || "pending"
+      }));
     },
     enabled: !!event,
   });
 
-  const confirmed = rsvpDetails?.filter(r => r.status === "confirmed") || [];
-  const declined = rsvpDetails?.filter(r => r.status === "declined") || [];
+  if (isLoading) return <div className="flex justify-center p-8"><span className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" /></div>;
+
+  const confirmed = usersData?.filter(u => u.status === "confirmed") || [];
+  const declined = usersData?.filter(u => u.status === "declined") || [];
+  const pending = usersData?.filter(u => u.status === "pending") || [];
 
   return (
-    <div className="space-y-4">
-      <div>
-        <p className="text-sm font-semibold text-emerald-600 mb-2">✅ Confirmados ({confirmed.length})</p>
-        {confirmed.length === 0 ? <p className="text-xs text-muted-foreground">Nenhum ainda</p> : (
-          <div className="space-y-1">
-            {confirmed.map(r => <p key={r.user_id} className="text-sm px-2 py-1 bg-emerald-50 dark:bg-emerald-950/30 rounded">{r.name}</p>)}
+    <div className="space-y-6">
+      <div className="space-y-6">
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-bold text-emerald-600 flex items-center gap-2">
+              <Check className="h-4 w-4" /> Confirmados
+            </p>
+            <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">{confirmed.length}</Badge>
           </div>
-        )}
-      </div>
-      <div>
-        <p className="text-sm font-semibold text-rose-500 mb-2">❌ Não vão ({declined.length})</p>
-        {declined.length === 0 ? <p className="text-xs text-muted-foreground">Nenhum ainda</p> : (
-          <div className="space-y-1">
-            {declined.map(r => <p key={r.user_id} className="text-sm px-2 py-1 bg-rose-50 dark:bg-rose-950/30 rounded">{r.name}</p>)}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {confirmed.length === 0 ? <p className="text-xs text-muted-foreground italic px-2">Nenhum confirmado ainda</p> : (
+              confirmed.map(u => <div key={u.user_id} className="text-[13px] px-3 py-2 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100/50 dark:border-emerald-900/30 rounded-lg font-medium">{u.name}</div>)
+            )}
           </div>
-        )}
+        </section>
+
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-bold text-rose-500 flex items-center gap-2">
+              <X className="h-4 w-4" /> Não Vão
+            </p>
+            <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200">{declined.length}</Badge>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {declined.length === 0 ? <p className="text-xs text-muted-foreground italic px-2">Ninguém declinou ainda</p> : (
+              declined.map(u => <div key={u.user_id} className="text-[13px] px-3 py-2 bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100/50 dark:border-rose-900/30 rounded-lg font-medium">{u.name}</div>)
+            )}
+          </div>
+        </section>
+
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-bold text-slate-500 flex items-center gap-2">
+              <Users className="h-4 w-4" /> Pendentes
+            </p>
+            <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-200">{pending.length}</Badge>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {pending.length === 0 ? <p className="text-xs text-muted-foreground italic px-2">Ninguém pendente</p> : (
+              pending.map(u => <div key={u.user_id} className="text-[13px] px-3 py-2 bg-slate-50/50 dark:bg-slate-900/10 border border-slate-200/50 dark:border-slate-800 rounded-lg text-muted-foreground">{u.name}</div>)
+            )}
+          </div>
+        </section>
       </div>
     </div>
   );

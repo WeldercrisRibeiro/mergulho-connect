@@ -1,6 +1,6 @@
 
 -- Create role enum
-CREATE TYPE public.app_role AS ENUM ('admin', 'moderator', 'member');
+CREATE TYPE public.app_role AS ENUM ('admin', 'moderador', 'membro');
 
 -- Create updated_at trigger function
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
@@ -30,7 +30,7 @@ FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 CREATE TABLE public.user_roles (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  role app_role NOT NULL DEFAULT 'member',
+  role app_role NOT NULL DEFAULT 'membro',
   UNIQUE(user_id, role)
 );
 ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
@@ -138,7 +138,7 @@ BEGIN
   INSERT INTO public.profiles (user_id, full_name)
   VALUES (NEW.id, COALESCE(NEW.raw_user_meta_data->>'full_name', ''));
   INSERT INTO public.user_roles (user_id, role)
-  VALUES (NEW.id, 'member');
+  VALUES (NEW.id, 'membro');
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;

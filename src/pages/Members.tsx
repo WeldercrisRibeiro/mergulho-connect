@@ -26,7 +26,7 @@ const Members = () => {
   const [editName, setEditName] = useState("");
   const [editUsername, setEditUsername] = useState("");
   const [editPhone, setEditPhone] = useState("");
-  const [editRole, setEditRole] = useState("member");
+  const [editRole, setEditRole] = useState("membro");
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
   const [deletingMember, setDeletingMember] = useState<any>(null);
 
@@ -74,17 +74,17 @@ const Members = () => {
     setEditName(m.full_name || "");
     setEditUsername(m.username || "");
     setEditPhone(m.whatsapp_phone || "");
-    setEditRole(m.roles?.[0]?.role || "member");
+    setEditRole(m.roles?.[0]?.role || "membro");
     setSelectedGroups(m.group_ids || []);
   };
 
   const updateMutation = useMutation({
     mutationFn: async () => {
       if (!editingMember) return;
-      
+
       const cleanUsername = (editUsername || "").trim().toLowerCase().replace(/\s+/g, ".");
       const email = cleanUsername + "@mergulhoconnect.com";
-      
+
       // 1. Sincroniza com Auth via RPC sem trocar a senha atual
       const { error: rpcErr } = await supabase.rpc("admin_manage_user" as any, {
         email,
@@ -95,12 +95,12 @@ const Members = () => {
       if (rpcErr) throw rpcErr;
 
       // 2. Atualiza perfil local (incluindo username para busca/exibição)
-      const { error: profErr } = await supabase.from("profiles").update({ 
-        full_name: editName, 
+      const { error: profErr } = await supabase.from("profiles").update({
+        full_name: editName,
         whatsapp_phone: editPhone,
-        username: editUsername 
+        username: editUsername
       } as any).eq("user_id", editingMember.user_id);
-      
+
       if (profErr) throw profErr;
 
       // 3. Atualiza Role
@@ -111,7 +111,7 @@ const Members = () => {
         await supabase.from("user_roles").insert({ user_id: editingMember.user_id, role: editRole as any });
       }
 
-      // 4. Atualiza Grupos
+      // 4. Atualiza departamentos
       await supabase.from("member_groups").delete().eq("user_id", editingMember.user_id);
       if (selectedGroups.length > 0) {
         const inserts = selectedGroups.map(gid => ({ user_id: editingMember.user_id, group_id: gid }));
@@ -139,11 +139,11 @@ const Members = () => {
       });
       if (error) throw error;
       const newUserId = data as any as string;
-      
-      const { error: profileError } = await supabase.from("profiles").update({ 
+
+      const { error: profileError } = await supabase.from("profiles").update({
         username: cleanUsername,
         full_name: editName,
-        whatsapp_phone: editPhone 
+        whatsapp_phone: editPhone
       } as any).eq("user_id", newUserId);
       if (profileError) throw profileError;
 
@@ -157,7 +157,7 @@ const Members = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["members"] });
       setCreatingMember(false);
-      setEditName(""); setEditUsername(""); setEditPhone(""); setEditRole("member"); setSelectedGroups([]);
+      setEditName(""); setEditUsername(""); setEditPhone(""); setEditRole("membro"); setSelectedGroups([]);
       toast({ title: "Membro criado!", description: `Usuário (Login): ${editUsername} | Senha: 123456` });
     },
     onError: (err: any) => {
@@ -207,7 +207,7 @@ const Members = () => {
           Membros
         </h1>
         <Button onClick={() => {
-          setEditName(""); setEditPhone(""); setEditRole("member"); setSelectedGroups([]);
+          setEditName(""); setEditPhone(""); setEditRole("membro"); setSelectedGroups([]);
           setCreatingMember(true);
         }}>
           <Plus className="h-4 w-4 mr-1" /> Novo Membro
@@ -258,11 +258,19 @@ const Members = () => {
                   </a>
                 )}
                 <div className="flex gap-1 mt-1 flex-wrap">
-                  {(member as any).roles?.map((r: any) => (
-                    <Badge key={r.role} variant={r.role === "admin" ? "default" : "secondary"} className="text-xs">
-                      {r.role}
+                  {member.roles?.some((r: any) => r.role === "admin") && (
+                    <Badge variant="default" className="uppercase text-[10px]">Admin</Badge>
+                  )}
+                  {member.roles?.some((r: any) => r.role === "moderador") && (
+                    <Badge variant="secondary" className="bg-orange-100 text-orange-700 hover:bg-orange-100 uppercase text-[10px]">
+                      Moderador
                     </Badge>
-                  ))}
+                  )}
+                  {(!member.roles || member.roles.length === 0 || member.roles.every((r: any) => r.role === "membro")) && (
+                    <Badge variant="outline" className="uppercase text-[10px] text-muted-foreground">
+                      Membro
+                    </Badge>
+                  )}
                   {(member as any).groups?.map((name: string) => (
                     <Badge key={name} variant="outline" className="text-xs">{name}</Badge>
                   ))}
@@ -324,14 +332,14 @@ const Members = () => {
                 <Select value={editRole} onValueChange={setEditRole}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="member">Membro</SelectItem>
+                    <SelectItem value="membro">Membro</SelectItem>
                     <SelectItem value="admin">Administrador</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Grupos</Label>
+              <Label>Departamentos</Label>
               <GroupCheckboxes />
             </div>
           </div>
@@ -377,16 +385,16 @@ const Members = () => {
                 <Select value={editRole} onValueChange={setEditRole}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="member">Membro</SelectItem>
+                    <SelectItem value="membro">Membro</SelectItem>
                     <SelectItem value="admin">Administrador</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
-            {/* Row 3: Grupos */}
+            {/* Row 3: departamentos */}
             <div className="space-y-2">
-              <Label>Grupos (Opcional)</Label>
+              <Label>departamentos (Opcional)</Label>
               <GroupCheckboxes />
             </div>
           </div>

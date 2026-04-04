@@ -12,7 +12,7 @@ const navItems = [
   { path: "/home", icon: Home, label: "Início" },
   { path: "/agenda", icon: Calendar, label: "Agenda" },
   { path: "/devocionais", icon: BookOpen, label: "Devocionais" },
-  { path: "/grupos", icon: Shield, label: "Grupos", adminOnly: true },
+  { path: "/departamentos", icon: Shield, label: "Departamentos", adminOnly: true },
   { path: "/membros", icon: Users, label: "Membros", adminOnly: true },
   { path: "/chat", icon: MessageCircle, label: "Chat" },
   { path: "/configuracoes", icon: Settings, label: "Configurações", adminOnly: true },
@@ -81,7 +81,7 @@ const DesktopSidebar = () => {
         }
 
         setTotalUnread(directUnread.size + groupUnread);
-      } catch (_) {}
+      } catch (_) { }
     };
     check();
     const interval = setInterval(check, 10000);
@@ -128,14 +128,14 @@ const DesktopSidebar = () => {
           )}
         </div>
 
-        {/* Toggle button */}
+        {/* Toggle button - Melhorado Visualmente */}
         <Button
-          variant="ghost"
+          variant="secondary"
           size="icon"
-          className="absolute -right-3 top-16 h-6 w-6 rounded-full border bg-background shadow-sm z-10"
+          className="absolute -right-3.5 top-16 h-7 w-7 rounded-full border border-sidebar-border bg-sidebar-accent shadow-lg shadow-black/10 z-20 hover:scale-110 active:scale-95 transition-all text-sidebar-primary"
           onClick={() => setCollapsed(!collapsed)}
         >
-          {collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
+          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </Button>
 
         {/* Nav */}
@@ -221,7 +221,7 @@ const DesktopSidebar = () => {
                   <Sun className="h-4 w-4 text-yellow-400 shrink-0" />
                 )}
                 {!collapsed && (
-                  <span className="ml-2 text-xs">{theme === "light" ? "Tema Escuro" : "Tema Claro"}</span>
+                  <span className="ml-2 text-xs">{theme === "light" ? " " : "  "}</span>
                 )}
               </Button>
             </TooltipTrigger>

@@ -2,6 +2,7 @@ import { ReactNode, useEffect } from "react";
 import BottomNav from "./BottomNav";
 import DesktopSidebar from "./DesktopSidebar";
 import DevotionalWelcome from "./DevotionalWelcome";
+import { PwaPrompt } from "./PwaPrompt";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -34,10 +35,21 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
 
         if (shouldNotify && !window.location.pathname.includes("/chat")) {
           const { data: sender } = await supabase.from("profiles").select("full_name").eq("user_id", msg.sender_id).single();
+          const title = `Nova mensagem de ${sender?.full_name || "Membro"}`;
+          const description = msg.content.substring(0, 50) + (msg.content.length > 50 ? "..." : "");
+          
           toast({
-            title: `Nova mensagem de ${sender?.full_name || "Membro"}`,
-            description: msg.content.substring(0, 50) + (msg.content.length > 50 ? "..." : ""),
+            title,
+            description,
           });
+
+          // Dispara notificação nativa se autorizado
+          if ("Notification" in window && Notification.permission === "granted") {
+            new Notification(title, {
+              body: description,
+              icon: "/idvmergulho/logo.png"
+            });
+          }
         }
       })
       .subscribe();
@@ -50,8 +62,9 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
   return (
     <div className="flex min-h-screen">
       <DesktopSidebar />
-      <main className="flex-1 pb-20 md:pb-0">
+      <main className="flex-1 pb-20 md:pb-0 relative">
         {children}
+        <PwaPrompt />
       </main>
       <BottomNav />
       <DevotionalWelcome />

@@ -60,6 +60,9 @@ const HomePage = () => {
               <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight">
                 Olá, {profile?.full_name?.split(' ')[0] || "Mergulhador"}! 👋
               </h1>
+              {/* a parte do profile funciona assim: se o usuario tiver um nome cadastrado, ele vai mostrar o primeiro nome, se nao tiver, vai mostrar "Mergulhador" 
+              se o usuário tiver nome, ao logar na plataforma vai mostrar mergulhador e ainda e depois de x minutos vai mudar o nome real onde você consegue dimunuir o tempo fazendo a seguinte alteração: 
+              na linha 63, onde está escrito "const [showRealName, setShowRealName] = useState(false);" você pode mudar o "false" para "true" para que o nome real seja mostrado logo de cara, ou pode diminuir o tempo de espera mudando o "setTimeout(() => setShowRealName(true), 10000);" para um tempo menor, por exemplo "setTimeout(() => setShowRealName(true), 5000);" para que o nome real seja mostrado em 5 segundos. */}
               <p className="text-blue-100/80 mt-3 text-lg font-medium">
                 Sua comunidade MergulhoApp está pronta para você.
               </p>

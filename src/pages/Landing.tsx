@@ -78,10 +78,10 @@ const Landing = () => {
         <div className="container mx-auto flex items-center justify-between px-6 py-4">
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <img 
-              src={theme === "dark" ? "/idvmergulho/logo-white.png" : "/idvmergulho/logo.png"} 
-              alt="Logo" 
-              className="h-10 w-auto hover:opacity-80 transition-opacity" 
+            <img
+              src={theme === "dark" ? "/idvmergulho/logo-white.png" : "/idvmergulho/logo.png"}
+              alt="Logo"
+              className="h-10 w-auto hover:opacity-80 transition-opacity"
             />
           </div>
 
@@ -104,9 +104,9 @@ const Landing = () => {
             >
               {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
             </button>
-            <Link to="/auth" className="text-sm font-bold hover:text-primary transition-colors hidden sm:block">
-              Área de Membros
-            </Link>
+            <Button asChild variant="secondary" className="rounded-full px-6 font-bold shadow-md transition-all hover:-translate-y-0.5 hidden sm:flex border border-border/50">
+              <Link to="/auth">Entrar</Link>
+            </Button>
             <Button asChild className="rounded-full px-6 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white border-0 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 transition-all hover:-translate-y-0.5">
               <Link to="/auth?request=true">Seja um Membro!</Link>
             </Button>
@@ -122,10 +122,10 @@ const Landing = () => {
 
         <div className="mx-auto max-w-4xl flex flex-col items-center relative z-10">
           <div className="mb-10 relative group w-full flex justify-center">
-            <img 
-              src={theme === "dark" ? "/idvmergulho/logo-horizontal.png" : "/idvmergulho/logo-horizontal-azul.png"} 
-              alt="Logo CC Mergulho" 
-              className="h-32 md:h-48 w-auto object-contain drop-shadow-xl transition-transform duration-500 hover:scale-105" 
+            <img
+              src={theme === "dark" ? "/idvmergulho/logo-horizontal.png" : "/idvmergulho/logo-horizontal-azul.png"}
+              alt="Logo CC Mergulho"
+              className="h-32 md:h-48 w-auto object-contain drop-shadow-xl transition-transform duration-500 hover:scale-105"
             />
           </div>
 
@@ -133,61 +133,18 @@ const Landing = () => {
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-primary to-cyan-400">AMAR | CUIDAR | SERVIR</span>
           </h1>
           <p className="mt-4 text-lg md:text-xl text-muted-foreground leading-relaxed max-w-3xl font-medium">
-            Uma comunidade cristã interligada. Junte-se aos nossos grupos, envolva-se em projetos, estude a Palavra e conecte-se com seus irmãos com um clique.
+            Uma comunidade cristã interligada. Junte-se aos nossos departamentos, envolva-se em projetos, estude a Palavra e conecte-se com seus irmãos com um clique.
           </p>
 
           <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center w-full max-w-lg">
             <Button size="lg" asChild className="rounded-full sm:flex-1 h-14 text-base bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 shadow-xl shadow-primary/30 hover:shadow-2xl hover:shadow-primary/40 transition-all hover:-translate-y-1">
               <Link to="/auth?request=true">Fazer Parte</Link>
             </Button>
-            <Button variant="outline" size="lg" asChild className="rounded-full sm:flex-1 h-14 text-base border-2 hover:bg-primary/5 transition-all hover:-translate-y-1">
-              <Link to="/auth">Área do Membro</Link>
+            <Button variant="secondary" size="lg" asChild className="rounded-full sm:flex-1 h-14 text-base border shadow-lg transition-all hover:-translate-y-1 font-bold">
+              <Link to="/auth">Entrar</Link>
             </Button>
           </div>
         </div>
-      </section>
-
-      {/* Galeria de Fotos + Depoimentos */}
-      <section id="servicos" className="relative container mx-auto px-4 py-24">
-        <div className="text-center mb-16">
-          <h2 className="text-sm font-bold tracking-widest text-primary uppercase mb-3">Nossa Comunidade</h2>
-          <h3 className="text-3xl md:text-4xl font-extrabold text-foreground">Momentos que nos unem</h3>
-        </div>
-
-        {/* Auto-slide Carousel */}
-        {photos && photos.length > 0 && (
-          <PhotoCarousel photos={photos} />
-        )}
-
-        {/* Testimonials */}
-        {testimonials && testimonials.length > 0 && (
-          <div className="mt-16">
-            <h3 className="text-center text-xl font-bold mb-8 text-muted-foreground">O que dizem nossos membros</h3>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {testimonials.map((t: any) => (
-                <div key={t.id} className="relative bg-card/60 backdrop-blur-sm border border-border/50 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                  <Quote className="h-8 w-8 text-primary/30 absolute top-4 right-4" />
-                  <p className="text-muted-foreground text-sm leading-relaxed italic mb-4">
-                    &ldquo;{t.text}&rdquo;
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shrink-0">
-                      <span className="text-white font-bold text-sm">{(t.name || "?").charAt(0)}</span>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-sm">{t.name}</p>
-                      {t.role && <p className="text-xs text-muted-foreground">{t.role}</p>}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {(!photos || photos.length === 0) && (!testimonials || testimonials.length === 0) && (
-          <p className="text-center text-muted-foreground py-12">Conteúdo em breve! 🌊</p>
-        )}
       </section>
 
       {/* Projetos & Sobre com backgrounds alternados */}
@@ -205,15 +162,63 @@ const Landing = () => {
 
       <section id="sobre" className="py-24 relative overflow-hidden">
         <div className="absolute right-0 bottom-0 w-96 h-96 bg-primary/10 rounded-full blur-[100px] -z-10" />
-        <div className="container mx-auto px-4 text-center max-w-4xl">
+        <div className="container mx-auto px-4 text-center max-w-4xl mb-24">
           <h3 className="text-sm font-bold tracking-widest text-primary uppercase mb-3">Quem Somos</h3>
           <h2 className="text-3xl md:text-5xl font-extrabold mb-8 leading-tight">Uma igreja focada no Reino</h2>
           <p className="text-lg text-muted-foreground leading-relaxed md:px-12">
             A Comunidade Cristã Mergulho é um lugar de encontro real e tangível com Deus e com pessoas que buscam viver
             uma fé prática e autêntica. Acreditamos na força da comunhão, na manifestação do Espírito pela adoração conjunta e no serviço abnegado ao próximo.
             <br /><br />
-            <strong>Venha mergulhar conosco nessa jornada!</strong>
+            <span className="text-primary font-bold text-xl block mt-4 animate-bounce">🌊 Venha mergulhar conosco nessa jornada!</span>
           </p>
+        </div>
+
+        {/* Galeria de Fotos + Depoimentos - Integrado e Melhorado */}
+        <div id="servicos" className="relative container mx-auto px-4 pt-20 mt-10">
+          {/* Divider Sutil */}
+          <div className="flex justify-center mb-16">
+            <div className="h-1 w-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent rounded-full" />
+          </div>
+          
+          <div className="text-center mb-16">
+            <h2 className="text-sm font-bold tracking-[0.2em] text-primary uppercase mb-3 opacity-80">Vida na Igreja</h2>
+            <h3 className="text-4xl md:text-5xl font-black text-foreground tracking-tight">Experiências que nos marcam</h3>
+          </div>
+
+          {/* Auto-slide Carousel */}
+          {photos && photos.length > 0 && (
+            <PhotoCarousel photos={photos} />
+          )}
+
+          {/* Testimonials */}
+          {testimonials && testimonials.length > 0 && (
+            <div className="mt-16">
+              <h3 className="text-center text-xl font-bold mb-8 text-muted-foreground">O que dizem nossos membros</h3>
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {testimonials.map((t: any) => (
+                  <div key={t.id} className="relative bg-card/60 backdrop-blur-sm border border-border/50 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                    <Quote className="h-8 w-8 text-primary/30 absolute top-4 right-4" />
+                    <p className="text-muted-foreground text-sm leading-relaxed italic mb-4">
+                      &ldquo;{t.text}&rdquo;
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shrink-0">
+                        <span className="text-white font-bold text-sm">{(t.name || "?").charAt(0)}</span>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm">{t.name}</p>
+                        {t.role && <p className="text-xs text-muted-foreground">{t.role}</p>}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {(!photos || photos.length === 0) && (!testimonials || testimonials.length === 0) && (
+            <p className="text-center text-muted-foreground py-12">Conteúdo em breve! 🌊</p>
+          )}
         </div>
       </section>
 
@@ -278,23 +283,10 @@ const Landing = () => {
                     <p className="text-sm text-muted-foreground mt-1">Rua Rio Paraguai, 534 - Jardim Iracema <br />Fortaleza - CE,60341-270</p>
                   </div>
                 </div>
-
-                <div className="flex items-start gap-4">
-                  <div className="mt-1 rounded-full bg-primary/10 p-2 text-primary">
-                    <Phone className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold">Contato</h4>
-                    <p className="text-sm text-muted-foreground mt-1">{siteSettings?.whatsapp_number || "85 99776-3630"}</p>
-                  </div>
-                </div>
               </div>
 
               <div className="flex items-center gap-4 pt-4 border-t">
                 <span className="font-medium">Redes Sociais:</span>
-                <a href={whatsappUrl} target="_blank" rel="noreferrer" className="rounded-full bg-emerald-500/10 p-2 hover:bg-emerald-500/20 text-emerald-600 transition-colors inline-flex">
-                  <Phone className="h-5 w-5" />
-                </a>
                 <a href={siteSettings?.instagram_url || "#"} target="_blank" rel="noreferrer" className="rounded-full bg-primary/5 p-2 hover:bg-primary/20 text-primary transition-colors inline-flex">
                   <Instagram className="h-5 w-5" />
                 </a>

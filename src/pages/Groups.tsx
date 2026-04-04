@@ -124,7 +124,7 @@ const Groups = () => {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Shield className="h-6 w-6 text-primary" />
-          Grupos
+          Departamentos
         </h1>
         <Button onClick={() => { setGroupName(""); setGroupDesc(""); setGroupIcon("🌊"); setCreatingGroup(true); }}>
           <Plus className="h-4 w-4 mr-1" /> Novo Grupo
@@ -170,7 +170,7 @@ const Groups = () => {
       <Dialog open={creatingGroup} onOpenChange={val => !val && setCreatingGroup(false)}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader><DialogTitle>Novo Grupo</DialogTitle></DialogHeader>
-          <GroupForm 
+          <GroupForm
             groupIcon={groupIcon} setGroupIcon={setGroupIcon}
             groupName={groupName} setGroupName={setGroupName}
             groupDesc={groupDesc} setGroupDesc={setGroupDesc}
@@ -199,7 +199,7 @@ const Groups = () => {
       <Dialog open={!!editingGroup} onOpenChange={val => !val && setEditingGroup(null)}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader><DialogTitle>Editar Grupo</DialogTitle></DialogHeader>
-          <GroupForm 
+          <GroupForm
             groupIcon={groupIcon} setGroupIcon={setGroupIcon}
             groupName={groupName} setGroupName={setGroupName}
             groupDesc={groupDesc} setGroupDesc={setGroupDesc}

@@ -19,6 +19,9 @@ const Profile = () => {
   const [fullName, setFullName] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [isNotifGranted, setIsNotifGranted] = useState(
+    typeof window !== "undefined" && Notification.permission === "granted"
+  );
 
   useEffect(() => {
     if (profile) {
@@ -100,7 +103,7 @@ const Profile = () => {
 
           {myGroups && myGroups.length > 0 && (
             <div className="space-y-2">
-              <Label>Meus Grupos</Label>
+              <Label>Meus departamentos</Label>
               <div className="flex gap-1 flex-wrap">
                 {myGroups.map((name) => (
                   <Badge key={name} variant="secondary">{name}</Badge>
@@ -115,13 +118,39 @@ const Profile = () => {
                 <Label>Tema do Aplicativo</Label>
                 <p className="text-xs text-muted-foreground">Escolha entre modo claro ou escuro</p>
               </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={toggleTheme}
                 className="gap-2"
               >
                 {theme === "light" ? "Modo Escuro" : "Modo Claro"}
+              </Button>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Notificações Nativas</Label>
+                <p className="text-xs text-muted-foreground">Receba alertas no seu dispositivo</p>
+              </div>
+              <Button
+                variant={isNotifGranted ? "secondary" : "outline"}
+                size="sm"
+                onClick={async () => {
+                  if (isNotifGranted) {
+                    toast({ title: "Notificações já estão ativas!" });
+                  } else {
+                    const perm = await Notification.requestPermission();
+                    if (perm === "granted") {
+                      setIsNotifGranted(true);
+                      toast({ title: "Notificações ativadas com sucesso!" });
+                    } else {
+                      toast({ title: "Permissão negada", description: "Habilite nas configurações do seu celular/navegador.", variant: "destructive" });
+                    }
+                  }
+                }}
+              >
+                {isNotifGranted ? "Ativado" : "Ativar"}
               </Button>
             </div>
           </div>
@@ -129,15 +158,15 @@ const Profile = () => {
           <div className="space-y-2 mt-4 pt-4 border-t border-border/50">
             <Label>Redefinir Senha</Label>
             <div className="flex gap-2">
-              <Input 
-                type="password" 
-                placeholder="Nova senha (mín. 6 caracteres)" 
-                value={newPassword} 
-                onChange={(e) => setNewPassword(e.target.value)} 
+              <Input
+                type="password"
+                placeholder="Nova senha (mín. 6 caracteres)"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
               />
-              <Button 
-                variant="secondary" 
-                onClick={() => updatePasswordMutation.mutate()} 
+              <Button
+                variant="secondary"
+                onClick={() => updatePasswordMutation.mutate()}
                 disabled={newPassword.length < 6 || updatePasswordMutation.isPending}
               >
                 {updatePasswordMutation.isPending ? "Alterando..." : "Alterar"}
