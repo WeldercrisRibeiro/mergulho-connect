@@ -8,8 +8,11 @@ interface AuthContextType {
   loading: boolean;
   isAdmin: boolean;
   isGerente: boolean;
+  isVisitor: boolean;
   managedGroupIds: string[];
   profile: { full_name: string; avatar_url: string | null; whatsapp_phone: string | null } | null;
+  routinePermissions: Record<string, boolean>;
+  unreadAnnouncements: number;
   signOut: () => Promise<void>;
 }
 
@@ -19,8 +22,11 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   isAdmin: false,
   isGerente: false,
+  isVisitor: false,
   managedGroupIds: [],
   profile: null,
+  routinePermissions: {},
+  unreadAnnouncements: 0,
   signOut: async () => {},
 });
 
@@ -32,8 +38,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isGerente, setIsGerente] = useState(false);
+  const [isVisitor, setIsVisitor] = useState(false);
   const [managedGroupIds, setManagedGroupIds] = useState<string[]>([]);
   const [profile, setProfile] = useState<AuthContextType["profile"]>(null);
+  const [routinePermissions, setRoutinePermissions] = useState<Record<string, boolean>>({});
+  const [unreadAnnouncements, setUnreadAnnouncements] = useState(0);
+
+  const playNotificationSound = () => {
+    try {
+      const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+      audio.volume = 0.5;
+      audio.play().catch(e => console.log("Audio play blocked by browser:", e));
+    } catch (_) {}
+  };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -51,7 +68,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setProfile(null);
         setIsAdmin(false);
         setIsGerente(false);
+        setIsVisitor(false);
         setManagedGroupIds([]);
+        setRoutinePermissions({});
+        setUnreadAnnouncements(0);
         setLoading(false);
       }
     });
@@ -95,36 +115,109 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .select("role")
         .eq("user_id", userId);
 
-      const admin = roles?.some((r: any) => r.role === "admin") || false;
-      const moderador = roles?.some((r: any) => r.role === "moderador") || false;
+      const rolesList = roles?.map((r: any) => r.role) || [];
+      const hasAdmin = rolesList.includes("admin");
+      const hasGerente = rolesList.includes("gerente");
+      const hasVisitante = rolesList.includes("visitante");
 
-      setIsAdmin(admin);
+      setIsAdmin(hasAdmin);
+      setIsVisitor(hasVisitante);
 
-      if (!admin) {
-        const { data: managed } = await (supabase as any)
-          .from("member_groups")
-          .select("group_id")
-          .eq("user_id", userId)
-          .eq("role" as any, "manager");
+      // Busca quais grupos este usuário gerencia (flexível para 'manager', 'gerente' ou 'Líder')
+      const { data: managedGroups, error: managedErr } = await supabase
+        .from("member_groups")
+        .select("group_id, role")
+        .eq("user_id", userId);
 
-        const managedIds = managed?.map((m: any) => m.group_id) || [];
-        setManagedGroupIds(managedIds);
-        setIsGerente(moderador || managedIds.length > 0);
+      if (managedErr) console.error("Managed groups fetch error:", managedErr);
+      console.log("RAW Managed Groups Data:", managedGroups);
+
+      // Filtra por qualquer coisa que NÃO seja 'member' (membro comum)
+      const managedIds = (managedGroups as any[])
+        ?.filter(mg => {
+          const role = (mg.role || "").toLowerCase();
+          return role !== "" && role !== "member" && role !== "membro";
+        })
+        .map((m: any) => m.group_id) || [];
+      
+      console.log("Managed Roles Found:", (managedGroups as any[])?.map(mg => (mg as any).role));
+      console.log("Final Managed ID List:", managedIds);
+      setManagedGroupIds(managedIds);
+      setIsGerente(hasAdmin || hasGerente || managedIds.length > 0);
+
+      // Busca permissões de rotina de TODOS os grupos que o usuário participa
+      const allGroupIds = managedGroups?.map((mg: any) => mg.group_id) || [];
+      if (allGroupIds.length > 0) {
+        const { data: routines } = await (supabase as any)
+          .from("group_routines")
+          .select("routine_key, is_enabled")
+          .in("group_id", allGroupIds);
+        
+        const perms: Record<string, boolean> = {};
+        (routines as any[])?.forEach(r => {
+          if (perms[r.routine_key] !== true) {
+            perms[r.routine_key] = r.is_enabled;
+          }
+        });
+        setRoutinePermissions(perms);
       } else {
-        setIsGerente(true);
-        setManagedGroupIds([]);
+        setRoutinePermissions({});
       }
     } catch (err) {
       console.error("Error checking roles:", err);
     }
   };
 
+  // Dedicated effect for Announcements and Notifications
+  useEffect(() => {
+    if (!user) return;
+
+    const checkAnnouncements = async () => {
+      try {
+        const lastChecked = localStorage.getItem("last_checked_announcements") || new Date(0).toISOString();
+        const { count } = await (supabase as any)
+          .from("announcements")
+          .select("id", { count: 'exact' })
+          .gt("created_at", lastChecked)
+          .neq("created_by", user.id);
+        setUnreadAnnouncements(count || 0);
+      } catch (_) {}
+    };
+
+    checkAnnouncements();
+
+    const channelName = `announcements-${user.id}-${Math.random().toString(36).substr(2, 9)}`;
+    const channel = supabase
+      .channel(channelName)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, (payload) => {
+        const newNotice = payload.new as any;
+        
+        // Sound notification ONLY on new entries (INSERT)
+        if (payload.eventType === 'INSERT' && newNotice.created_by !== user.id) {
+          playNotificationSound();
+          window.dispatchEvent(new CustomEvent('new-announcement', { detail: newNotice }));
+        }
+        
+        // Always recalculate count for any change (INSERT, DELETE, UPDATE)
+        checkAnnouncements();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   const signOut = async () => {
     await supabase.auth.signOut();
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, isAdmin, isGerente, managedGroupIds, profile, signOut }}>
+    <AuthContext.Provider value={{ 
+      user, session, loading, isAdmin, isGerente, isVisitor, 
+      managedGroupIds: managedGroupIds || [], 
+      profile, routinePermissions, unreadAnnouncements, signOut 
+    }}>
       {children}
     </AuthContext.Provider>
   );

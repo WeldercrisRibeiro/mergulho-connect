@@ -44,8 +44,34 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
           });
 
           // Dispara notificação nativa se autorizado
-          if ("Notification" in window && Notification.permission === "granted") {
-            new Notification(title, {
+          if (typeof window !== "undefined" && "Notification" in window && (window as any).Notification.permission === "granted") {
+            new (window as any).Notification(title, {
+              body: description,
+              icon: "/idvmergulho/logo.png"
+            });
+          }
+        }
+      })
+      .subscribe();
+
+    // Global listener for kids checkin calls
+    const checkinChannel = supabase
+      .channel("kids-checkin-calls")
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "kids_checkins" }, (payload) => {
+        const checkin = payload.new as any;
+        if (checkin.guardian_id === user.id && checkin.call_requested && !payload.old.call_requested) {
+          const title = "⚠️ CHAMADA URGENTE: Kids";
+          const description = `Favor comparecer ao Kids/Volumes para auxiliar com ${(checkin.child_name || "seu item").toUpperCase()}.`;
+          
+          toast({
+            title,
+            description,
+            variant: "destructive",
+            duration: 10000,
+          });
+
+          if (typeof window !== "undefined" && "Notification" in window && (window as any).Notification.permission === "granted") {
+            new (window as any).Notification(title, {
               body: description,
               icon: "/idvmergulho/logo.png"
             });
@@ -56,6 +82,7 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
 
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(checkinChannel);
     };
   }, [user, toast]);
 

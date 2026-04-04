@@ -6,6 +6,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Heart, X, BookOpen } from "lucide-react";
 import { safeFormat } from "@/lib/dateUtils";
+import VideoPlayer from "./VideoPlayer";
 
 const SESSION_KEY = "devotional_shown";
 
@@ -120,17 +121,12 @@ const DevotionalWelcome = () => {
             </p>
           </div>
 
-          {devotional.media_url && (
-            <div className="rounded-lg overflow-hidden mb-4">
-              {devotional.media_url.includes("youtube") || devotional.media_url.includes("youtu.be") ? (
-                <iframe
-                  className="w-full aspect-video rounded-lg"
-                  src={devotional.media_url.replace("watch?v=", "embed/")}
-                  allowFullScreen
-                />
-              ) : (
-                <img src={devotional.media_url} alt="" className="w-full rounded-lg max-h-48 object-cover" />
-              )}
+          {((devotional as any).video_url || devotional.media_url) && (
+            <div className="rounded-xl overflow-hidden mb-4 shadow-md">
+              <VideoPlayer 
+                url={(devotional as any).video_url || devotional.media_url || ""} 
+                isUpload={(devotional as any).is_video_upload}
+              />
             </div>
           )}
 

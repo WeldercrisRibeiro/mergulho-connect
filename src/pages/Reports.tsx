@@ -16,8 +16,9 @@ import { safeFormat } from "@/lib/dateUtils";
 import { useToast } from "@/hooks/use-toast";
 
 const Reports = () => {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, managedGroupIds } = useAuth();
   const { toast } = useToast();
+  console.log("Reports Access: Admin only");
   const queryClient = useQueryClient();
 
   const [creating, setCreating] = useState(false);
@@ -40,20 +41,16 @@ const Reports = () => {
   const [eventId, setEventId] = useState<string | null>(null);
   const [groupId, setGroupId] = useState<string | null>(null);
 
-  const { isGerente, managedGroupIds } = useAuth();
 
   const { data: reports } = useQuery({
     queryKey: ["event-reports", managedGroupIds, isAdmin],
     queryFn: async () => {
       let query = (supabase as any).from("event_reports").select("*, groups(name)").order("report_date", { ascending: false });
-      if (!isAdmin && managedGroupIds.length > 0) {
-        query = query.in("group_id", managedGroupIds);
-      }
       const { data } = await query;
       return data || [];
     },
   });
-
+  
   const { data: events } = useQuery({
     queryKey: ["events-for-reports"],
     queryFn: async () => {
@@ -62,10 +59,16 @@ const Reports = () => {
     },
   });
 
-  const { data: groups } = useQuery({
-    queryKey: ["groups-for-reports"],
+  const { data: groups, isLoading: loadingGroups } = useQuery({
+    queryKey: ["groups-for-reports", isAdmin, managedGroupIds],
     queryFn: async () => {
-      const { data } = await supabase.from("groups").select("id, name");
+      console.log("Fetching groups from DB...");
+      const { data, error } = await supabase.from("groups").select("id, name");
+      if (error) {
+        console.error("DB Error fetching groups:", error);
+        throw error;
+      }
+      console.log("Groups loaded from DB:", data?.length, "items");
       return data || [];
     },
   });
@@ -162,10 +165,10 @@ const Reports = () => {
     setTithers(prev => prev.filter((_, i) => i !== idx));
   };
 
-  if (!isAdmin && !isGerente) {
+  if (!isAdmin) {
     return (
       <div className="p-8 text-center text-muted-foreground">
-        Acesso restrito a administradores e líderes de departamento.
+        Acesso restrito a administradores.
       </div>
     );
   }
@@ -323,6 +326,7 @@ const Reports = () => {
       <Dialog open={formOpen} onOpenChange={v => { if (!v) { setCreating(false); setEditing(null); } }}>
         <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editing ? "Editar Relatório" : "Novo Relatório"}</DialogTitle></DialogHeader>
+          
           <div className="space-y-4 py-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -346,12 +350,9 @@ const Reports = () => {
                 <Select value={groupId || ""} onValueChange={v => setGroupId(v)}>
                   <SelectTrigger><SelectValue placeholder="Selecione o depto" /></SelectTrigger>
                   <SelectContent>
-                    {isAdmin 
-                      ? (groups?.map((g: any) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>))
-                      : (groups?.filter((g: any) => managedGroupIds.includes(g.id)).map((g: any) => (
-                          <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
-                        )))
-                    }
+                    {groups?.map((g: any) => (
+                      <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

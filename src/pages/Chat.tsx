@@ -347,8 +347,8 @@ const Chat = () => {
         const snapConvId = convId;
 
         // Dispara notificação nativa se o usuário estiver fora da aba e tiver permitido
-        if (document.hidden && "Notification" in window && Notification.permission === "granted") {
-          const notif = new Notification(`💬 ${convName}`, {
+        if (document.hidden && typeof window !== "undefined" && "Notification" in window && (window as any).Notification.permission === "granted") {
+          const notif = new (window as any).Notification(`💬 ${convName}`, {
             body: msg.content?.substring(0, 80) || "Nova mensagem",
             icon: "/idvmergulho/logo.png"
           });
@@ -458,7 +458,7 @@ const Chat = () => {
       queryClient.invalidateQueries({ queryKey: ["hidden-conversations"] });
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
       queryClient.invalidateQueries({ queryKey: ["messages"] });
-      toast({ title: "Conversa apagada visualmente!" });
+      toast({ title: "Conversa apagada!" });
     },
     onError: (err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" }),
   });

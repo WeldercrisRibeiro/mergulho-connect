@@ -20,7 +20,7 @@ const Profile = () => {
   const [whatsapp, setWhatsapp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [isNotifGranted, setIsNotifGranted] = useState(
-    typeof window !== "undefined" && Notification.permission === "granted"
+    typeof window !== "undefined" && "Notification" in window && (window as any).Notification.permission === "granted"
   );
 
   useEffect(() => {
@@ -137,10 +137,14 @@ const Profile = () => {
                 variant={isNotifGranted ? "secondary" : "outline"}
                 size="sm"
                 onClick={async () => {
+                  if (typeof window === "undefined" || !("Notification" in window)) {
+                    toast({ title: "Não suportado", description: "Seu dispositivo ou navegador não suporta notificações nativas.", variant: "destructive" });
+                    return;
+                  }
                   if (isNotifGranted) {
                     toast({ title: "Notificações já estão ativas!" });
                   } else {
-                    const perm = await Notification.requestPermission();
+                    const perm = await (window as any).Notification.requestPermission();
                     if (perm === "granted") {
                       setIsNotifGranted(true);
                       toast({ title: "Notificações ativadas com sucesso!" });

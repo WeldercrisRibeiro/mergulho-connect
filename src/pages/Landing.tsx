@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, MapPin, Phone, Instagram, Facebook, Youtube, Quote, ChevronLeft, ChevronRight, Moon, Sun } from "lucide-react";
+import { Heart, MapPin, Phone, Instagram, Facebook, Youtube, Quote, ChevronLeft, ChevronRight, Moon, Sun, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTheme } from "@/components/ThemeProvider";
+import VideoPlayer from "@/components/VideoPlayer";
 
 
 const Landing = () => {
@@ -171,6 +172,48 @@ const Landing = () => {
             <br /><br />
             <span className="text-primary font-bold text-xl block mt-4 animate-bounce">🌊 Venha mergulhar conosco nessa jornada!</span>
           </p>
+        </div>
+
+        {/* Institutional Video Section - Moved from HomePage */}
+        <div className="container mx-auto px-4 mb-24 max-w-5xl">
+          <Card className="border-0 shadow-2xl overflow-hidden bg-card/40 backdrop-blur-md rounded-[2.5rem]">
+            <CardContent className="p-0">
+              <div className="grid grid-cols-1 lg:grid-cols-2">
+                <div className="p-8 md:p-12 space-y-6 flex flex-col justify-center">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest w-fit">
+                    <Star className="h-3 w-3 fill-primary" /> Institucional
+                  </div>
+                  <h4 className="text-3xl md:text-5xl font-black leading-tight tracking-tighter">
+                    Conheça o Mergulho
+                  </h4>
+                  <p className="text-muted-foreground text-lg leading-relaxed">
+                    Assista ao nosso vídeo e entenda como estamos construindo uma comunidade focada em amar, cuidar e servir.
+                  </p>
+                  <div className="flex items-center gap-4 pt-4 border-t border-border/50">
+                    <div className="flex -space-x-3">
+                      {[1, 2, 3, 4].map(i => (
+                        <div key={i} className="h-10 w-10 rounded-full border-4 border-background bg-muted overflow-hidden shadow-sm">
+                          <img src={`https://i.pravatar.cc/100?u=${i + 10}`} alt="avatar" />
+                        </div>
+                      ))}
+                    </div>
+                    <div>
+                      <p className="text-xs font-black text-foreground uppercase tracking-wider">Comunidade Unida</p>
+                      <p className="text-[10px] text-muted-foreground uppercase">+500 Membros Ativos</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4 md:p-8 bg-muted/20">
+                  <div className="rounded-3xl overflow-hidden shadow-2xl hover:scale-[1.02] transition-transform duration-500 bg-black">
+                    <VideoPlayer 
+                      url={siteSettings?.about_us_video_url || "https://www.youtube.com/watch?v=dQw4w9WgXcQ"} 
+                      isUpload={siteSettings?.about_us_video_is_upload === "true"}
+                    />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Galeria de Fotos + Depoimentos - Integrado e Melhorado */}

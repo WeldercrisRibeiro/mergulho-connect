@@ -5,6 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 import AppLayout from "@/components/AppLayout";
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
@@ -20,6 +22,9 @@ import Settings from "./pages/Settings";
 import Volunteers from "./pages/Volunteers";
 import Reports from "./pages/Reports";
 import ArchivedChats from "./pages/ArchivedChats";
+import KidsCheckin from "./pages/KidsCheckin";
+import AdminNotices from "./pages/AdminNotices";
+import GroupPermissions from "./pages/GroupPermissions";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +40,24 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <AppLayout>{children}</AppLayout>;
 };
 
+const NotificationManager = () => {
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    const handler = (e: any) => {
+      const notice = e.detail;
+      toast({
+        title: "Novo Comunicado!",
+        description: notice.title || "Você recebeu um novo aviso da igreja.",
+      });
+    };
+    window.addEventListener('new-announcement', handler);
+    return () => window.removeEventListener('new-announcement', handler);
+  }, [toast]);
+
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
@@ -43,6 +66,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
+            <NotificationManager />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/landing" element={<Landing />} />
@@ -58,6 +82,9 @@ const App = () => (
               <Route path="/voluntarios" element={<ProtectedRoute><Volunteers /></ProtectedRoute>} />
               <Route path="/relatorios" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
               <Route path="/arquivos" element={<ProtectedRoute><ArchivedChats /></ProtectedRoute>} />
+              <Route path="/checkin-kids" element={<ProtectedRoute><KidsCheckin /></ProtectedRoute>} />
+              <Route path="/comunicados" element={<ProtectedRoute><AdminNotices /></ProtectedRoute>} />
+              <Route path="/gestao-rotinas" element={<ProtectedRoute><GroupPermissions /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>

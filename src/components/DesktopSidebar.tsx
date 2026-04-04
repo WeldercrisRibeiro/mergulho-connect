@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Home, Calendar, BookOpen, MessageCircle, User, Users, LogOut, ChevronLeft, ChevronRight, Bell, BellOff, Shield, Settings, Sun, Moon, HandHeart, BarChart3, Archive } from "lucide-react";
+import { Home, Calendar, BookOpen, MessageCircle, User, Users, LogOut, ChevronLeft, ChevronRight, Bell, BellOff, Shield, ShieldCheck, Settings, Sun, Moon, HandHeart, BarChart3, Archive, Megaphone } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,25 +10,28 @@ import { supabase } from "@/integrations/supabase/client";
 
 const navItems = [
   { path: "/home", icon: Home, label: "Início" },
-  { path: "/agenda", icon: Calendar, label: "Agenda" },
-  { path: "/devocionais", icon: BookOpen, label: "Devocionais" },
-  { path: "/voluntarios", icon: HandHeart, label: "Voluntários" },
+  { path: "/agenda", icon: Calendar, label: "Agenda", routine: "agenda" },
+  { path: "/devocionais", icon: BookOpen, label: "Devocionais", routine: "devocionais" },
+  { path: "/voluntarios", icon: HandHeart, label: "Voluntários", routine: "voluntarios" },
   { path: "/departamentos", icon: Shield, label: "Departamentos", adminOnly: true },
-  { path: "/membros", icon: Users, label: "Membros", adminOnly: true },
-  { path: "/relatorios", icon: BarChart3, label: "Relatórios", managerAccess: true },
-  { path: "/chat", icon: MessageCircle, label: "Chat" },
-  { path: "/arquivos", icon: Archive, label: "Arquivos", adminOnly: true },
+  { path: "/membros", icon: Users, label: "Membros", adminOnly: true, routine: "membros" },
+  { path: "/relatorios", icon: BarChart3, label: "Relatórios", adminOnly: true, routine: "relatorios" },
+  { path: "/chat", icon: MessageCircle, label: "Chat", routine: "chat" },
+  { path: "/arquivos", icon: Archive, label: "Arquivados", adminOnly: true },
+  { path: "/checkin-kids", icon: ShieldCheck, label: "Kids & Segurança", adminOnly: true, routine: "kids" },
+  { path: "/comunicados", icon: Megaphone, label: "Comunicados", routine: "comunicados" },
+  { path: "/gestao-rotinas", icon: ShieldCheck, label: "Gestão de Rotinas", adminOnly: true },
   { path: "/configuracoes", icon: Settings, label: "Configurações", adminOnly: true },
   { path: "/perfil", icon: User, label: "Perfil" },
 ];
 
 const DesktopSidebar = () => {
   const location = useLocation();
-  const { isAdmin, isGerente, signOut, profile, user } = useAuth();
+  const { isAdmin, isGerente, isVisitor, signOut, profile, user, routinePermissions, unreadAnnouncements } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [collapsed, setCollapsed] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(
-    typeof window !== "undefined" && Notification.permission === "granted"
+    typeof window !== "undefined" && "Notification" in window && (window as any).Notification.permission === "granted"
   );
   const [totalUnread, setTotalUnread] = useState(0);
 
@@ -86,14 +89,19 @@ const DesktopSidebar = () => {
         setTotalUnread(directUnread.size + groupUnread);
       } catch (_) { }
     };
+
     check();
-    const interval = setInterval(check, 10000);
+    const interval = setInterval(check, 15000);
     return () => clearInterval(interval);
   }, [user]);
 
   const handleNotificationToggle = async () => {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      alert("Seu navegador não suporta notificações nativas.");
+      return;
+    }
     if (!notificationsEnabled) {
-      const perm = await Notification.requestPermission();
+      const perm = await (window as any).Notification.requestPermission();
       if (perm === "granted") {
         setNotificationsEnabled(true);
       } else {
@@ -144,8 +152,10 @@ const DesktopSidebar = () => {
         {/* Nav */}
         <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
           {navItems.filter(item => {
+            const visitorAllowed = ["/home", "/agenda", "/devocionais", "/perfil"].includes(item.path);
+            if (isVisitor && !visitorAllowed) return false;
             if (item.adminOnly && !isAdmin) return false;
-            if (item.managerAccess && !isAdmin && !isGerente) return false;
+            if (item.routine && !isAdmin && routinePermissions[item.routine] !== true) return false;
             return true;
           }).map(({ path, icon: Icon, label }) => {
             const active = location.pathname === path;
@@ -168,11 +178,21 @@ const DesktopSidebar = () => {
                       {totalUnread > 9 ? "9+" : totalUnread}
                     </span>
                   )}
+                  {path === "/comunicados" && unreadAnnouncements > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-blue-500 text-white text-[9px] font-bold flex items-center justify-center animate-bounce">
+                      {unreadAnnouncements > 9 ? "9+" : unreadAnnouncements}
+                    </span>
+                  )}
                 </div>
                 {!collapsed && <span>{label}</span>}
                 {!collapsed && path === "/chat" && totalUnread > 0 && (
                   <span className="ml-auto h-5 w-5 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center">
                     {totalUnread > 9 ? "9+" : totalUnread}
+                  </span>
+                )}
+                {!collapsed && path === "/comunicados" && unreadAnnouncements > 0 && (
+                  <span className="ml-auto h-5 w-5 rounded-full bg-blue-500 text-white text-[9px] font-bold flex items-center justify-center">
+                    {unreadAnnouncements > 9 ? "9+" : unreadAnnouncements}
                   </span>
                 )}
               </Link>

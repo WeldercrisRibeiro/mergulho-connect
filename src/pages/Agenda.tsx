@@ -28,7 +28,7 @@ const EVENT_TYPE_COLORS: Record<string, string> = {
 };
 
 const Agenda = () => {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isGerente, managedGroupIds } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<string>("all");
@@ -46,7 +46,7 @@ const Agenda = () => {
   const [desc, setDesc] = useState("");
   const [date, setDate] = useState("");
   const [location, setLocation] = useState("");
-  const [isGeneral, setIsGeneral] = useState("true");
+  const [isGeneral, setIsGeneral] = useState(isAdmin ? "true" : "false");
   const [groupId, setGroupId] = useState("");
   const [eventType, setEventType] = useState("simple");
   const [bannerUrl, setBannerUrl] = useState("");
@@ -123,7 +123,9 @@ const Agenda = () => {
   });
 
   const resetForm = () => {
-    setTitle(""); setDesc(""); setDate(""); setLocation(""); setIsGeneral("true"); setGroupId("");
+    setTitle(""); setDesc(""); setDate(""); setLocation(""); 
+    setIsGeneral(isAdmin ? "true" : "false"); 
+    setGroupId("");
     setEventType("simple"); setBannerUrl(""); setSpeakers(""); setPrice(0); setPixKey(""); setPixQrcodeUrl(""); setMapUrl("");
   };
 
@@ -235,7 +237,7 @@ const Agenda = () => {
           <Calendar className="h-6 w-6 text-primary" />
           Agenda
         </h1>
-        {isAdmin && (
+        {(isAdmin || isGerente) && (
           <Button onClick={() => { resetForm(); setCreatingEvent(true); }}>
             <Plus className="h-4 w-4 mr-1" /> Novo Evento
           </Button>
@@ -316,7 +318,7 @@ const Agenda = () => {
                       </div>
                     )}
                   </div>
-                  {isAdmin && (
+                  {(isAdmin || (isGerente && event.group_id && useAuth().managedGroupIds.includes(event.group_id))) && (
                     <div className="flex items-center gap-1">
                       <Button variant="ghost" size="icon" onClick={() => handleEdit(event)}>
                         <Edit2 className="h-4 w-4 text-primary" />
@@ -338,7 +340,7 @@ const Agenda = () => {
                     <div className="flex items-center gap-1 bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 px-2 py-0.5 rounded-full font-semibold border border-rose-100 dark:border-rose-900/50">
                       <X className="h-3 w-3" /> {declined}
                     </div>
-                    {isAdmin && (
+                    {(isAdmin || (isGerente && event.group_id && useAuth().managedGroupIds.includes(event.group_id))) && (
                       <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setRsvpViewEvent(event)}>
                         <Users className="h-3 w-3 mr-1" /> Lista
                       </Button>
@@ -477,21 +479,38 @@ const Agenda = () => {
               </div>
               <div className="space-y-2">
                 <Label>Visibilidade</Label>
-                <Select value={isGeneral} onValueChange={setIsGeneral}>
+                <Select 
+                  value={isGeneral} 
+                  onValueChange={(v) => {
+                    setIsGeneral(v);
+                    if (v === "true") setGroupId("");
+                  }} 
+                  disabled={!isAdmin}
+                >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="true">Evento Geral</SelectItem>
+                    {isAdmin && <SelectItem value="true">Evento Geral</SelectItem>}
                     <SelectItem value="false">Evento de Grupo</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+              
               {isGeneral === "false" && (
                 <div className="space-y-2 col-span-full">
-                  <Label>Grupo</Label>
-                  <Select value={groupId} onValueChange={setGroupId}>
-                    <SelectTrigger><SelectValue placeholder="Selecione o grupo" /></SelectTrigger>
+                  <Label>Selecione o Grupo</Label>
+                  <Select 
+                    value={groupId || ""} 
+                    onValueChange={setGroupId}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Escolha o departamento" />
+                    </SelectTrigger>
                     <SelectContent>
-                      {groups?.map((g: any) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
+                      {groups?.filter(g => isAdmin || userGroups?.includes(g.id)).map((group) => (
+                        <SelectItem key={group.id} value={group.id}>
+                          {group.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

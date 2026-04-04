@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { Users, Search, Phone, Edit2, Trash2, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 const Members = () => {
   const [search, setSearch] = useState("");
@@ -27,7 +28,7 @@ const Members = () => {
   const [editUsername, setEditUsername] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [editRole, setEditRole] = useState("membro");
-  const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
+  const [selectedGroups, setSelectedGroups] = useState<{ id: string; role: string }[]>([]);
   const [deletingMember, setDeletingMember] = useState<any>(null);
 
   if (!isAdmin) {
@@ -60,7 +61,7 @@ const Members = () => {
           .filter(Boolean),
         group_ids: (memberGroupsData || [])
           .filter((mg) => mg.user_id === p.user_id)
-          .map((mg) => mg.group_id),
+          .map((mg) => ({ id: mg.group_id, role: mg.role || "member" })),
       }));
     },
   });
@@ -103,18 +104,23 @@ const Members = () => {
 
       if (profErr) throw profErr;
 
-      // 3. Atualiza Role
-      const userRole = editingMember.roles?.[0]?.role;
-      if (userRole) {
-        await supabase.from("user_roles").update({ role: editRole as any }).eq("user_id", editingMember.user_id);
-      } else {
-        await supabase.from("user_roles").insert({ user_id: editingMember.user_id, role: editRole as any });
-      }
+      // 3. Atualiza Role de forma robusta (Deleta anterior e insere nova)
+      await supabase.from("user_roles").delete().eq("user_id", editingMember.user_id);
+      const { error: roleErr } = await supabase.from("user_roles").insert({ 
+        user_id: editingMember.user_id, 
+        role: editRole as any 
+      });
+      
+      if (roleErr) throw roleErr;
 
-      // 4. Atualiza departamentos
+      // 4. Atualiza departamentos com cargos
       await supabase.from("member_groups").delete().eq("user_id", editingMember.user_id);
       if (selectedGroups.length > 0) {
-        const inserts = selectedGroups.map(gid => ({ user_id: editingMember.user_id, group_id: gid }));
+        const inserts = selectedGroups.map(g => ({ 
+          user_id: editingMember.user_id, 
+          group_id: g.id,
+          role: g.role || "member"
+        }));
         await supabase.from("member_groups").insert(inserts as any);
       }
     },
@@ -147,11 +153,14 @@ const Members = () => {
       } as any).eq("user_id", newUserId);
       if (profileError) throw profileError;
 
-      if (editRole === "admin") {
-        await supabase.from("user_roles").insert({ user_id: newUserId, role: "admin" } as any);
-      }
+      // 3. Salva a role selecionada (Membro, Gerente ou Admin)
+      await supabase.from("user_roles").insert({ user_id: newUserId, role: editRole as any } as any);
       if (selectedGroups.length > 0) {
-        await supabase.from("member_groups").insert(selectedGroups.map(gid => ({ user_id: newUserId, group_id: gid })) as any);
+        await supabase.from("member_groups").insert(selectedGroups.map(g => ({ 
+          user_id: newUserId, 
+          group_id: g.id,
+          role: g.role || "member" 
+        })) as any);
       }
     },
     onSuccess: () => {
@@ -184,18 +193,52 @@ const Members = () => {
   });
 
   const GroupCheckboxes = () => (
-    <div className="grid grid-cols-2 gap-2 mt-2">
-      {allGroups?.map(g => (
-        <div key={g.id} className="flex items-center space-x-2">
-          <Checkbox id={`mg-${g.id}`} checked={selectedGroups.includes(g.id)}
-            onCheckedChange={(checked) => {
-              if (checked) setSelectedGroups([...selectedGroups, g.id]);
-              else setSelectedGroups(selectedGroups.filter(id => id !== g.id));
-            }}
-          />
-          <label htmlFor={`mg-${g.id}`} className="text-sm font-medium leading-none">{g.name}</label>
-        </div>
-      ))}
+    <div className="space-y-2 mt-2">
+      {allGroups?.map(g => {
+        const isSelected = selectedGroups.some(sg => sg.id === g.id);
+        const currentGroup = selectedGroups.find(sg => sg.id === g.id);
+        
+        return (
+          <div key={g.id} className="flex items-center justify-between p-2 rounded-lg border bg-muted/30">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id={`mg-${g.id}`} 
+                checked={isSelected}
+                onCheckedChange={(checked) => {
+                  if (checked) setSelectedGroups([...selectedGroups, { id: g.id, role: "member" }]);
+                  else setSelectedGroups(selectedGroups.filter(sg => sg.id !== g.id));
+                }}
+              />
+              <label htmlFor={`mg-${g.id}`} className="text-sm font-medium">{g.name}</label>
+            </div>
+            
+            {isSelected && (
+              <div className="flex bg-muted rounded-md p-0.5 border">
+                <button
+                  type="button"
+                  onClick={() => setSelectedGroups(selectedGroups.map(sg => sg.id === g.id ? { ...sg, role: "member" } : sg))}
+                  className={cn(
+                    "px-2 py-0.5 text-[10px] rounded-sm transition-all",
+                    currentGroup?.role === "member" ? "bg-white shadow-sm font-bold" : "text-muted-foreground"
+                  )}
+                >
+                  Membro
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedGroups(selectedGroups.map(sg => sg.id === g.id ? { ...sg, role: "manager" } : sg))}
+                  className={cn(
+                    "px-2 py-0.5 text-[10px] rounded-sm transition-all",
+                    currentGroup?.role === "manager" ? "bg-primary text-white shadow-sm font-bold" : "text-muted-foreground"
+                  )}
+                >
+                  Líder
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 
@@ -261,9 +304,9 @@ const Members = () => {
                   {member.roles?.some((r: any) => r.role === "admin") && (
                     <Badge variant="default" className="uppercase text-[10px]">Admin</Badge>
                   )}
-                  {member.roles?.some((r: any) => r.role === "moderador") && (
-                    <Badge variant="secondary" className="bg-orange-100 text-orange-700 hover:bg-orange-100 uppercase text-[10px]">
-                      Moderador
+                  {member.roles?.some((r: any) => r.role === "gerente") && (
+                    <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 uppercase text-[10px]">
+                      Gerente
                     </Badge>
                   )}
                   {(!member.roles || member.roles.length === 0 || member.roles.every((r: any) => r.role === "membro")) && (
@@ -333,6 +376,8 @@ const Members = () => {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="membro">Membro</SelectItem>
+                    <SelectItem value="gerente">Gerente</SelectItem>
+                    <SelectItem value="moderador">Moderador</SelectItem>
                     <SelectItem value="admin">Administrador</SelectItem>
                   </SelectContent>
                 </Select>
