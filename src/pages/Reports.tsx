@@ -12,8 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { BarChart3, Plus, Trash2, Users, Baby, DollarSign, Heart, Edit2 } from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { safeFormat } from "@/lib/dateUtils";
 import { useToast } from "@/hooks/use-toast";
 
 const Reports = () => {
@@ -266,7 +265,7 @@ const Reports = () => {
                   <div className="flex items-center gap-2 flex-wrap">
                     <Badge variant="secondary" className="text-xs capitalize">{r.report_type}</Badge>
                     <span className="text-sm font-semibold">
-                      {format(new Date(r.report_date + "T12:00:00"), "dd/MM/yyyy", { locale: ptBR })}
+                      {safeFormat(r.report_date + "T12:00:00", "dd/MM/yyyy")}
                     </span>
                     {r.groups?.name && <Badge variant="outline" className="text-[10px]">{r.groups.name}</Badge>}
                   </div>

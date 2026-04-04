@@ -5,8 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Heart, X, BookOpen } from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { safeFormat } from "@/lib/dateUtils";
 
 const SESSION_KEY = "devotional_shown";
 
@@ -112,8 +111,7 @@ const DevotionalWelcome = () => {
         <div className="p-6">
           <h2 className="text-xl font-bold mb-1">{devotional.title}</h2>
           <p className="text-xs text-muted-foreground mb-4">
-            {devotional.publish_date &&
-              format(new Date(devotional.publish_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+            {safeFormat(devotional.publish_date, "dd 'de' MMMM 'de' yyyy")}
           </p>
 
           <div className="max-h-52 overflow-y-auto pr-1 mb-4">

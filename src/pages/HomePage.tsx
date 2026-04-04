@@ -5,10 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, BookOpen, Users, MessageCircle, ArrowRight, Star, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { useTheme } from "@/components/ThemeProvider";
 import { cn } from "@/lib/utils";
+import { safeFormatMonth, safeFormatDay, safeFormatTime } from "@/lib/dateUtils";
 
 const HomePage = () => {
   const { profile } = useAuth();
@@ -116,10 +115,10 @@ const HomePage = () => {
                     <CardContent className="p-0 flex items-stretch">
                       <div className="bg-primary/5 dark:bg-primary/10 w-16 md:w-20 flex flex-col items-center justify-center border-r shrink-0 group-hover:bg-primary/10 transition-colors">
                         <span className="text-xs font-bold text-muted-foreground">
-                          {format(new Date(event.event_date), "MMM", { locale: ptBR }).toUpperCase()}
+                          {safeFormatMonth(event.event_date)}
                         </span>
                         <span className="text-2xl font-black text-primary">
-                          {format(new Date(event.event_date), "dd")}
+                          {safeFormatDay(event.event_date)}
                         </span>
                       </div>
                       <div className="p-4 flex-1 flex flex-col justify-center">
@@ -127,7 +126,7 @@ const HomePage = () => {
                         <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <ArrowRight className="h-3 w-3" />
-                            {format(new Date(event.event_date), "HH:mm", { locale: ptBR })}
+                            {safeFormatTime(event.event_date)}
                           </span>
                           {event.location && <span>• {event.location}</span>}
                         </div>

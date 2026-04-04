@@ -11,8 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { safeFormat } from "@/lib/dateUtils";
 import { Calendar, MapPin, Check, X, Share2, Plus, Edit2, Trash2, Users, Ticket, Copy, QrCode, Mic2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -220,7 +219,7 @@ const Agenda = () => {
   });
 
   const shareWhatsApp = (event: any) => {
-    const text = `🌊 *CC Mergulho - ${EVENT_TYPE_LABELS[event.event_type] || "Evento"}*\n\n📌 ${event.title}\n📅 ${format(new Date(event.event_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}\n📍 ${event.location || "A definir"}${event.price > 0 ? `\n💰 R$ ${event.price.toFixed(2)}` : ""}\n\n${event.description || ""}`;
+    const text = `🌊 *CC Mergulho - ${EVENT_TYPE_LABELS[event.event_type] || "Evento"}*\n\n📌 ${event.title}\n📅 ${safeFormat(event.event_date, "dd/MM/yyyy 'às' HH:mm")}\n📍 ${event.location || "A definir"}${event.price > 0 ? `\n💰 R$ ${event.price.toFixed(2)}` : ""}\n\n${event.description || ""}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
   };
 
@@ -297,7 +296,7 @@ const Agenda = () => {
                     <CardTitle className="text-lg">{event.title}</CardTitle>
                     <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                       <Calendar className="h-3.5 w-3.5" />
-                      {event.event_date && format(new Date(event.event_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      {safeFormat(event.event_date, "dd/MM/yyyy 'às' HH:mm")}
                     </div>
                     {event.location && (
                       <div className="flex items-center gap-2 mt-0.5 text-sm text-muted-foreground">

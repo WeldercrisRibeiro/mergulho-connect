@@ -40,25 +40,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        setTimeout(() => {
-          fetchProfile(session.user.id);
-          checkRoles(session.user.id);
+        setTimeout(async () => {
+          await Promise.all([
+            fetchProfile(session.user.id),
+            checkRoles(session.user.id)
+          ]);
+          setLoading(false);
         }, 0);
       } else {
         setProfile(null);
         setIsAdmin(false);
         setIsGerente(false);
         setManagedGroupIds([]);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id);
-        checkRoles(session.user.id);
+        await Promise.all([
+          fetchProfile(session.user.id),
+          checkRoles(session.user.id)
+        ]);
       }
       setLoading(false);
     });
@@ -67,40 +72,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("full_name, avatar_url, whatsapp_phone")
-      .eq("user_id", userId)
-      .single();
-    if (data) setProfile(data);
+    try {
+      const { data, error } = await (supabase as any)
+        .from("profiles")
+        .select("full_name, avatar_url, whatsapp_phone")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (error && error.code !== "PGRST116") {
+        console.error("Error fetching profile:", error);
+      }
+      if (data) setProfile(data);
+    } catch (err) {
+      console.error("Profile fetch exception:", err);
+    }
   };
 
   const checkRoles = async (userId: string) => {
-    // Check Admin
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId);
-    
-    const admin = roles?.some(r => r.role === "admin") || false;
-    const moderador = roles?.some(r => r.role === "moderador") || false;
-    
-    setIsAdmin(admin);
+    try {
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
 
-    // If not admin, check if manager of any group
-    if (!admin) {
-      const { data: managed } = await supabase
-        .from("member_groups")
-        .select("group_id")
-        .eq("user_id", userId)
-        .eq("role" as any, "manager"); // Use cast because column might not be in types yet
-      
-      const managedIds = managed?.map(m => m.group_id) || [];
-      setManagedGroupIds(managedIds);
-      setIsGerente(moderador || managedIds.length > 0);
-    } else {
-      setIsGerente(true); // Admin is also a gerente of all
-      setManagedGroupIds([]);
+      const admin = roles?.some((r: any) => r.role === "admin") || false;
+      const moderador = roles?.some((r: any) => r.role === "moderador") || false;
+
+      setIsAdmin(admin);
+
+      if (!admin) {
+        const { data: managed } = await (supabase as any)
+          .from("member_groups")
+          .select("group_id")
+          .eq("user_id", userId)
+          .eq("role" as any, "manager");
+
+        const managedIds = managed?.map((m: any) => m.group_id) || [];
+        setManagedGroupIds(managedIds);
+        setIsGerente(moderador || managedIds.length > 0);
+      } else {
+        setIsGerente(true);
+        setManagedGroupIds([]);
+      }
+    } catch (err) {
+      console.error("Error checking roles:", err);
     }
   };
 

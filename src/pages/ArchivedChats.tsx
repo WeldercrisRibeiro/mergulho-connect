@@ -4,8 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Archive, MessageSquare, Clock, User, Users } from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { safeFormat } from "@/lib/dateUtils";
 
 const ArchivedChats = () => {
   const { isAdmin } = useAuth();
@@ -94,7 +93,7 @@ const ArchivedChats = () => {
               <CardContent className="pt-2 space-y-3">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Clock className="h-3.5 w-3.5" />
-                  <span>Último arquivamento: {format(new Date(stat.lastArchiveAt), "PPp", { locale: ptBR })}</span>
+                  <span>Último arquivamento: {safeFormat(stat.lastArchiveAt, "PPp")}</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <MessageSquare className="h-3.5 w-3.5" />

@@ -11,8 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MessageCircle, Send, Users, ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format, isToday, isYesterday } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { isToday, isYesterday } from "date-fns";
+import { safeFormat, safeFormatTime } from "@/lib/dateUtils";
 
 type ChatView =
   | { type: "list" }
@@ -484,7 +484,7 @@ const Chat = () => {
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
   const renderDateSeparator = (date: Date) => {
-    let label = format(date, "d 'de' MMMM", { locale: ptBR });
+    let label = safeFormat(date, "d 'de' MMMM");
     if (isToday(date)) label = "Hoje";
     else if (isYesterday(date)) label = "Ontem";
     return (
@@ -720,7 +720,7 @@ const Chat = () => {
           const prevMsg = index > 0 ? messages[index - 1] : null;
           const showDateSeparator =
             !prevMsg ||
-            format(new Date(prevMsg.created_at), "yyyy-MM-dd") !== format(msgDate, "yyyy-MM-dd");
+            safeFormat(prevMsg.created_at, "yyyy-MM-dd") !== safeFormat(msg.created_at, "yyyy-MM-dd");
 
           return (
             <div key={msg.id} className="space-y-3">
@@ -747,7 +747,7 @@ const Chat = () => {
                       isMe ? "text-primary-foreground/60" : "text-muted-foreground/60"
                     )}
                   >
-                    {format(msgDate, "HH:mm")}
+                    {safeFormatTime(msg.created_at)}
                   </p>
                 </div>
               </div>
