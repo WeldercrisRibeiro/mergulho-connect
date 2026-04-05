@@ -701,6 +701,54 @@ export type Database = {
         }
         Relationships: []
       }
+      volunteer_schedules: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          group_id: string | null
+          id: string
+          role_function: string
+          schedule_date: string
+          updated_at: string
+          volunteer_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          group_id?: string | null
+          id?: string
+          role_function: string
+          schedule_date: string
+          updated_at?: string
+          volunteer_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          group_id?: string | null
+          id?: string
+          role_function?: string
+          schedule_date?: string
+          updated_at?: string
+          volunteer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "volunteer_schedules_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "volunteer_schedules_volunteer_id_fkey"
+            columns: ["volunteer_id"]
+            isOneToOne: false
+            referencedRelation: "volunteers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       volunteers: {
         Row: {
           availability: string | null
@@ -710,6 +758,7 @@ export type Database = {
           interest_area: string | null
           interest_areas: string[] | null
           phone: string | null
+          status: string
           user_id: string
         }
         Insert: {
@@ -720,6 +769,7 @@ export type Database = {
           interest_area?: string | null
           interest_areas?: string[] | null
           phone?: string | null
+          status?: string
           user_id: string
         }
         Update: {
@@ -730,6 +780,7 @@ export type Database = {
           interest_area?: string | null
           interest_areas?: string[] | null
           phone?: string | null
+          status?: string
           user_id?: string
         }
         Relationships: []
