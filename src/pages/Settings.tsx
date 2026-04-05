@@ -279,7 +279,7 @@ const SettingsPage = () => {
       </h1>
 
       <Tabs defaultValue="site">
-        <TabsList className="grid grid-cols-4 w-full max-w-2xl bg-muted/50 p-1 rounded-2xl">
+        <TabsList className="grid grid-cols-5 w-full max-w-2xl bg-muted/50 p-1 rounded-2xl">
           <TabsTrigger value="site" className="rounded-xl flex items-center gap-2">
             <ImagePlus className="h-4 w-4" /> Layout
           </TabsTrigger>
@@ -296,6 +296,9 @@ const SettingsPage = () => {
                 {contactMessages.length}
               </span>
             )}
+          </TabsTrigger>
+          <TabsTrigger value="arquivados" className="rounded-xl flex items-center gap-2">
+            <Archive className="h-4 w-4" /> Arquivados
           </TabsTrigger>
         </TabsList>
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,7 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { BookOpen, Plus, Edit2, Trash2, Heart, Users } from "lucide-react";
+import { BookOpen, Plus, Edit2, Trash2, Heart, Users, Upload } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -345,7 +346,48 @@ const Devotionals = () => {
   );
 };
 
-const DevForm = ({ title, setTitle, content, setContent, status, setStatus, publishDate, setPublishDate, expirationDate, setExpirationDate, isActive, setIsActive, mediaUrl, setMediaUrl }: any) => (
+const DevForm = ({ title, setTitle, content, setContent, status, setStatus, publishDate, setPublishDate, expirationDate, setExpirationDate, isActive, setIsActive, mediaUrl, setMediaUrl }: any) => {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const fileName = `img_${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("devotionals").upload(fileName, file, { upsert: true });
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from("devotionals").getPublicUrl(fileName);
+      setMediaUrl(urlData.publicUrl);
+    } catch (err: any) {
+      console.error("Upload error:", err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const fileName = `video_${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("devotionals").upload(fileName, file, { upsert: true });
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from("devotionals").getPublicUrl(fileName);
+      setMediaUrl(urlData.publicUrl);
+    } catch (err: any) {
+      console.error("Upload error:", err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
   <div className="space-y-4 py-4">
     <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-dashed">
       <div className="space-y-0.5">
@@ -357,11 +399,11 @@ const DevForm = ({ title, setTitle, content, setContent, status, setStatus, publ
 
     <div className="space-y-2">
       <Label>Título</Label>
-      <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Título do devocional" />
+      <Input value={title} onChange={(e: any) => setTitle(e.target.value)} placeholder="Título do devocional" />
     </div>
     <div className="space-y-2">
       <Label>Conteúdo</Label>
-      <Textarea value={content} onChange={e => setContent(e.target.value)} placeholder="Conteúdo..." rows={7} />
+      <Textarea value={content} onChange={(e: any) => setContent(e.target.value)} placeholder="Conteúdo..." rows={7} />
     </div>
     <div className="grid grid-cols-2 gap-4">
       <div className="space-y-2">
@@ -378,7 +420,7 @@ const DevForm = ({ title, setTitle, content, setContent, status, setStatus, publ
       {(status === "scheduled" || status === "published") && (
         <div className="space-y-2">
           <Label>Data de Publicação</Label>
-          <Input type="datetime-local" value={publishDate} onChange={e => setPublishDate(e.target.value)} />
+          <Input type="datetime-local" value={publishDate} onChange={(e: any) => setPublishDate(e.target.value)} />
         </div>
       )}
     </div>
@@ -387,14 +429,35 @@ const DevForm = ({ title, setTitle, content, setContent, status, setStatus, publ
         Data de Expiração
         <CalendarIcon className="h-3 w-3 text-muted-foreground" />
       </Label>
-      <Input type="datetime-local" value={expirationDate} onChange={e => setExpirationDate(e.target.value)} />
+      <Input type="datetime-local" value={expirationDate} onChange={(e: any) => setExpirationDate(e.target.value)} />
       <p className="text-[10px] text-muted-foreground">Opcional. O devocional deixará de aparecer para membros após esta data.</p>
     </div>
     <div className="space-y-2">
-      <Label>URL de Mídia (YouTube / Imagem)</Label>
-      <Input value={mediaUrl} onChange={e => setMediaUrl(e.target.value)} placeholder="Opcional" />
+      <Label>Mídia (Imagem, Vídeo ou URL do YouTube)</Label>
+      <div className="flex gap-2">
+        <Input value={mediaUrl} onChange={(e: any) => setMediaUrl(e.target.value)} placeholder="Cole uma URL ou faça upload" className="flex-1" />
+        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+        <input ref={videoRef} type="file" accept="video/*" className="hidden" onChange={handleVideoUpload} />
+        <Button type="button" variant="secondary" size="sm" onClick={() => fileRef.current?.click()} disabled={uploading}>
+          📷
+        </Button>
+        <Button type="button" variant="secondary" size="sm" onClick={() => videoRef.current?.click()} disabled={uploading}>
+          🎥
+        </Button>
+      </div>
+      {uploading && <p className="text-xs text-muted-foreground animate-pulse">Enviando arquivo...</p>}
+      {mediaUrl && !mediaUrl.includes("youtube") && !mediaUrl.includes("youtu.be") && (
+        <div className="mt-2 rounded-lg overflow-hidden border max-h-40">
+          {mediaUrl.match(/\.(mp4|webm|mov)/) ? (
+            <video src={mediaUrl} controls className="w-full max-h-40" />
+          ) : (
+            <img src={mediaUrl} alt="Preview" className="w-full max-h-40 object-cover" />
+          )}
+        </div>
+      )}
     </div>
   </div>
-);
+  );
+};
 
 export default Devotionals;
