@@ -44,8 +44,6 @@ const SettingsPage = () => {
   const [tempVideoUrl, setTempVideoUrl] = useState("");
   const [tempIsVideoUpload, setTempIsVideoUpload] = useState(false);
 
-  if (!isAdmin) return <Navigate to="/home" replace />;
-
   const { data: photos } = useQuery({
     queryKey: ["landing-photos"],
     queryFn: async () => {
@@ -93,6 +91,8 @@ const SettingsPage = () => {
       setTempIsVideoUpload(siteSettings.about_us_video_is_upload === "true");
     }
   }, [siteSettings]);
+
+  if (!isAdmin) return <Navigate to="/home" replace />;
 
   const saveSettingsMutation = useMutation({
     mutationFn: async () => {
