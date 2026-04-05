@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Navigate } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -506,6 +506,20 @@ const SettingsPage = () => {
               </div>
             )}
           </div>
+        </TabsContent>
+
+        <TabsContent value="arquivados" className="pt-6">
+          <Card className="border-0 shadow-xl rounded-3xl overflow-hidden">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Archive className="h-5 w-5 text-primary" /> Conversas Arquivadas
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">Gerencie suas conversas arquivadas do chat.</p>
+            </CardHeader>
+            <CardContent>
+              <ArchivedChatsEmbed />
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
