@@ -137,12 +137,12 @@ const Agenda = () => {
       const ext = file.name.split(".").pop();
       const fileName = `event-${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage
-        .from("landing-photos")
+        .from("event-banners")
         .upload(fileName, file, { upsert: true });
       
       if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage.from("landing-photos").getPublicUrl(fileName);
+      const { data: urlData } = supabase.storage.from("event-banners").getPublicUrl(fileName);
       setBannerUrl(urlData.publicUrl);
       toast({ title: "Banner carregado com sucesso!" });
     } catch (err: any) {
