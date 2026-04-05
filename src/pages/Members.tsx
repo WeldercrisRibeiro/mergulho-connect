@@ -50,7 +50,7 @@ const Members = () => {
       const { data: roles } = await supabase.from("user_roles").select("user_id, role");
       const { data: memberGroupsData } = await supabase
         .from("member_groups")
-        .select("user_id, group_id, groups(name)");
+        .select("user_id, group_id, role, groups(name)");
 
       return (profiles || []).map((p) => ({
         ...p,
@@ -61,7 +61,7 @@ const Members = () => {
           .filter(Boolean),
         group_ids: (memberGroupsData || [])
           .filter((mg) => mg.user_id === p.user_id)
-          .map((mg) => ({ id: mg.group_id, role: mg.role || "member" })),
+          .map((mg) => ({ id: mg.group_id, role: (mg as any).role || "member" })),
       }));
     },
   });

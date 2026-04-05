@@ -371,9 +371,9 @@ const Reports = () => {
             </div>
 
             <div className="font-semibold uppercase tracking-tight text-xs text-muted-foreground border-b pb-2 mt-4">Público</div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label>Total Geral</Label>
+                <Label>Total de Presentes</Label>
                 <Input type="number" min={0} value={totalAttendees} onChange={e => setTotalAttendees(Number(e.target.value))} />
               </div>
               <div className="space-y-2">
@@ -383,10 +383,6 @@ const Reports = () => {
               <div className="space-y-2">
                 <Label>Jovens (opcional)</Label>
                 <Input type="number" min={0} value={youthCount} onChange={e => setYouthCount(Number(e.target.value))} />
-              </div>
-              <div className="space-y-2">
-                <Label>Público Geral</Label>
-                <Input type="number" min={0} value={publicCount} onChange={e => setPublicCount(Number(e.target.value))} />
               </div>
               <div className="space-y-2">
                 <Label>Monitores / Tios</Label>

@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      announcements: {
+        Row: {
+          content: string
+          created_at: string | null
+          created_by: string | null
+          group_id: string | null
+          id: string
+          priority: string | null
+          target_group_id: string | null
+          target_user_id: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          created_by?: string | null
+          group_id?: string | null
+          id?: string
+          priority?: string | null
+          target_group_id?: string | null
+          target_user_id?: string | null
+          title: string
+          type: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          created_by?: string | null
+          group_id?: string | null
+          id?: string
+          priority?: string | null
+          target_group_id?: string | null
+          target_user_id?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcements_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "announcements_target_group_id_fkey"
+            columns: ["target_group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_messages: {
         Row: {
           created_at: string | null
@@ -78,11 +132,13 @@ export type Database = {
           expiration_date: string | null
           id: string
           is_active: boolean
+          is_video_upload: boolean | null
           media_url: string | null
           publish_date: string
           status: string
           title: string
           updated_at: string
+          video_url: string | null
         }
         Insert: {
           author_id?: string | null
@@ -91,11 +147,13 @@ export type Database = {
           expiration_date?: string | null
           id?: string
           is_active?: boolean
+          is_video_upload?: boolean | null
           media_url?: string | null
           publish_date?: string
           status?: string
           title: string
           updated_at?: string
+          video_url?: string | null
         }
         Update: {
           author_id?: string | null
@@ -104,11 +162,13 @@ export type Database = {
           expiration_date?: string | null
           id?: string
           is_active?: boolean
+          is_video_upload?: boolean | null
           media_url?: string | null
           publish_date?: string
           status?: string
           title?: string
           updated_at?: string
+          video_url?: string | null
         }
         Relationships: []
       }
@@ -150,45 +210,57 @@ export type Database = {
           created_at: string
           created_by: string | null
           event_id: string | null
+          group_id: string | null
           id: string
           monitors_count: number | null
           notes: string | null
+          public_count: number | null
           report_date: string
           report_type: string
           tithers: Json | null
+          tithes_amount: number | null
           total_attendees: number | null
           total_offerings: number | null
           updated_at: string
+          youth_count: number | null
         }
         Insert: {
           children_count?: number | null
           created_at?: string
           created_by?: string | null
           event_id?: string | null
+          group_id?: string | null
           id?: string
           monitors_count?: number | null
           notes?: string | null
+          public_count?: number | null
           report_date?: string
           report_type?: string
           tithers?: Json | null
+          tithes_amount?: number | null
           total_attendees?: number | null
           total_offerings?: number | null
           updated_at?: string
+          youth_count?: number | null
         }
         Update: {
           children_count?: number | null
           created_at?: string
           created_by?: string | null
           event_id?: string | null
+          group_id?: string | null
           id?: string
           monitors_count?: number | null
           notes?: string | null
+          public_count?: number | null
           report_date?: string
           report_type?: string
           tithers?: Json | null
+          tithes_amount?: number | null
           total_attendees?: number | null
           total_offerings?: number | null
           updated_at?: string
+          youth_count?: number | null
         }
         Relationships: [
           {
@@ -196,6 +268,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_reports_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
             referencedColumns: ["id"]
           },
         ]
@@ -300,6 +379,38 @@ export type Database = {
           },
         ]
       }
+      group_routines: {
+        Row: {
+          group_id: string | null
+          id: string
+          is_enabled: boolean | null
+          routine_key: string
+          updated_at: string | null
+        }
+        Insert: {
+          group_id?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          routine_key: string
+          updated_at?: string | null
+        }
+        Update: {
+          group_id?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          routine_key?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_routines_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       groups: {
         Row: {
           created_at: string
@@ -359,6 +470,56 @@ export type Database = {
           },
         ]
       }
+      kids_checkins: {
+        Row: {
+          call_requested: boolean | null
+          category: string | null
+          child_name: string
+          created_at: string | null
+          event_id: string | null
+          guardian_id: string | null
+          id: string
+          items_description: string | null
+          status: string | null
+          updated_at: string | null
+          validation_token: string
+        }
+        Insert: {
+          call_requested?: boolean | null
+          category?: string | null
+          child_name: string
+          created_at?: string | null
+          event_id?: string | null
+          guardian_id?: string | null
+          id?: string
+          items_description?: string | null
+          status?: string | null
+          updated_at?: string | null
+          validation_token: string
+        }
+        Update: {
+          call_requested?: boolean | null
+          category?: string | null
+          child_name?: string
+          created_at?: string | null
+          event_id?: string | null
+          guardian_id?: string | null
+          id?: string
+          items_description?: string | null
+          status?: string | null
+          updated_at?: string | null
+          validation_token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kids_checkins_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       landing_photos: {
         Row: {
           caption: string | null
@@ -409,18 +570,21 @@ export type Database = {
           group_id: string
           id: string
           joined_at: string
+          role: string | null
           user_id: string
         }
         Insert: {
           group_id: string
           id?: string
           joined_at?: string
+          role?: string | null
           user_id: string
         }
         Update: {
           group_id?: string
           id?: string
           joined_at?: string
+          role?: string | null
           user_id?: string
         }
         Relationships: [
@@ -537,6 +701,54 @@ export type Database = {
         }
         Relationships: []
       }
+      volunteer_schedules: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          group_id: string | null
+          id: string
+          role_function: string
+          schedule_date: string
+          updated_at: string
+          volunteer_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          group_id?: string | null
+          id?: string
+          role_function: string
+          schedule_date: string
+          updated_at?: string
+          volunteer_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          group_id?: string | null
+          id?: string
+          role_function?: string
+          schedule_date?: string
+          updated_at?: string
+          volunteer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "volunteer_schedules_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "volunteer_schedules_volunteer_id_fkey"
+            columns: ["volunteer_id"]
+            isOneToOne: false
+            referencedRelation: "volunteers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       volunteers: {
         Row: {
           availability: string | null
@@ -544,7 +756,9 @@ export type Database = {
           full_name: string
           id: string
           interest_area: string | null
+          interest_areas: string[] | null
           phone: string | null
+          status: string
           user_id: string
         }
         Insert: {
@@ -553,7 +767,9 @@ export type Database = {
           full_name: string
           id?: string
           interest_area?: string | null
+          interest_areas?: string[] | null
           phone?: string | null
+          status?: string
           user_id: string
         }
         Update: {
@@ -562,7 +778,9 @@ export type Database = {
           full_name?: string
           id?: string
           interest_area?: string | null
+          interest_areas?: string[] | null
           phone?: string | null
+          status?: string
           user_id?: string
         }
         Relationships: []
@@ -585,16 +803,27 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: undefined
       }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
+      has_role:
+        | {
+            Args: {
+              _role: Database["public"]["Enums"]["app_role"]
+              _user_id: string
+            }
+            Returns: boolean
+          }
+        | {
+            Args: {
+              _role: Database["public"]["Enums"]["app_role"]
+              _user_id: string
+            }
+            Returns: boolean
+          }
+        | { Args: { role_name: string; user_id: string }; Returns: boolean }
+        | { Args: { role_name: string; user_id: string }; Returns: boolean }
+      is_admin_master: { Args: never; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "moderador" | "membro"
+      app_role: "admin" | "moderador" | "membro" | "visitante" | "gerente"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -722,7 +951,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderador", "membro"],
+      app_role: ["admin", "moderador", "membro", "visitante", "gerente"],
     },
   },
 } as const
