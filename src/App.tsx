@@ -26,6 +26,7 @@ import KidsCheckin from "./pages/KidsCheckin";
 import AdminNotices from "./pages/AdminNotices";
 import GroupPermissions from "./pages/GroupPermissions";
 import NotFound from "./pages/NotFound";
+import InstallBanner from "./components/InstallBanner";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +67,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
+            <InstallBanner />
             <NotificationManager />
             <Routes>
               <Route path="/" element={<Index />} />

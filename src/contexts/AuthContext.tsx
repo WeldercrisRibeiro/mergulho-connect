@@ -219,6 +219,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [user]);
 
+  const subscribeToPush = async (userId: string) => {
+    try {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+
+      const registration = await navigator.serviceWorker.ready;
+      
+      // Public VAPID Key (Replace with your own generated key for production)
+      const vapidPublicKey = 'BDRS6oE6-pP3oT1-L9E-f_Q-z9jQ-v7_X_M8vX_8v_Y'; 
+      
+      let subscription = await registration.pushManager.getSubscription();
+      
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: vapidPublicKey
+        });
+      }
+
+      if (subscription) {
+        await (supabase as any).from('user_push_subscriptions').upsert({
+          user_id: userId,
+          subscription: subscription.toJSON(),
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' });
+        console.log('Push subscription saved!');
+      }
+    } catch (err) {
+      console.warn('Push subscription failed:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (user && !loading) {
+      subscribeToPush(user.id);
+    }
+  }, [user, loading]);
+
   const signOut = async () => {
     await supabase.auth.signOut();
   };
