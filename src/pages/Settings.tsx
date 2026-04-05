@@ -514,10 +514,12 @@ const SettingsPage = () => {
               <CardTitle className="flex items-center gap-2">
                 <Archive className="h-5 w-5 text-primary" /> Conversas Arquivadas
               </CardTitle>
-              <p className="text-sm text-muted-foreground">Gerencie suas conversas arquivadas do chat.</p>
+              <p className="text-sm text-muted-foreground">Acesse suas conversas arquivadas do chat.</p>
             </CardHeader>
-            <CardContent>
-              <ArchivedChatsEmbed />
+            <CardContent className="text-center py-8">
+              <Link to="/arquivos" className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-colors">
+                <Archive className="h-4 w-4" /> Abrir Conversas Arquivadas
+              </Link>
             </CardContent>
           </Card>
         </TabsContent>
