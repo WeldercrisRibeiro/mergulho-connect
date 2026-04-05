@@ -143,7 +143,7 @@ const KidsCheckin = () => {
     }
   });
 
-  if (!isAdmin) return <div className="p-8 text-center text-muted-foreground">Acesso restrito ao ministério de segurança.</div>;
+  if (!isAdmin && !isGerente) return <div className="p-8 text-center text-muted-foreground font-medium bg-card rounded-2xl border border-dashed">Acesso restrito ao ministério de segurança e líderes.</div>;
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-8 pb-24">

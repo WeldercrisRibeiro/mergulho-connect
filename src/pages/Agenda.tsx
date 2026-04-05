@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { safeFormat } from "@/lib/dateUtils";
-import { Calendar, MapPin, Check, X, Share2, Plus, Edit2, Trash2, Users, Ticket, Copy, QrCode, Mic2 } from "lucide-react";
+import { Calendar, MapPin, Check, X, Share2, Plus, Edit2, Trash2, Users, Ticket, Copy, QrCode, Mic2, Info, ImagePlus, Loader2, Upload, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const EVENT_TYPE_LABELS: Record<string, string> = {
@@ -28,7 +28,7 @@ const EVENT_TYPE_COLORS: Record<string, string> = {
 };
 
 const Agenda = () => {
-  const { user, isAdmin, isGerente, managedGroupIds } = useAuth();
+  const { user, isAdmin, isGerente, managedGroupIds, userGroupIds } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<string>("all");
@@ -80,13 +80,21 @@ const Agenda = () => {
   });
 
   const { data: events } = useQuery({
-    queryKey: ["events", filter],
+    queryKey: ["events", filter, userGroupIds, isAdmin],
     queryFn: async () => {
       let query = (supabase as any)
         .from("events")
         .select("*, event_rsvps(*), groups(name)")
         .order("event_date", { ascending: true });
-      if (filter !== "all") query = query.eq("group_id", filter);
+      
+      if (filter !== "all") {
+        query = query.eq("group_id", filter);
+      } else if (!isAdmin) {
+        // Se não for admin, vê eventos gerais OU do seu grupo
+        const groupFilter = userGroupIds.length > 0 ? `group_id.in.(${userGroupIds.join(",")})` : "";
+        query = query.or(`is_general.eq.true${groupFilter ? `,${groupFilter}` : ""}`);
+      }
+      
       const { data } = await query;
       return data || [];
     },
@@ -403,106 +411,141 @@ const Agenda = () => {
 
       {/* Create/Edit Dialog */}
       <Dialog open={creatingEvent || !!editingEvent} onOpenChange={val => { if (!val) { setCreatingEvent(false); setEditingEvent(null); } }}>
-        <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{editingEvent ? "Editar Evento" : "Novo Evento"}</DialogTitle></DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-4 font-semibold uppercase tracking-tight text-xs text-muted-foreground border-b pb-2 col-span-full">Informações Básicas</div>
-              <div className="space-y-2">
-                <Label>Título</Label>
-                <Input placeholder="Título do evento" value={title} onChange={e => setTitle(e.target.value)} />
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto rounded-3xl border-0 shadow-2xl custom-scrollbar">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-primary flex items-center gap-2">
+              {editingEvent ? <Edit2 className="h-6 w-6" /> : <Plus className="h-6 w-6" />}
+              {editingEvent ? "Editar Evento" : "Novo Evento"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-8 py-6">
+            {/* Section 1: Basic Info */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground border-b pb-2">
+                <Info className="h-3.5 w-3.5" /> Informações Básicas
               </div>
-              <div className="space-y-2">
-                <Label>Tipo de Evento</Label>
-                <Select value={eventType} onValueChange={setEventType}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="simple">Compromisso Simples</SelectItem>
-                    <SelectItem value="course">Curso</SelectItem>
-                    <SelectItem value="conference">Conferência</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Local</Label>
-                <Input placeholder="Onde será o evento?" value={location} onChange={e => setLocation(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Link do Mapa (opcional)</Label>
-                <Input placeholder="https://maps.google.com/..." value={mapUrl} onChange={e => setMapUrl(e.target.value)} />
-              </div>
-              <div className="space-y-2 col-span-full">
-                <Label>Descrição</Label>
-                <Textarea placeholder="Breve descritivo..." value={desc} onChange={e => setDesc(e.target.value)} rows={3} />
-              </div>
-              <div className="space-y-2 col-span-full">
-                <Label>Banner do Evento</Label>
-                <div className="flex gap-2">
-                  <Input placeholder="URL da imagem..." value={bannerUrl} onChange={e => setBannerUrl(e.target.value)} className="flex-1" />
-                  <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
-                  <Button variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-                    {uploading ? "..." : "Upload"}
-                  </Button>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase">Título</Label>
+                  <Input placeholder="Título do evento" value={title} onChange={e => setTitle(e.target.value)} className="rounded-xl h-11" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase">Tipo de Evento</Label>
+                  <Select value={eventType} onValueChange={setEventType}>
+                    <SelectTrigger className="rounded-xl h-11"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="simple">Compromisso Simples</SelectItem>
+                      <SelectItem value="course">Curso</SelectItem>
+                      <SelectItem value="conference">Conferência</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
-
-              {(eventType === "course" || eventType === "conference") && (
-                <>
-                  <div className="space-y-4 font-semibold uppercase tracking-tight text-xs text-muted-foreground border-b pb-2 col-span-full mt-2">Detalhes do {EVENT_TYPE_LABELS[eventType]}</div>
-                  <div className="space-y-2 col-span-full">
-                    <Label>Palestrantes</Label>
-                    <Input placeholder="Nomes separados por vírgula" value={speakers} onChange={e => setSpeakers(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Valor (R$) — 0 se gratuito</Label>
-                    <Input type="number" min={0} step={0.01} value={price} onChange={e => setPrice(Number(e.target.value))} />
-                  </div>
-                  {price > 0 && (
-                    <>
-                      <div className="space-y-2">
-                        <Label>Chave PIX</Label>
-                        <Input placeholder="email@, CPF, telefone..." value={pixKey} onChange={e => setPixKey(e.target.value)} />
-                      </div>
-                      <div className="space-y-2 col-span-full">
-                        <Label>URL QR Code PIX (opcional)</Label>
-                        <Input placeholder="https://..." value={pixQrcodeUrl} onChange={e => setPixQrcodeUrl(e.target.value)} />
-                      </div>
-                    </>
-                  )}
-                </>
-              )}
-
-              <div className="space-y-4 font-semibold uppercase tracking-tight text-xs text-muted-foreground border-b pb-2 col-span-full mt-2">Configurações e Data</div>
-              <div className="space-y-2">
-                <Label>Data e Hora</Label>
-                <Input type="datetime-local" value={date} onChange={e => setDate(e.target.value)} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase">Local</Label>
+                  <Input placeholder="Onde será o evento?" value={location} onChange={e => setLocation(e.target.value)} className="rounded-xl h-11" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase">Link do Mapa (opcional)</Label>
+                  <Input placeholder="https://maps.google.com/..." value={mapUrl} onChange={e => setMapUrl(e.target.value)} className="rounded-xl h-11" />
+                </div>
               </div>
               <div className="space-y-2">
-                <Label>Visibilidade</Label>
-                <Select 
-                  value={isGeneral} 
-                  onValueChange={(v) => {
-                    setIsGeneral(v);
-                    if (v === "true") setGroupId("");
-                  }} 
-                  disabled={!isAdmin}
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {isAdmin && <SelectItem value="true">Evento Geral</SelectItem>}
-                    <SelectItem value="false">Evento de Grupo</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label className="text-xs font-bold uppercase">Descrição</Label>
+                <Textarea placeholder="Breve descritivo..." value={desc} onChange={e => setDesc(e.target.value)} rows={3} className="rounded-2xl resize-none" />
+              </div>
+            </div>
+
+            {/* Section 2: Banner */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground border-b pb-2">
+                <ImagePlus className="h-3.5 w-3.5" /> Banner do Evento
+              </div>
+              <div className="flex gap-3">
+                <Input placeholder="URL da imagem..." value={bannerUrl} onChange={e => setBannerUrl(e.target.value)} className="flex-1 rounded-xl h-11" />
+                <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
+                <Button variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="rounded-xl px-6">
+                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
+                  {uploading ? "Sendo..." : "Upload"}
+                </Button>
+              </div>
+              {bannerUrl && (
+                <div className="relative aspect-video rounded-2xl overflow-hidden border-2 border-muted shadow-inner bg-muted/20">
+                  <img src={bannerUrl} className="w-full h-full object-cover" />
+                  <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-8 w-8 rounded-full opacity-0 hover:opacity-100 group-hover:opacity-100 transition-opacity" onClick={() => setBannerUrl("")}><X className="h-4 w-4" /></Button>
+                </div>
+              )}
+            </div>
+
+            {/* Section 3: Details (Conditional) */}
+            {(eventType === "course" || eventType === "conference") && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground border-b pb-2">
+                  <Ticket className="h-3.5 w-3.5" /> Detalhes do {EVENT_TYPE_LABELS[eventType]}
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase">Palestrantes</Label>
+                  <Input placeholder="Nomes separados por vírgula" value={speakers} onChange={e => setSpeakers(e.target.value)} className="rounded-xl h-11" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase">Valor (R$) — 0 se gratuito</Label>
+                    <Input type="number" min={0} step={0.01} value={price} onChange={e => setPrice(Number(e.target.value))} className="rounded-xl h-11" />
+                  </div>
+                  {price > 0 && (
+                    <div className="space-y-2">
+                      <Label className="text-xs font-bold uppercase">Chave PIX</Label>
+                      <Input placeholder="email@, CPF, telefone..." value={pixKey} onChange={e => setPixKey(e.target.value)} className="rounded-xl h-11" />
+                    </div>
+                  )}
+                </div>
+                {price > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase">URL QR Code PIX (opcional)</Label>
+                    <Input placeholder="https://..." value={pixQrcodeUrl} onChange={e => setPixQrcodeUrl(e.target.value)} className="rounded-xl h-11" />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Section 4: Settings & Date */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground border-b pb-2">
+                <Settings className="h-3.5 w-3.5" /> Configurações de Data e Visibilidade
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase text-primary">Data e Hora do Evento</Label>
+                  <Input type="datetime-local" value={date} onChange={e => setDate(e.target.value)} className="rounded-xl h-11 border-primary/30 bg-primary/5 focus:bg-background transition-colors" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase">Escopo de Visibilidade</Label>
+                  <Select 
+                    value={isGeneral} 
+                    onValueChange={(v) => {
+                      setIsGeneral(v);
+                      if (v === "true") setGroupId("");
+                    }} 
+                    disabled={!isAdmin}
+                  >
+                    <SelectTrigger className="rounded-xl h-11"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {isAdmin && <SelectItem value="true">Evento Geral</SelectItem>}
+                      <SelectItem value="false">Evento de Grupo (Departamento)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               
               {isGeneral === "false" && (
-                <div className="space-y-2 col-span-full">
-                  <Label>Selecione o Grupo</Label>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase">Selecione o Departamento / Grupo</Label>
                   <Select 
                     value={groupId || ""} 
                     onValueChange={setGroupId}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="rounded-xl h-11">
                       <SelectValue placeholder="Escolha o departamento" />
                     </SelectTrigger>
                     <SelectContent>
@@ -517,10 +560,10 @@ const Agenda = () => {
               )}
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setCreatingEvent(false); setEditingEvent(null); }}>Cancelar</Button>
-            <Button onClick={() => saveMutation.mutate()} disabled={!title || !date || saveMutation.isPending}>
-              {saveMutation.isPending ? "Salvando..." : editingEvent ? "Salvar" : "Criar Evento"}
+          <DialogFooter className="gap-2 pb-2">
+            <Button variant="outline" onClick={() => { setCreatingEvent(false); setEditingEvent(null); }} className="rounded-xl border-2">Cancelar</Button>
+            <Button onClick={() => saveMutation.mutate()} disabled={!title || !date || saveMutation.isPending} className="rounded-xl px-12 font-bold shadow-lg shadow-primary/20">
+              {saveMutation.isPending ? "Salvando..." : editingEvent ? "Salvar Alterações" : "Criar Evento Agora"}
             </Button>
           </DialogFooter>
         </DialogContent>

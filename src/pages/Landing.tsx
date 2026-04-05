@@ -184,7 +184,7 @@ const Landing = () => {
                     <Star className="h-3 w-3 fill-primary" /> Institucional
                   </div>
                   <h4 className="text-3xl md:text-5xl font-black leading-tight tracking-tighter">
-                    Conheça o Mergulho
+                    Conheça a Comunidade Cristã Mergulho
                   </h4>
                   <p className="text-muted-foreground text-lg leading-relaxed">
                     Assista ao nosso vídeo e entenda como estamos construindo uma comunidade focada em amar, cuidar e servir.
@@ -205,8 +205,8 @@ const Landing = () => {
                 </div>
                 <div className="p-4 md:p-8 bg-muted/20">
                   <div className="rounded-3xl overflow-hidden shadow-2xl hover:scale-[1.02] transition-transform duration-500 bg-black">
-                    <VideoPlayer 
-                      url={siteSettings?.about_us_video_url || "https://www.youtube.com/watch?v=dQw4w9WgXcQ"} 
+                    <VideoPlayer
+                      url={siteSettings?.about_us_video_url || "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}
                       isUpload={siteSettings?.about_us_video_is_upload === "true"}
                     />
                   </div>
@@ -222,7 +222,7 @@ const Landing = () => {
           <div className="flex justify-center mb-16">
             <div className="h-1 w-20 bg-gradient-to-r from-transparent via-primary/30 to-transparent rounded-full" />
           </div>
-          
+
           <div className="text-center mb-16">
             <h2 className="text-sm font-bold tracking-[0.2em] text-primary uppercase mb-3 opacity-80">Vida na Igreja</h2>
             <h3 className="text-4xl md:text-5xl font-black text-foreground tracking-tight">Experiências que nos marcam</h3>

@@ -78,10 +78,10 @@ const BottomNav = () => {
                   <div className="h-10 w-10 rounded-xl bg-secondary/50 flex items-center justify-center">
                     <Target className="h-5 w-5" />
                   </div>
-                  <span className="text-[10px] font-semibold">Grupos</span>
+                  <span className="text-[10px] font-semibold">Departamentos</span>
                 </Link>
               )}
-              {(isAdmin || (routinePermissions.membros === true && !isVisitor)) && (
+              {(isAdmin || (routinePermissions.membros !== false && !isVisitor)) && (
                 <Link to="/membros" onClick={() => setOpen(false)} className="flex flex-col items-center gap-2 text-muted-foreground hover:text-primary">
                   <div className="h-10 w-10 rounded-xl bg-secondary/50 flex items-center justify-center">
                     <Users className="h-5 w-5" />
@@ -89,12 +89,12 @@ const BottomNav = () => {
                   <span className="text-[10px] font-semibold">Membros</span>
                 </Link>
               )}
-              {(isAdmin || routinePermissions.voluntarios === true) && (
+              {(isAdmin || routinePermissions.voluntarios !== false) && (
                 <Link to="/voluntarios" onClick={() => setOpen(false)} className="flex flex-col items-center gap-2 text-muted-foreground hover:text-primary">
                   <div className="h-10 w-10 rounded-xl bg-secondary/50 flex items-center justify-center">
                     <HandHeart className="h-5 w-5" />
                   </div>
-                  <span className="text-[10px] font-semibold">Escalas</span>
+                  <span className="text-[10px] font-semibold">Voluntários</span>
                 </Link>
               )}
               {isAdmin && (
@@ -113,15 +113,15 @@ const BottomNav = () => {
                   <span className="text-[10px] font-semibold">Ajustes</span>
                 </Link>
               )}
-              {(isAdmin || routinePermissions.kids === true) && (
+              {(isAdmin || routinePermissions.kids !== false) && (
                 <Link to="/checkin-kids" onClick={() => setOpen(false)} className="flex flex-col items-center gap-2 text-muted-foreground hover:text-primary">
                   <div className="h-10 w-10 rounded-xl bg-secondary/50 flex items-center justify-center">
                     <ShieldCheck className="h-5 w-5" />
                   </div>
-                  <span className="text-[10px] font-semibold">Kids</span>
+                  <span className="text-[10px] font-semibold">Check-in</span>
                 </Link>
               )}
-              {(isAdmin || routinePermissions.comunicados === true) && (
+              {(isAdmin || routinePermissions.comunicados !== false) && (
                 <Link to="/comunicados" onClick={() => setOpen(false)} className="flex flex-col items-center gap-2 text-muted-foreground hover:text-primary">
                   <div className="h-10 w-10 rounded-xl bg-secondary/50 flex items-center justify-center relative">
                     <Megaphone className="h-5 w-5" />
@@ -131,7 +131,7 @@ const BottomNav = () => {
                       </span>
                     )}
                   </div>
-                  <span className="text-[10px] font-semibold">Avisos</span>
+                  <span className="text-[10px] font-semibold">Comunicados</span>
                 </Link>
               )}
               {isAdmin && (

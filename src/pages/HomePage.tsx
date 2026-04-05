@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, BookOpen, Users, MessageCircle, ArrowRight, Star, TrendingUp, ShieldCheck, QrCode, Phone, Megaphone } from "lucide-react";
+import { Calendar, BookOpen, Users, MessageCircle, ArrowRight, Star, TrendingUp, ShieldCheck, QrCode, Phone, Megaphone, HandHeart, BarChart3 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTheme } from "@/components/ThemeProvider";
 import { cn } from "@/lib/utils";
@@ -12,7 +12,7 @@ import { safeFormatMonth, safeFormatDay, safeFormatTime } from "@/lib/dateUtils"
 import { QRCodeSVG } from "qrcode.react";
 
 const HomePage = () => {
-  const { profile, user, isVisitor } = useAuth();
+  const { profile, user, isVisitor, isAdmin, userGroupIds, routinePermissions } = useAuth();
   const { theme } = useTheme();
 
   const { data: myActiveCheckin } = useQuery({
@@ -65,14 +65,21 @@ const HomePage = () => {
   });
 
   const { data: nextEvents } = useQuery({
-    queryKey: ["next-events"],
+    queryKey: ["next-events", userGroupIds, isAdmin],
     queryFn: async () => {
-      const { data } = await supabase
+      let query = supabase
         .from("events")
         .select("*")
         .gte("event_date", new Date().toISOString())
         .order("event_date", { ascending: true })
         .limit(3);
+
+      if (!isAdmin) {
+        const groupFilter = userGroupIds?.length > 0 ? `group_id.in.(${userGroupIds.join(",")})` : "";
+        query = query.or(`is_general.eq.true${groupFilter ? `,${groupFilter}` : ""}`);
+      }
+
+      const { data } = await query;
       return data || [];
     },
   });
@@ -148,17 +155,28 @@ const HomePage = () => {
           </Card>
         )}
 
-        {/* Quick Actions */}
+        {/* Quick Actions (Funções Liberadas) */}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {[
-            { icon: Calendar, label: "Agenda", path: "/agenda", color: "bg-blue-500" },
-            { icon: BookOpen, label: "Devocionais", path: "/devocionais", color: "bg-cyan-500" },
-            { icon: Users, label: "Membros", path: "/membros", color: "bg-indigo-500", hidden: isVisitor },
-            { icon: MessageCircle, label: "Chat", path: "/chat", color: "bg-emerald-500", hidden: isVisitor },
-          ].filter(i => !i.hidden).map(({ icon: Icon, label, path, color }) => (
+            { icon: Calendar, label: "Agenda", path: "/agenda", color: "bg-blue-500", routine: "agenda" },
+            { icon: BookOpen, label: "Devocionais", path: "/devocionais", color: "bg-cyan-500", routine: "devocionais" },
+            { icon: HandHeart, label: "Voluntários", path: "/voluntarios", color: "bg-rose-500", routine: "voluntarios" },
+            { icon: MessageCircle, label: "Chat", path: "/chat", color: "bg-emerald-500", routine: "chat" },
+            { icon: Users, label: "Membros", path: "/membros", color: "bg-indigo-500", adminOnly: true, routine: "membros" },
+            { icon: ShieldCheck, label: "Check-in", path: "/checkin-kids", color: "bg-amber-500", adminOnly: true, routine: "kids" },
+            { icon: Megaphone, label: "Avisos", path: "/comunicados", color: "bg-purple-500", routine: "comunicados" },
+            { icon: BarChart3, label: "Relatórios", path: "/relatorios", color: "bg-slate-700", adminOnly: true, routine: "relatorios" },
+          ].filter(item => {
+            if (isVisitor) return ["/agenda", "/devocionais"].includes(item.path);
+            if (item.adminOnly && !isAdmin) return false;
+            if (item.routine && !isAdmin && routinePermissions[item.routine] === false) return false;
+            // Additional check for whitelist: if routine is present and we're not admin, it MUST be true if we use whitelist.
+            // But usually "liberada apenas" means "if deactivated, hide it".
+            return true;
+          }).map(({ icon: Icon, label, path, color }) => (
             <Link key={path} to={path}>
-              <Card className="border-0 shadow-xl hover:translate-y-[-4px] transition-all group cursor-pointer overflow-hidden text-center p-6">
-                <div className={cn("inline-flex p-3 rounded-2xl text-white shadow-lg mb-3", color)}>
+              <Card className="border-0 shadow-xl hover:translate-y-[-4px] transition-all group cursor-pointer overflow-hidden text-center p-6 bg-card/40 backdrop-blur-sm h-full">
+                <div className={cn("inline-flex p-3 rounded-2xl text-white shadow-lg mb-3 transition-transform group-hover:scale-110", color)}>
                   <Icon className="h-6 w-6" />
                 </div>
                 <span className="text-sm font-bold block">{label}</span>

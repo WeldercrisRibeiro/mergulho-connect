@@ -12,15 +12,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { Users, Search, Phone, Edit2, Trash2, Plus } from "lucide-react";
+import { Users, Search, Phone, Edit2, Trash2, Plus, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 const Members = () => {
   const [search, setSearch] = useState("");
-  const { isAdmin } = useAuth();
+  const { isAdmin, isGerente } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [nivelFilter, setNivelFilter] = useState("all");
 
   const [editingMember, setEditingMember] = useState<any>(null);
   const [creatingMember, setCreatingMember] = useState(false);
@@ -31,7 +32,7 @@ const Members = () => {
   const [selectedGroups, setSelectedGroups] = useState<{ id: string; role: string }[]>([]);
   const [deletingMember, setDeletingMember] = useState<any>(null);
 
-  if (!isAdmin) {
+  if (!isAdmin && !isGerente) {
     return <Navigate to="/home" replace />;
   }
 
@@ -66,9 +67,11 @@ const Members = () => {
     },
   });
 
-  const filtered = members?.filter((m) =>
-    (m.full_name || "").toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = members?.filter((m) => {
+    const matchesSearch = (m.full_name || "").toLowerCase().includes(search.toLowerCase());
+    const matchesNivel = nivelFilter === "all" || m.roles?.some((r: any) => r.role === nivelFilter);
+    return matchesSearch && matchesNivel;
+  });
 
   const handleEdit = (m: any) => {
     setEditingMember(m);
@@ -104,12 +107,11 @@ const Members = () => {
 
       if (profErr) throw profErr;
 
-      // 3. Atualiza Role de forma robusta (Deleta anterior e insere nova)
-      await supabase.from("user_roles").delete().eq("user_id", editingMember.user_id);
-      const { error: roleErr } = await supabase.from("user_roles").insert({ 
+      // 3. Atualiza Role de forma robusta (Upsert para evitar duplicatas ou conflitos)
+      const { error: roleErr } = await (supabase as any).from("user_roles").upsert({ 
         user_id: editingMember.user_id, 
         role: editRole as any 
-      });
+      }, { onConflict: "user_id" });
       
       if (roleErr) throw roleErr;
 
@@ -153,8 +155,12 @@ const Members = () => {
       } as any).eq("user_id", newUserId);
       if (profileError) throw profileError;
 
-      // 3. Salva a role selecionada (Membro, Gerente ou Admin)
-      await supabase.from("user_roles").insert({ user_id: newUserId, role: editRole as any } as any);
+      // 3. Salva a role selecionada (Membro, Gerente, Moderador ou Admin)
+      await (supabase as any).from("user_roles").upsert({ 
+        user_id: newUserId, 
+        role: editRole as any 
+      }, { onConflict: "user_id" });
+
       if (selectedGroups.length > 0) {
         await supabase.from("member_groups").insert(selectedGroups.map(g => ({ 
           user_id: newUserId, 
@@ -193,7 +199,7 @@ const Members = () => {
   });
 
   const GroupCheckboxes = () => (
-    <div className="space-y-2 mt-2">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
       {allGroups?.map(g => {
         const isSelected = selectedGroups.some(sg => sg.id === g.id);
         const currentGroup = selectedGroups.find(sg => sg.id === g.id);
@@ -212,7 +218,7 @@ const Members = () => {
               <label htmlFor={`mg-${g.id}`} className="text-sm font-medium">{g.name}</label>
             </div>
             
-            {isSelected && (
+            {isSelected && (editRole === "gerente" || editRole === "admin") && (
               <div className="flex bg-muted rounded-md p-0.5 border">
                 <button
                   type="button"
@@ -249,22 +255,37 @@ const Members = () => {
           <Users className="h-6 w-6 text-primary" />
           Membros
         </h1>
-        <Button onClick={() => {
-          setEditName(""); setEditPhone(""); setEditRole("membro"); setSelectedGroups([]);
-          setCreatingMember(true);
-        }}>
-          <Plus className="h-4 w-4 mr-1" /> Novo Membro
-        </Button>
+        {isAdmin && (
+          <Button onClick={() => {
+            setEditName(""); setEditPhone(""); setEditRole("membro"); setSelectedGroups([]);
+            setCreatingMember(true);
+          }}>
+            <Plus className="h-4 w-4 mr-1" /> Novo Membro
+          </Button>
+        )}
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar membros..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-10"
-        />
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar membros..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-10 h-11 rounded-xl"
+          />
+        </div>
+        <Select value={nivelFilter} onValueChange={setNivelFilter}>
+          <SelectTrigger className="w-full sm:w-[180px] h-11 rounded-xl bg-background border-muted-foreground/20">
+            <SelectValue placeholder="Nível" />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl">
+            <SelectItem value="all">Todos os Níveis</SelectItem>
+            <SelectItem value="admin">Administradores</SelectItem>
+            <SelectItem value="gerente">Líderes (Gerentes)</SelectItem>
+            <SelectItem value="membro">Membros</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
@@ -319,17 +340,19 @@ const Members = () => {
                   ))}
                 </div>
               </div>
-              <div className="flex items-center gap-1 shrink-0">
-                <Button variant="ghost" size="icon" onClick={() => handleEdit(member)}>
-                  <Edit2 className="h-4 w-4 text-primary" />
-                </Button>
-                <Button variant="ghost" size="icon"
-                  onClick={() => setDeletingMember(member)}
-                  disabled={deleteMutation.isPending}
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-              </div>
+              {isAdmin && (
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button variant="ghost" size="icon" onClick={() => handleEdit(member)}>
+                    <Edit2 className="h-4 w-4 text-primary" />
+                  </Button>
+                  <Button variant="ghost" size="icon"
+                    onClick={() => setDeletingMember(member)}
+                    disabled={deleteMutation.isPending}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}
@@ -352,46 +375,45 @@ const Members = () => {
 
       {/* Edit Dialog */}
       <Dialog open={!!editingMember} onOpenChange={(val) => !val && setEditingMember(null)}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader><DialogTitle>Editar Membro</DialogTitle></DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+        <DialogContent className="sm:max-w-[900px] rounded-3xl border-0 shadow-2xl overflow-y-auto max-h-[90vh]">
+          <DialogHeader><DialogTitle className="text-xl font-bold">Editar Membro: {editingMember?.full_name}</DialogTitle></DialogHeader>
+          <div className="space-y-6 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Nome Completo</Label>
-                <Input value={editName} onChange={e => setEditName(e.target.value)} />
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Nome Completo</Label>
+                <Input value={editName} onChange={e => setEditName(e.target.value)} className="rounded-xl h-11" />
               </div>
               <div className="space-y-2">
-                <Label>Nome de Usuário (Login)</Label>
-                <Input value={editUsername} onChange={e => setEditUsername(e.target.value)} placeholder="ex: joao.silva" />
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Nome de Usuário (Login)</Label>
+                <Input value={editUsername} onChange={e => setEditUsername(e.target.value)} placeholder="ex: joao.silva" className="rounded-xl h-11" />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>WhatsApp</Label>
-                <Input value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="(11) 99999-9999" />
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">WhatsApp</Label>
+                <Input value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="(11) 99999-9999" className="rounded-xl h-11" />
               </div>
               <div className="space-y-2">
-                <Label>Permissão</Label>
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Permissão Global</Label>
                 <Select value={editRole} onValueChange={setEditRole}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="rounded-xl h-11"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="membro">Membro</SelectItem>
-                    <SelectItem value="gerente">Gerente</SelectItem>
-                    <SelectItem value="moderador">Moderador</SelectItem>
+                    <SelectItem value="gerente">Líder (Gerente)</SelectItem>
                     <SelectItem value="admin">Administrador</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>Departamentos</Label>
+            <div className="space-y-3">
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Vincular a Departamentos</Label>
               <GroupCheckboxes />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingMember(null)}>Cancelar</Button>
-            <Button onClick={() => updateMutation.mutate()} disabled={updateMutation.isPending}>
-              {updateMutation.isPending ? "Salvando..." : "Salvar"}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setEditingMember(null)} className="rounded-xl border-2">Cancelar</Button>
+            <Button onClick={() => updateMutation.mutate()} disabled={updateMutation.isPending} className="rounded-xl px-8 font-bold">
+              {updateMutation.isPending ? "Salvando..." : "Salvar Alterações"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -399,38 +421,41 @@ const Members = () => {
 
       {/* Create Dialog */}
       <Dialog open={creatingMember} onOpenChange={(val) => !val && setCreatingMember(false)}>
-        <DialogContent className="sm:max-w-[680px]">
-          <DialogHeader><DialogTitle>Novo Membro</DialogTitle></DialogHeader>
-          <div className="py-4 space-y-4">
-            <div className="bg-primary/10 border-l-4 border-primary p-3 rounded text-sm text-primary font-medium">
-              Senha padrão: <strong>123456</strong>. O usuário deverá trocar após o primeiro acesso.
+        <DialogContent className="sm:max-w-[900px] rounded-3xl border-0 shadow-2xl overflow-y-auto max-h-[90vh]">
+          <DialogHeader><DialogTitle className="text-xl font-bold text-primary">Cadastrar Novo Membro</DialogTitle></DialogHeader>
+          <div className="py-4 space-y-6">
+            <div className="bg-primary/5 border border-primary/20 p-4 rounded-2xl text-xs text-primary font-medium flex items-center gap-3">
+              <CheckCircle className="h-5 w-5 shrink-0" />
+              <p>Senha padrão: <strong>123456</strong>. O usuário deverá trocar após o primeiro acesso.</p>
             </div>
 
             {/* Row 1: Nome + Usuário */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Nome Completo</Label>
-                <Input value={editName} onChange={e => setEditName(e.target.value)} placeholder="Nome completo" required />
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Nome Completo</Label>
+                <Input value={editName} onChange={e => setEditName(e.target.value)} placeholder="Nome completo" required className="rounded-xl h-11" />
               </div>
               <div className="space-y-2">
-                <Label>Nome de Usuário (Login)</Label>
-                <Input value={editUsername} onChange={e => setEditUsername(e.target.value)} placeholder="ex: joao.silva" required />
-                <p className="text-xs text-muted-foreground">Usado para entrar no sistema</p>
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Nome de Usuário (Login)</Label>
+                <Input value={editUsername} onChange={e => setEditUsername(e.target.value)} placeholder="ex: joao.silva" required className="rounded-xl h-11" />
+                <p className="text-[10px] text-muted-foreground italic">Usado para entrar no sistema</p>
               </div>
             </div>
 
             {/* Row 2: WhatsApp + Permissão */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>WhatsApp (opcional)</Label>
-                <Input value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="(11) 99999-9999" />
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">WhatsApp (opcional)</Label>
+                <Input value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="(11) 99999-9999" className="rounded-xl h-11" />
               </div>
               <div className="space-y-2">
-                <Label>Permissão</Label>
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Permissão Global</Label>
                 <Select value={editRole} onValueChange={setEditRole}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="rounded-xl h-11"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="membro">Membro</SelectItem>
+                    <SelectItem value="gerente">Líder (Gerente)</SelectItem>
+                    <SelectItem value="moderador">Moderador</SelectItem>
                     <SelectItem value="admin">Administrador</SelectItem>
                   </SelectContent>
                 </Select>
@@ -438,15 +463,15 @@ const Members = () => {
             </div>
 
             {/* Row 3: departamentos */}
-            <div className="space-y-2">
-              <Label>departamentos (Opcional)</Label>
+            <div className="space-y-3">
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">departamentos (Opcional)</Label>
               <GroupCheckboxes />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCreatingMember(false)}>Cancelar</Button>
-            <Button onClick={() => createMutation.mutate()} disabled={!editName || !editUsername || createMutation.isPending}>
-              {createMutation.isPending ? "Cadastrando..." : "Cadastrar"}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setCreatingMember(false)} className="rounded-xl border-2">Cancelar</Button>
+            <Button onClick={() => createMutation.mutate()} disabled={!editName || !editUsername || createMutation.isPending} className="rounded-xl px-8 font-bold">
+              {createMutation.isPending ? "Cadastrando..." : "Confirmar Cadastro"}
             </Button>
           </DialogFooter>
         </DialogContent>

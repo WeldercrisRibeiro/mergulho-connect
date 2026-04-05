@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { Settings, ImagePlus, MessageSquareQuote, Trash2, Plus, Edit2, ChevronLeft, ChevronRight, Upload, Mail, CheckCircle, Archive, Video, Youtube } from "lucide-react";
+import { Settings, ImagePlus, MessageSquareQuote, Trash2, Plus, Edit2, ChevronLeft, ChevronRight, Upload, Mail, CheckCircle, Archive, Video, Youtube, Shield, Users, Calendar, BookOpen, HandHeart, BarChart3, MessageCircle, ShieldCheck, Megaphone, Lock, ChevronRight as ChevronRightIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import VideoPlayer from "@/components/VideoPlayer";
 import { cn } from "@/lib/utils";
@@ -43,6 +43,26 @@ const SettingsPage = () => {
   // Video state
   const [tempVideoUrl, setTempVideoUrl] = useState("");
   const [tempIsVideoUpload, setTempIsVideoUpload] = useState(false);
+
+  // Routine Permissions state
+  const [selectedRole, setSelectedRole] = useState<string | null>(null);
+
+  const ROUTINES = [
+    { id: "agenda", label: "Agenda", icon: Calendar, description: "Gestão de eventos e compromissos" },
+    { id: "devocionais", label: "Devocionais", icon: BookOpen, description: "Leituras e meditações diárias" },
+    { id: "voluntarios", label: "Voluntários", icon: HandHeart, description: "Escalas e gestão de equipes" },
+    { id: "membros", label: "Membros", icon: Users, description: "Acesso ao cadastro de pessoas" },
+    { id: "relatorios", label: "Relatórios", icon: BarChart3, description: "Dados, gráficos e estatísticas" },
+    { id: "chat", label: "Chat", icon: MessageCircle, description: "Mensagens e comunicação interna" },
+    { id: "kids", label: "Check-in", icon: ShieldCheck, description: "Check-in e proteção infantil" },
+    { id: "comunicados", label: "Comunicados", icon: Megaphone, description: "Mural de avisos e notificações" },
+  ];
+
+  const ROLE_TYPES = [
+    { id: "admin", label: "Administrador", description: "Acesso total ao sistema", color: "bg-primary" },
+    { id: "gerente", label: "Líder (Gerente)", description: "Líderes de departamento", color: "bg-emerald-500" },
+    { id: "membro", label: "Membro", description: "Acesso básico", color: "bg-slate-500" },
+  ];
 
   const { data: photos } = useQuery({
     queryKey: ["landing-photos"],
@@ -77,6 +97,16 @@ const SettingsPage = () => {
       return settings;
     },
   });
+
+  const { data: permissions } = useQuery({
+    queryKey: ["all-role-routines"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from("group_routines").select("*");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
 
   const [editWhatsApp, setEditWhatsApp] = useState("");
   const [editInstagram, setEditInstagram] = useState("");
@@ -129,6 +159,29 @@ const SettingsPage = () => {
     onError: (err: any) => toast({ title: "Erro ao salvar vídeo", description: err.message, variant: "destructive" }),
   });
 
+  const toggleRoutineMutation = useMutation({
+    mutationFn: async ({ roleId, routineKey, enabled }: { roleId: string, routineKey: string, enabled: boolean }) => {
+      const { error } = await (supabase as any)
+        .from("group_routines")
+        .upsert(
+          { group_id: roleId, routine_key: routineKey, is_enabled: enabled },
+          { onConflict: "group_id,routine_key" }
+        );
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["all-role-routines"] });
+      toast({ title: "Permissão atualizada!" });
+    },
+    onError: (err: any) => toast({ title: "Erro ao salvar", description: err.message, variant: "destructive" }),
+  });
+
+  const getPermStatus = (roleId: string, routineKey: string) => {
+    const perm = permissions?.find((p: any) => p.group_id === roleId && p.routine_key === routineKey);
+    return perm ? perm.is_enabled : true;
+  };
+
+
   const loadSettings = () => {
     if (siteSettings) {
       setEditWhatsApp(siteSettings.whatsapp_number || "");
@@ -179,7 +232,7 @@ const SettingsPage = () => {
       const { error: uploadError } = await supabase.storage
         .from("devotionals")
         .upload(fileName, file, { upsert: true });
-      
+
       if (uploadError) throw uploadError;
 
       const { data: urlData } = supabase.storage.from("devotionals").getPublicUrl(fileName);
@@ -238,7 +291,7 @@ const SettingsPage = () => {
       const phoneDigits = m.phone?.replace(/\D/g, "");
       const nameSlug = m.name?.trim().toLowerCase().replace(/\s+/g, ".");
       const loginPrefix = phoneDigits && phoneDigits.length >= 8 ? phoneDigits : nameSlug;
-      
+
       const email = loginPrefix + "@mergulhoconnect.com";
       const { data, error } = await supabase.rpc("admin_manage_user" as any, {
         email, password: "123456", raw_user_meta_data: { full_name: m.name, whatsapp_phone: m.phone }
@@ -279,17 +332,17 @@ const SettingsPage = () => {
       </h1>
 
       <Tabs defaultValue="site">
-        <TabsList className="grid grid-cols-5 w-full max-w-2xl bg-muted/50 p-1 rounded-2xl">
-          <TabsTrigger value="site" className="rounded-xl flex items-center gap-2">
+        <TabsList className="grid grid-cols-3 md:grid-cols-6 w-full max-w-3xl bg-muted/50 p-1 rounded-2xl h-auto">
+          <TabsTrigger value="site" className="rounded-xl flex items-center gap-2 py-2">
             <ImagePlus className="h-4 w-4" /> Layout
           </TabsTrigger>
-          <TabsTrigger value="video" className="rounded-xl flex items-center gap-2">
+          <TabsTrigger value="video" className="rounded-xl flex items-center gap-2 py-2">
             <Video className="h-4 w-4" /> Vídeo
           </TabsTrigger>
-          <TabsTrigger value="links" className="rounded-xl flex items-center gap-2">
+          <TabsTrigger value="links" className="rounded-xl flex items-center gap-2 py-2">
             <Youtube className="h-4 w-4" /> Redes
           </TabsTrigger>
-          <TabsTrigger value="mensagens" className="rounded-xl flex items-center gap-2 relative">
+          <TabsTrigger value="mensagens" className="rounded-xl flex items-center gap-2 py-2 relative">
             <Mail className="h-4 w-4" /> Inbox
             {contactMessages && contactMessages.length > 0 && (
               <span className="absolute -top-1 -right-1 h-4 w-4 bg-destructive text-white text-[8px] font-bold flex items-center justify-center rounded-full animate-bounce">
@@ -297,10 +350,14 @@ const SettingsPage = () => {
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="arquivados" className="rounded-xl flex items-center gap-2">
-            <Archive className="h-4 w-4" /> Arquivados
+          <TabsTrigger value="arquivados" className="rounded-xl flex items-center gap-2 py-2">
+            <Archive className="h-4 w-4" /> Arquivos
+          </TabsTrigger>
+          <TabsTrigger value="rotinas" className="rounded-xl flex items-center gap-2 py-2">
+            <Shield className="h-4 w-4" /> Rotinas
           </TabsTrigger>
         </TabsList>
+
 
         <TabsContent value="site" className="space-y-10 pt-6">
           {/* Photos Carousel Management */}
@@ -333,7 +390,7 @@ const SettingsPage = () => {
                       <Button size="icon" variant="secondary" className="h-10 w-10 rounded-full" onClick={next}><ChevronRight /></Button>
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-3">
                     {photos.map((p: any, i: number) => (
                       <div key={p.id} className={cn("relative rounded-xl overflow-hidden cursor-pointer border-2 transition-all aspect-square", i === carouselIdx ? "border-primary scale-105" : "border-transparent opacity-60 hover:opacity-100")} onClick={() => setCarouselIdx(i)}>
@@ -392,7 +449,7 @@ const SettingsPage = () => {
               <CardTitle className="flex items-center gap-2">
                 <Video className="h-5 w-5 text-indigo-500" /> Vídeo Institucional
               </CardTitle>
-              <p className="text-sm text-muted-foreground">Gerencie o vídeo "Conheça o Mergulho" na Landing Page.</p>
+              <p className="text-sm text-muted-foreground">Gerencie o vídeo "Conheça a Comunidade Cristã Mergulho" na Landing Page.</p>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid gap-4">
@@ -400,9 +457,9 @@ const SettingsPage = () => {
                   <div className="flex-1 space-y-2">
                     <Label>URL do Vídeo (YouTube, Vimeo ou Link Direto)</Label>
                     <div className="flex gap-2">
-                      <Input 
-                        placeholder="https://youtube.com/..." 
-                        value={tempVideoUrl} 
+                      <Input
+                        placeholder="https://youtube.com/..."
+                        value={tempVideoUrl}
                         onChange={(e) => {
                           setTempVideoUrl(e.target.value);
                           setTempIsVideoUpload(false);
@@ -410,9 +467,9 @@ const SettingsPage = () => {
                         className="bg-background"
                       />
                       <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={handleVideoUpload} />
-                      <Button 
-                        variant="secondary" 
-                        className="gap-2 shrink-0" 
+                      <Button
+                        variant="secondary"
+                        className="gap-2 shrink-0"
                         onClick={() => videoInputRef.current?.click()}
                         disabled={uploading}
                       >
@@ -435,7 +492,7 @@ const SettingsPage = () => {
                     )}
                   </div>
                 </div>
-                
+
                 <Button className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 font-bold shadow-lg" onClick={() => saveVideoSettingsMutation.mutate()} disabled={saveVideoSettingsMutation.isPending}>
                   {saveVideoSettingsMutation.isPending ? "Salvando..." : "Salvar Configurações de Vídeo"}
                 </Button>
@@ -523,7 +580,83 @@ const SettingsPage = () => {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="rotinas" className="pt-6 space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {ROLE_TYPES.map((role) => (
+              <Card
+                key={role.id}
+                className={cn(
+                  "cursor-pointer transition-all border-2 rounded-2xl",
+                  selectedRole === role.id ? "border-primary bg-primary/5" : "border-transparent hover:bg-muted/50"
+                )}
+                onClick={() => setSelectedRole(role.id)}
+              >
+                <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
+                  <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center text-white", role.color)}>
+                    <Users className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm">{role.label}</p>
+                    <p className="text-[10px] text-muted-foreground">{role.description}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {selectedRole ? (
+            <Card className="border-0 shadow-xl rounded-3xl overflow-hidden">
+              <CardHeader className="bg-muted/20 border-b pb-4">
+                <CardTitle className="text-lg">Acessos: {ROLE_TYPES.find(r => r.id === selectedRole)?.label}</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:gap-px md:bg-muted/10">
+                  {ROUTINES.map((routine) => {
+                    const isEnabled = getPermStatus(selectedRole, routine.id);
+                    const Icon = routine.icon;
+                    return (
+                      <div key={routine.id} className="p-4 bg-card flex items-center justify-between hover:bg-muted/5 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center", isEnabled ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground")}>
+                            <Icon className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-xs">{routine.label}</p>
+                            <p className="text-[10px] text-muted-foreground">{routine.description}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={cn("text-[9px] font-bold uppercase", isEnabled ? "text-primary" : "text-muted-foreground")}>
+                            {isEnabled ? "On" : "Off"}
+                          </span>
+                          <input
+                            type="checkbox"
+                            className="w-8 h-4 rounded-full bg-muted checked:bg-primary appearance-none cursor-pointer transition-colors relative after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-transform checked:after:translate-x-4 border border-border"
+                            checked={isEnabled}
+                            onChange={(e) => toggleRoutineMutation.mutate({
+                              roleId: selectedRole,
+                              routineKey: routine.id,
+                              enabled: e.target.checked
+                            })}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="h-48 border-2 border-dashed rounded-3xl flex flex-col items-center justify-center text-muted-foreground text-center p-6">
+              <Lock className="h-8 w-8 mb-2 opacity-20" />
+              <p className="text-sm font-medium">Selecione um perfil para configurar as rotinas</p>
+            </div>
+          )}
+        </TabsContent>
+
       </Tabs>
+
 
       {/* Dialogs */}
       <Dialog open={photoDialogOpen} onOpenChange={setPhotoDialogOpen}>

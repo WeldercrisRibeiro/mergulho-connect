@@ -10,6 +10,7 @@ interface AuthContextType {
   isGerente: boolean;
   isVisitor: boolean;
   managedGroupIds: string[];
+  userGroupIds: string[];
   profile: { full_name: string; avatar_url: string | null; whatsapp_phone: string | null } | null;
   routinePermissions: Record<string, boolean>;
   unreadAnnouncements: number;
@@ -24,6 +25,7 @@ const AuthContext = createContext<AuthContextType>({
   isGerente: false,
   isVisitor: false,
   managedGroupIds: [],
+  userGroupIds: [],
   profile: null,
   routinePermissions: {},
   unreadAnnouncements: 0,
@@ -40,6 +42,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isGerente, setIsGerente] = useState(false);
   const [isVisitor, setIsVisitor] = useState(false);
   const [managedGroupIds, setManagedGroupIds] = useState<string[]>([]);
+  const [userGroupIds, setUserGroupIds] = useState<string[]>([]);
   const [profile, setProfile] = useState<AuthContextType["profile"]>(null);
   const [routinePermissions, setRoutinePermissions] = useState<Record<string, boolean>>({});
   const [unreadAnnouncements, setUnreadAnnouncements] = useState(0);
@@ -70,6 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsGerente(false);
         setIsVisitor(false);
         setManagedGroupIds([]);
+        setUserGroupIds([]);
         setRoutinePermissions({});
         setUnreadAnnouncements(0);
         setLoading(false);
@@ -123,16 +127,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsAdmin(hasAdmin);
       setIsVisitor(hasVisitante);
 
-      // Busca quais grupos este usuário gerencia (flexível para 'manager', 'gerente' ou 'Líder')
-      const { data: managedGroups, error: managedErr } = await supabase
+      // Busca associações deste usuário aos grupos (membro ou líder)
+      const { data: memberGroupsData, error: managedErr } = await supabase
         .from("member_groups")
         .select("group_id, role")
         .eq("user_id", userId);
 
       if (managedErr) console.error("Managed groups fetch error:", managedErr);
-      console.log("RAW Managed Groups Data:", managedGroups);
+      const managedGroups = memberGroupsData || [];
 
-      // Filtra por qualquer coisa que NÃO seja 'member' (membro comum)
+      const allGroupIds = Array.from(new Set((managedGroups as any[])?.map(m => m.group_id) || []));
+      setUserGroupIds(allGroupIds);
+
       const managedIds = (managedGroups as any[])
         ?.filter(mg => {
           const role = (mg.role || "").toLowerCase();
@@ -140,27 +146,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         })
         .map((m: any) => m.group_id) || [];
       
-      console.log("Managed Roles Found:", (managedGroups as any[])?.map(mg => (mg as any).role));
-      console.log("Final Managed ID List:", managedIds);
       setManagedGroupIds(managedIds);
       setIsGerente(hasAdmin || hasGerente || managedIds.length > 0);
 
-      // Busca permissões de rotina de TODOS os grupos que o usuário participa
-      const allGroupIds = managedGroups?.map((mg: any) => mg.group_id) || [];
-      if (allGroupIds.length > 0) {
-        const { data: routines } = await (supabase as any)
+      // NOVO: Busca permissões baseadas no PAPEL do usuário (admin, gerente, moderador, membro)
+      const currentRoles = rolesList.length > 0 ? rolesList : ["membro"];
+      
+      try {
+        const { data: routines, error: routineErr } = await (supabase as any)
           .from("group_routines")
           .select("routine_key, is_enabled")
-          .in("group_id", allGroupIds);
+          .in("group_id", currentRoles);
         
-        const perms: Record<string, boolean> = {};
-        (routines as any[])?.forEach(r => {
-          if (perms[r.routine_key] !== true) {
-            perms[r.routine_key] = r.is_enabled;
-          }
-        });
-        setRoutinePermissions(perms);
-      } else {
+        if (routineErr) {
+          console.error("Erro ao buscar permissões de rotina:", routineErr);
+          setRoutinePermissions({});
+        } else {
+          const perms: Record<string, boolean> = {};
+          (routines as any[])?.forEach(r => {
+            if (perms[r.routine_key] !== true) {
+              perms[r.routine_key] = r.is_enabled;
+            }
+          });
+          setRoutinePermissions(perms);
+        }
+      } catch (e) {
+        console.error("Falha silenciosa na busca de rotinas:", e);
         setRoutinePermissions({});
       }
     } catch (err) {
@@ -216,6 +227,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     <AuthContext.Provider value={{ 
       user, session, loading, isAdmin, isGerente, isVisitor, 
       managedGroupIds: managedGroupIds || [], 
+      userGroupIds: userGroupIds || [],
       profile, routinePermissions, unreadAnnouncements, signOut 
     }}>
       {children}

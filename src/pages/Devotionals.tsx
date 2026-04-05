@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { BookOpen, Plus, Edit2, Trash2, Heart, Users, Upload } from "lucide-react";
+import { BookOpen, Plus, Edit2, Trash2, Heart, Users, Upload, Mic2, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -268,8 +268,12 @@ const Devotionals = () => {
 
       {/* Create Dialog */}
       <Dialog open={creatingDev} onOpenChange={val => !val && setCreatingDev(false)}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Novo Devocional</DialogTitle></DialogHeader>
+        <DialogContent className="sm:max-w-[750px] max-h-[90vh] overflow-y-auto rounded-3xl border-0 shadow-2xl custom-scrollbar">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-primary flex items-center gap-2">
+              <Plus className="h-6 w-6" /> Novo Devocional
+            </DialogTitle>
+          </DialogHeader>
           <DevForm 
             title={title} setTitle={setTitle}
             content={content} setContent={setContent}
@@ -279,10 +283,10 @@ const Devotionals = () => {
             isActive={isActive} setIsActive={setIsActive}
             mediaUrl={mediaUrl} setMediaUrl={setMediaUrl}
           />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCreatingDev(false)}>Cancelar</Button>
-            <Button onClick={() => saveMutation.mutate()} disabled={!title || !content || saveMutation.isPending}>
-              {saveMutation.isPending ? "Salvando..." : "Criar"}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setCreatingDev(false)} className="rounded-xl border-2">Cancelar</Button>
+            <Button onClick={() => saveMutation.mutate()} disabled={!title || !content || saveMutation.isPending} className="rounded-xl px-12 font-bold shadow-lg shadow-primary/20">
+              {saveMutation.isPending ? "Salvando..." : "Publicar Devocional"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -290,8 +294,12 @@ const Devotionals = () => {
 
       {/* Edit Dialog */}
       <Dialog open={!!editingDev} onOpenChange={val => !val && setEditingDev(null)}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Editar Devocional</DialogTitle></DialogHeader>
+        <DialogContent className="sm:max-w-[750px] max-h-[90vh] overflow-y-auto rounded-3xl border-0 shadow-2xl custom-scrollbar">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-primary flex items-center gap-2">
+              <Edit2 className="h-6 w-6" /> Editar Devocional
+            </DialogTitle>
+          </DialogHeader>
           <DevForm 
             title={title} setTitle={setTitle}
             content={content} setContent={setContent}
@@ -301,10 +309,10 @@ const Devotionals = () => {
             isActive={isActive} setIsActive={setIsActive}
             mediaUrl={mediaUrl} setMediaUrl={setMediaUrl}
           />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingDev(null)}>Cancelar</Button>
-            <Button onClick={() => saveMutation.mutate()} disabled={!title || !content || saveMutation.isPending}>
-              {saveMutation.isPending ? "Salvando..." : "Salvar"}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setEditingDev(null)} className="rounded-xl border-2">Cancelar</Button>
+            <Button onClick={() => saveMutation.mutate()} disabled={!title || !content || saveMutation.isPending} className="rounded-xl px-12 font-bold shadow-lg shadow-primary/20">
+              {saveMutation.isPending ? "Salvando..." : "Salvar Alterações"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -387,71 +395,92 @@ const DevForm = ({ title, setTitle, content, setContent, status, setStatus, publ
   };
 
   return (
-  <div className="space-y-4 py-4">
-    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-dashed">
-      <div className="space-y-0.5">
-        <Label>Devocional Ativo</Label>
-        <p className="text-[10px] text-muted-foreground">Define se o devocional será visível para os membros</p>
+  <div className="space-y-8 py-4">
+    <div className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-primary/20 shadow-inner">
+      <div className="space-y-1">
+        <Label className="text-sm font-bold text-primary">Estado de Visibilidade</Label>
+        <p className="text-[11px] text-muted-foreground leading-tight">Escolha se este devocional estará visível imediatamente para os membros.</p>
       </div>
-      <Switch checked={isActive} onCheckedChange={setIsActive} />
+      <Switch checked={isActive} onCheckedChange={setIsActive} className="data-[state=checked]:bg-primary" />
     </div>
 
-    <div className="space-y-2">
-      <Label>Título</Label>
-      <Input value={title} onChange={(e: any) => setTitle(e.target.value)} placeholder="Título do devocional" />
-    </div>
-    <div className="space-y-2">
-      <Label>Conteúdo</Label>
-      <Textarea value={content} onChange={(e: any) => setContent(e.target.value)} placeholder="Conteúdo..." rows={7} />
-    </div>
-    <div className="grid grid-cols-2 gap-4">
-      <div className="space-y-2">
-        <Label>Status</Label>
-        <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="published">Publicar agora</SelectItem>
-            <SelectItem value="scheduled">Agendar</SelectItem>
-            <SelectItem value="draft">Rascunho</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      {(status === "scheduled" || status === "published") && (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="space-y-4 md:col-span-2">
         <div className="space-y-2">
-          <Label>Data de Publicação</Label>
-          <Input type="datetime-local" value={publishDate} onChange={(e: any) => setPublishDate(e.target.value)} />
+          <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Título do Devocional</Label>
+          <Input value={title} onChange={(e: any) => setTitle(e.target.value)} placeholder="Ex: A Importância da Oração Diária" className="rounded-xl h-11 font-medium" />
         </div>
-      )}
+        <div className="space-y-2">
+          <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Conteúdo Inspiracional</Label>
+          <Textarea value={content} onChange={(e: any) => setContent(e.target.value)} placeholder="Escreva a mensagem aqui..." rows={8} className="rounded-2xl resize-none" />
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Status de Publicação</Label>
+          <Select value={status} onValueChange={setStatus}>
+            <SelectTrigger className="rounded-xl h-11"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="published">Publicar Imediatamente</SelectItem>
+              <SelectItem value="scheduled">Agendar p/ Futuro</SelectItem>
+              <SelectItem value="draft">Manter como Rascunho</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        {(status === "scheduled" || status === "published") && (
+          <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Data/Hora de Ativação</Label>
+            <div className="relative">
+              <Input type="datetime-local" value={publishDate} onChange={(e: any) => setPublishDate(e.target.value)} className="rounded-xl h-11 pl-10" />
+              <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+            Data de Expiração (Opcional)
+          </Label>
+          <div className="relative">
+            <Input type="datetime-local" value={expirationDate} onChange={(e: any) => setExpirationDate(e.target.value)} className="rounded-xl h-11 pl-10" />
+            <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          </div>
+          <p className="text-[10px] text-muted-foreground italic">Deixará de aparecer após esta data.</p>
+        </div>
+      </div>
     </div>
-    <div className="space-y-2">
-      <Label className="flex items-center gap-2">
-        Data de Expiração
-        <CalendarIcon className="h-3 w-3 text-muted-foreground" />
-      </Label>
-      <Input type="datetime-local" value={expirationDate} onChange={(e: any) => setExpirationDate(e.target.value)} />
-      <p className="text-[10px] text-muted-foreground">Opcional. O devocional deixará de aparecer para membros após esta data.</p>
-    </div>
-    <div className="space-y-2">
-      <Label>Mídia (Imagem, Vídeo ou URL do YouTube)</Label>
+
+    <div className="space-y-4 bg-muted/30 p-5 rounded-2xl border border-dashed border-muted-foreground/30">
+      <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Mídia e Anexos (Imagem, Vídeo ou YouTube)</Label>
       <div className="flex gap-2">
-        <Input value={mediaUrl} onChange={(e: any) => setMediaUrl(e.target.value)} placeholder="Cole uma URL ou faça upload" className="flex-1" />
+        <Input value={mediaUrl} onChange={(e: any) => setMediaUrl(e.target.value)} placeholder="Cole uma URL ou use os botões ao lado" className="flex-1 rounded-xl h-11" />
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
         <input ref={videoRef} type="file" accept="video/*" className="hidden" onChange={handleVideoUpload} />
-        <Button type="button" variant="secondary" size="sm" onClick={() => fileRef.current?.click()} disabled={uploading}>
-          📷
+        <Button type="button" variant="secondary" className="h-11 w-11 rounded-xl" onClick={() => fileRef.current?.click()} disabled={uploading}>
+          <Upload className="h-4 w-4" />
         </Button>
-        <Button type="button" variant="secondary" size="sm" onClick={() => videoRef.current?.click()} disabled={uploading}>
-          🎥
+        <Button type="button" variant="secondary" className="h-11 w-11 rounded-xl" onClick={() => videoRef.current?.click()} disabled={uploading}>
+          <Mic2 className="h-4 w-4" />
         </Button>
       </div>
-      {uploading && <p className="text-xs text-muted-foreground animate-pulse">Enviando arquivo...</p>}
-      {mediaUrl && !mediaUrl.includes("youtube") && !mediaUrl.includes("youtu.be") && (
-        <div className="mt-2 rounded-lg overflow-hidden border max-h-40">
-          {mediaUrl.match(/\.(mp4|webm|mov)/) ? (
-            <video src={mediaUrl} controls className="w-full max-h-40" />
+      {uploading && <p className="text-xs text-primary font-medium animate-pulse flex items-center gap-2">
+        <Loader2 className="h-3 w-3 animate-spin" /> Processando seu arquivo...
+      </p>}
+      
+      {mediaUrl && (
+        <div className="relative mt-2 rounded-xl overflow-hidden border-2 border-background shadow-md bg-muted aspect-video max-h-48 mx-auto">
+          {mediaUrl.includes("youtube") || mediaUrl.includes("youtu.be") ? (
+            <iframe className="w-full h-full" src={mediaUrl.replace("watch?v=", "embed/")} allowFullScreen />
+          ) : mediaUrl.match(/\.(mp4|webm|mov)/) ? (
+            <video src={mediaUrl} controls className="w-full h-full object-cover" />
           ) : (
-            <img src={mediaUrl} alt="Preview" className="w-full max-h-40 object-cover" />
+            <img src={mediaUrl} alt="Preview" className="w-full h-full object-cover" />
           )}
+          <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7 rounded-full" onClick={() => setMediaUrl("")}><Trash2 className="h-3.5 w-3.5" /></Button>
         </div>
       )}
     </div>

@@ -168,17 +168,17 @@ const Groups = () => {
 
       {/* Create Dialog */}
       <Dialog open={creatingGroup} onOpenChange={val => !val && setCreatingGroup(false)}>
-        <DialogContent className="sm:max-w-[400px]">
-          <DialogHeader><DialogTitle>Novo Grupo</DialogTitle></DialogHeader>
+        <DialogContent className="sm:max-w-[600px] rounded-3xl border-0 shadow-2xl">
+          <DialogHeader><DialogTitle className="text-xl font-bold">Novo Departamento</DialogTitle></DialogHeader>
           <GroupForm
             groupIcon={groupIcon} setGroupIcon={setGroupIcon}
             groupName={groupName} setGroupName={setGroupName}
             groupDesc={groupDesc} setGroupDesc={setGroupDesc}
           />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCreatingGroup(false)}>Cancelar</Button>
-            <Button onClick={() => saveMutation.mutate()} disabled={!groupName || saveMutation.isPending}>
-              {saveMutation.isPending ? "Salvando..." : "Criar"}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setCreatingGroup(false)} className="rounded-xl border-2">Cancelar</Button>
+            <Button onClick={() => saveMutation.mutate()} disabled={!groupName || saveMutation.isPending} className="rounded-xl px-8 font-bold">
+              {saveMutation.isPending ? "Salvando..." : "Criar Departamento"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -197,17 +197,17 @@ const Groups = () => {
 
       {/* Edit Dialog */}
       <Dialog open={!!editingGroup} onOpenChange={val => !val && setEditingGroup(null)}>
-        <DialogContent className="sm:max-w-[400px]">
-          <DialogHeader><DialogTitle>Editar Grupo</DialogTitle></DialogHeader>
+        <DialogContent className="sm:max-w-[600px] rounded-3xl border-0 shadow-2xl">
+          <DialogHeader><DialogTitle className="text-xl font-bold">Editar Departamento: {editingGroup?.name}</DialogTitle></DialogHeader>
           <GroupForm
             groupIcon={groupIcon} setGroupIcon={setGroupIcon}
             groupName={groupName} setGroupName={setGroupName}
             groupDesc={groupDesc} setGroupDesc={setGroupDesc}
           />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingGroup(null)}>Cancelar</Button>
-            <Button onClick={() => saveMutation.mutate()} disabled={!groupName || saveMutation.isPending}>
-              {saveMutation.isPending ? "Salvando..." : "Salvar"}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setEditingGroup(null)} className="rounded-xl border-2">Cancelar</Button>
+            <Button onClick={() => saveMutation.mutate()} disabled={!groupName || saveMutation.isPending} className="rounded-xl px-8 font-bold">
+              {saveMutation.isPending ? "Salvando..." : "Salvar Alterações"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -215,13 +215,14 @@ const Groups = () => {
 
       {/* Manage Members Dialog */}
       <Dialog open={!!managingGroup} onOpenChange={val => !val && setManagingGroup(null)}>
-        <DialogContent className="sm:max-w-[450px] max-h-[90vh]">
+        <DialogContent className="sm:max-w-[550px] rounded-3xl border-0 shadow-2xl max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle>Membros: {managingGroup?.name}</DialogTitle>
+            <DialogTitle className="text-xl font-bold">Gerenciar Membros: {managingGroup?.name}</DialogTitle>
+            <p className="text-xs text-muted-foreground mt-1">Selecione os membros que fazem parte deste departamento.</p>
           </DialogHeader>
-          <div className="overflow-y-auto max-h-[50vh] py-2 space-y-2">
+          <div className="overflow-y-auto max-h-[50vh] py-4 pr-2 space-y-2 custom-scrollbar">
             {allMembers?.map(m => (
-              <div key={m.user_id} className="flex items-center space-x-3 p-2 rounded hover:bg-muted/50">
+              <div key={m.user_id} className="flex items-center space-x-3 p-3 rounded-xl hover:bg-muted/50 border border-transparent hover:border-border transition-all group">
                 <Checkbox
                   id={`gm-${m.user_id}`}
                   checked={selectedMembers.includes(m.user_id)}
@@ -229,20 +230,21 @@ const Groups = () => {
                     if (checked) setSelectedMembers([...selectedMembers, m.user_id]);
                     else setSelectedMembers(selectedMembers.filter(id => id !== m.user_id));
                   }}
+                  className="rounded-md"
                 />
-                <label htmlFor={`gm-${m.user_id}`} className="text-sm font-medium cursor-pointer flex-1">
+                <label htmlFor={`gm-${m.user_id}`} className="text-sm font-semibold cursor-pointer flex-1 group-hover:text-primary transition-colors">
                   {m.full_name || "Sem nome"}
                 </label>
                 {selectedMembers.includes(m.user_id) && (
-                  <Badge variant="secondary" className="text-xs">no grupo</Badge>
+                  <Badge variant="secondary" className="text-[10px] bg-primary/10 text-primary border-0">membro ativo</Badge>
                 )}
               </div>
             ))}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setManagingGroup(null)}>Cancelar</Button>
-            <Button onClick={() => saveMembersMutation.mutate()} disabled={saveMembersMutation.isPending}>
-              {saveMembersMutation.isPending ? "Salvando..." : "Salvar Membros"}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setManagingGroup(null)} className="rounded-xl border-2">Cancelar</Button>
+            <Button onClick={() => saveMembersMutation.mutate()} disabled={saveMembersMutation.isPending} className="rounded-xl px-8 font-bold">
+              {saveMembersMutation.isPending ? "Salvando..." : "Salvar Alterações"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -254,18 +256,21 @@ const Groups = () => {
 export default Groups;
 
 const GroupForm = ({ groupIcon, setGroupIcon, groupName, setGroupName, groupDesc, setGroupDesc }: any) => (
-  <div className="space-y-4 py-4">
-    <div className="space-y-2">
-      <Label>Ícone (emoji)</Label>
-      <Input value={groupIcon} onChange={e => setGroupIcon(e.target.value)} placeholder="🌊" className="w-20" />
+  <div className="space-y-6 py-4">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="space-y-2 md:col-span-1">
+        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Ícone (emoji)</Label>
+        <Input value={groupIcon} onChange={e => setGroupIcon(e.target.value)} placeholder="🌊" className="rounded-xl h-11 text-center text-xl" />
+      </div>
+      <div className="space-y-2 md:col-span-3">
+        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Nome do Departamento</Label>
+        <Input value={groupName} onChange={e => setGroupName(e.target.value)} placeholder="Nome do departamento" className="rounded-xl h-11" />
+      </div>
     </div>
     <div className="space-y-2">
-      <Label>Nome do Grupo</Label>
-      <Input value={groupName} onChange={e => setGroupName(e.target.value)} placeholder="Nome do grupo" />
-    </div>
-    <div className="space-y-2">
-      <Label>Descrição (opcional)</Label>
-      <Input value={groupDesc} onChange={e => setGroupDesc(e.target.value)} placeholder="Descrição breve" />
+      <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Descrição (opcional)</Label>
+      <Input value={groupDesc} onChange={e => setGroupDesc(e.target.value)} placeholder="Descreva brevemente a função deste departamento..." className="rounded-xl h-11" />
     </div>
   </div>
 );
+

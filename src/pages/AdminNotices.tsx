@@ -45,7 +45,11 @@ const AdminNotices = () => {
   const { data: groups } = useQuery({
     queryKey: ["groups-list-notices"],
     queryFn: async () => {
-      const { data } = await supabase.from("groups").select("id, name");
+      let query = supabase.from("groups").select("id, name");
+      if (!isAdmin && managedGroupIds.length > 0) {
+        query = query.in("id", managedGroupIds);
+      }
+      const { data } = await query;
       return data || [];
     },
   });
@@ -53,7 +57,14 @@ const AdminNotices = () => {
   const { data: members } = useQuery({
     queryKey: ["members-list-notices"],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("user_id, full_name");
+      let query = supabase.from("profiles").select("user_id, full_name");
+      if (!isAdmin && managedGroupIds.length > 0) {
+        // Busca os IDs dos usuários que pertencem aos grupos liderados pelo gerente
+        const { data: memberData } = await supabase.from("member_groups").select("user_id").in("group_id", managedGroupIds);
+        const ids = memberData?.map(m => m.user_id) || [];
+        query = query.in("user_id", ids);
+      }
+      const { data } = await query;
       return data || [];
     },
   });
@@ -63,7 +74,7 @@ const AdminNotices = () => {
   );
 
   const { data: announcements, isLoading } = useQuery({
-    queryKey: ["announcements-inbox", filter],
+    queryKey: ["announcements-inbox", filter, user?.id],
     queryFn: async () => {
       // Usando select "*" para evitar erros de join enquanto estabilizamos as colunas
       let query = (supabase as any)
@@ -72,7 +83,9 @@ const AdminNotices = () => {
         .order("created_at", { ascending: false });
 
       if (filter === "group") query = query.not("target_group_id", "is", null);
-      if (filter === "private") query = query.eq("target_user_id", user?.id);
+      if (filter === "private") {
+        query = query.or(`target_user_id.eq.${user?.id},created_by.eq.${user?.id}`).eq("type", "individual");
+      }
       
       const { data, error } = await query;
       if (error) throw error;
@@ -99,9 +112,13 @@ const AdminNotices = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      setTitle(""); setContent(""); setIsOpen(false);
+      setTitle(""); 
+      setContent(""); 
+      setGroupId("");
+      setTargetUserId("");
+      setIsOpen(false);
       queryClient.invalidateQueries({ queryKey: ["announcements-inbox"] });
-      toast({ title: "Aviso disparado!", description: "O comunicado foi enviado com sucesso." });
+      toast({ title: "Enviado com sucesso! 🚀", description: "O comunicado já está disponível no seu histórico." });
     },
     onError: (err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" })
   });
@@ -117,7 +134,7 @@ const AdminNotices = () => {
     }
   });
 
-  const canCreate = isAdmin;
+  const canCreate = isAdmin || isGerente;
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-8 pb-Safe">
@@ -140,77 +157,82 @@ const AdminNotices = () => {
                   <Send className="h-4 w-4" /> Novo Comunicado
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px]">
+              <DialogContent className="sm:max-w-[900px] rounded-3xl border-0 shadow-2xl">
                 <DialogHeader>
-                  <DialogTitle>Criar Novo Comunicado</DialogTitle>
+                  <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-primary">
+                    <Send className="h-6 w-6" /> Novo Comunicado
+                  </DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Alcance</Label>
+                <div className="space-y-3 py-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Alcance do Aviso</Label>
                       <Select value={type} onValueChange={setType}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="rounded-xl h-10"><SelectValue placeholder="Selecione o destino" /></SelectTrigger>
                         <SelectContent>
-                          {isAdmin && <SelectItem value="general">Geral (Todos)</SelectItem>}
-                          <SelectItem value="group">Departamento</SelectItem>
-                          {isAdmin && <SelectItem value="individual">Individual</SelectItem>}
+                          {isAdmin && <SelectItem value="general">Geral (Toda a Igreja)</SelectItem>}
+                          <SelectItem value="group">Departamento Específico</SelectItem>
+                          {(isAdmin || isGerente) && <SelectItem value="individual">Membro Individual</SelectItem>}
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Prioridade</Label>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Nível de Prioridade</Label>
                       <Select value={priority} onValueChange={setPriority}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="rounded-xl h-10"><SelectValue placeholder="Escolha a prioridade" /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="normal">Normal</SelectItem>
-                          <SelectItem value="urgent">Urgente 🚨</SelectItem>
+                          <SelectItem value="normal">Informativo (Normal)</SelectItem>
+                          <SelectItem value="urgent">Urgente (Push 🚨)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
 
-                  {type === "group" && (
-                    <div className="space-y-2">
-                      <Label>Departamento Destino</Label>
-                      <Select value={groupId} onValueChange={setGroupId}>
-                        <SelectTrigger><SelectValue placeholder="Escolha o grupo" /></SelectTrigger>
-                        <SelectContent>
-                          {groups?.map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                    {type === "group" && (
+                      <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2">
+                        <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Departamento Destino</Label>
+                        <Select value={groupId} onValueChange={setGroupId}>
+                          <SelectTrigger className="rounded-xl h-10"><SelectValue placeholder="Escolha o departamento" /></SelectTrigger>
+                          <SelectContent>
+                            {groups?.map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
 
-                  {type === "individual" && (
-                    <div className="space-y-2">
-                      <Label>Membro Destino</Label>
-                      <Select value={targetUserId} onValueChange={setTargetUserId}>
-                        <SelectTrigger><SelectValue placeholder="Escolha o membro" /></SelectTrigger>
-                        <SelectContent>
-                          {members?.map(m => <SelectItem key={m.user_id} value={m.user_id}>{m.full_name}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
+                    {type === "individual" && (
+                      <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2">
+                        <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Membro Destino</Label>
+                        <Select value={targetUserId} onValueChange={setTargetUserId}>
+                          <SelectTrigger className="rounded-xl h-10"><SelectValue placeholder="Busque o membro" /></SelectTrigger>
+                          <SelectContent>
+                            {members?.map(m => <SelectItem key={m.user_id} value={m.user_id}>{m.full_name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
 
-                  <div className="space-y-2">
-                    <Label>Título</Label>
-                    <Input placeholder="Resumo do aviso..." value={title} onChange={(e) => setTitle(e.target.value)} />
+                    <div className={cn("space-y-1.5", type === "general" && "md:col-span-2")}>
+                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Assunto / Título</Label>
+                      <Input placeholder="Resumo do aviso..." value={title} onChange={(e) => setTitle(e.target.value)} className="rounded-xl h-10" />
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label>Mensagem</Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Mensagem Detalhada</Label>
                     <Textarea 
-                      placeholder="Escreva os detalhes aqui..." 
-                      className="min-h-[120px]" 
+                      placeholder="Descreva aqui todas as informações importantes do comunicado..." 
+                      className="min-h-[100px] rounded-2xl resize-none py-3" 
                       value={content}
                       onChange={(e) => setContent(e.target.value)}
                     />
                   </div>
 
-                  <Button className="w-full" onClick={() => sendMutation.mutate()} disabled={sendMutation.isPending}>
-                    {sendMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
-                    Disparar agora
+                  <Button className="w-full h-11 rounded-xl font-bold shadow-lg shadow-primary/20 mt-2" onClick={() => sendMutation.mutate()} disabled={sendMutation.isPending}>
+                    {sendMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <Send className="h-5 w-5 mr-2" />}
+                    Disparar Comunicado
                   </Button>
                 </div>
               </DialogContent>
@@ -301,10 +323,13 @@ const AdminNotices = () => {
                             {notice.priority === "urgent" && (
                               <Badge variant="destructive" className="animate-bounce">URGENTE</Badge>
                             )}
-                            <Badge variant="secondary" className="bg-muted/50">
-                              {notice.type === "general" ? "Igreja" : "Departamento"}
+                            <Badge variant="secondary" className={cn(
+                              "bg-muted/50",
+                              notice.type === "individual" && "bg-indigo-50 text-indigo-700 border-indigo-100"
+                            )}>
+                              {notice.type === "general" ? "Igreja" : notice.type === "individual" ? "Privado" : "Departamento"}
                             </Badge>
-                            {notice.target_user_id === user?.id && (
+                            {notice.target_user_id === user?.id && notice.type !== "individual" && (
                               <Badge variant="outline" className="text-indigo-600 border-indigo-200 bg-indigo-50">Individual</Badge>
                             )}
                           </div>
@@ -321,7 +346,7 @@ const AdminNotices = () => {
                           {notice.content}
                         </p>
 
-                        {isAdmin && (
+                        {((isAdmin) || (isGerente && notice.created_by === user?.id)) && (
                           <div className="mt-4 pt-4 border-t flex justify-end">
                             <Button 
                               variant="ghost" 
@@ -329,7 +354,7 @@ const AdminNotices = () => {
                               className="h-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                               onClick={() => deleteMutation.mutate(notice.id)}
                             >
-                              <Trash2 className="h-4 w-4 mr-2" /> Excluir Aviso
+                              <Trash2 className="h-4 w-4 mr-2" /> Excluir Comunicado
                             </Button>
                           </div>
                         )}
