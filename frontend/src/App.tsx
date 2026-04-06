@@ -27,6 +27,7 @@ import AdminNotices from "./pages/AdminNotices";
 import GroupPermissions from "./pages/GroupPermissions";
 import NotFound from "./pages/NotFound";
 import InstallBanner from "./components/InstallBanner";
+import AdminWhatsApp from "./pages/AdminWhatsApp";
 
 const queryClient = new QueryClient();
 
@@ -86,6 +87,7 @@ const App = () => (
               <Route path="/arquivos" element={<ProtectedRoute><ArchivedChats /></ProtectedRoute>} />
               <Route path="/checkin-kids" element={<ProtectedRoute><KidsCheckin /></ProtectedRoute>} />
               <Route path="/comunicados" element={<ProtectedRoute><AdminNotices /></ProtectedRoute>} />
+              <Route path="/whatsapp" element={<ProtectedRoute><AdminWhatsApp /></ProtectedRoute>} />
               <Route path="/gestao-rotinas" element={<ProtectedRoute><GroupPermissions /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>

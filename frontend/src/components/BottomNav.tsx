@@ -1,4 +1,4 @@
-import { Home, Calendar, BookOpen, MessageCircle, User, ShieldCheck, Users, Settings, Target, HandHeart, BarChart3, Megaphone } from "lucide-react";
+import { Home, Calendar, BookOpen, MessageCircle, User, ShieldCheck, Users, Settings, Target, HandHeart, BarChart3, Megaphone, Smartphone } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -111,6 +111,14 @@ const BottomNav = () => {
                     <Settings className="h-5 w-5" />
                   </div>
                   <span className="text-[10px] font-semibold">Ajustes</span>
+                </Link>
+              )}
+              {isAdmin && (
+                <Link to="/whatsapp" onClick={() => setOpen(false)} className="flex flex-col items-center gap-2 text-muted-foreground hover:text-primary">
+                  <div className="h-10 w-10 rounded-xl bg-secondary/50 flex items-center justify-center">
+                    <Smartphone className="h-5 w-5" />
+                  </div>
+                  <span className="text-[10px] font-semibold">WhatsApp</span>
                 </Link>
               )}
               {(isAdmin || routinePermissions.kids !== false) && (

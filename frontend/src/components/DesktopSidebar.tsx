@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Home, Calendar, BookOpen, MessageCircle, User, Users, LogOut, ChevronLeft, ChevronRight, Bell, BellOff, Shield, ShieldCheck, Settings, Sun, Moon, HandHeart, BarChart3, Archive, Megaphone } from "lucide-react";
+import { Home, Calendar, BookOpen, MessageCircle, User, Users, LogOut, ChevronLeft, ChevronRight, Bell, BellOff, Shield, ShieldCheck, Settings, Sun, Moon, HandHeart, BarChart3, Archive, Megaphone, Smartphone } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -47,6 +47,7 @@ const navGroups: {
       { path: "/membros", icon: Users, label: "Membros", routine: "membros" },
       { path: "/departamentos", icon: Shield, label: "Departamentos", adminOnly: true },
       { path: "/relatorios", icon: BarChart3, label: "Relatórios", adminOnly: true, routine: "relatorios" },
+      { path: "/whatsapp", icon: Smartphone, label: "WhatsApp", adminOnly: true },
       { path: "/configuracoes", icon: Settings, label: "Ajustes", adminOnly: true },
     ]
   }
