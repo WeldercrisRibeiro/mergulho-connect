@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { prisma } from "../lib/prisma";
+import { supabase } from "../lib/supabase";
 import { upload } from "../middleware/upload";
 import path from "path";
 
@@ -15,11 +15,22 @@ function getAttachmentType(mimetype: string): "image" | "video" | "audio" | "doc
 // GET /api/dispatches — lista todos os disparos
 router.get("/", async (_req: Request, res: Response) => {
   try {
-    const dispatches = await prisma.wzDispatch.findMany({
-      include: { attachments: true, logs: { orderBy: { created_at: "desc" } } },
-      orderBy: { created_at: "desc" },
-    });
-    res.json(dispatches);
+    const { data: dispatches, error } = await supabase
+      .from("wz_dispatches")
+      .select("*, attachments:wz_dispatch_attachments(*), logs:wz_dispatch_logs(*)")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    
+    // Ordena logs manualmente pois o Supabase não suporta order by em nested select de forma simples
+    const formatted = (dispatches || []).map(d => ({
+      ...d,
+      logs: (d.logs || []).sort((a: any, b: any) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      )
+    }));
+
+    res.json(formatted);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -45,8 +56,9 @@ router.post("/", upload.array("files"), async (req: Request, res: Response) => {
 
     const files = (req.files as Express.Multer.File[]) || [];
 
-    const dispatch = await prisma.wzDispatch.create({
-      data: {
+    const { data: dispatch, error: dError } = await supabase
+      .from("wz_dispatches")
+      .insert({
         title,
         content: content || null,
         type: type || "general",
@@ -54,21 +66,35 @@ router.post("/", upload.array("files"), async (req: Request, res: Response) => {
         target_group_id: target_group_id || null,
         target_user_id: target_user_id || null,
         status: "pending",
-        scheduled_at: new Date(scheduled_at),
+        scheduled_at: new Date(scheduled_at).toISOString(),
         created_by: created_by || null,
-        attachments: {
-          create: files.map((file) => ({
-            type: getAttachmentType(file.mimetype),
-            filename: file.originalname,
-            filepath: file.path,
-            mimetype: file.mimetype,
-          })),
-        },
-      },
-      include: { attachments: true, logs: true },
-    });
+      })
+      .select()
+      .single();
 
-    res.status(201).json(dispatch);
+    if (dError) throw dError;
+
+    if (files.length > 0) {
+      const { error: aError } = await supabase.from("wz_dispatch_attachments").insert(
+        files.map((file) => ({
+          dispatch_id: dispatch.id,
+          type: getAttachmentType(file.mimetype),
+          filename: file.originalname,
+          filepath: file.path,
+          mimetype: file.mimetype,
+        }))
+      );
+      if (aError) throw aError;
+    }
+
+    // Busca o objeto completo para retornar (com attachments e logs vazios)
+    const { data: fullDispatch } = await supabase
+      .from("wz_dispatches")
+      .select("*, attachments:wz_dispatch_attachments(*), logs:wz_dispatch_logs(*)")
+      .eq("id", dispatch.id)
+      .single();
+
+    res.status(201).json(fullDispatch);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -86,7 +112,12 @@ router.put("/:id", upload.array("files"), async (req: Request, res: Response) =>
       return;
     }
 
-    const existing = await prisma.wzDispatch.findUnique({ where: { id } });
+    const { data: existing, error: eError } = await supabase
+      .from("wz_dispatches")
+      .select("*")
+      .eq("id", id)
+      .single();
+
     if (!existing) {
       res.status(404).json({ error: "Disparo não encontrado." });
       return;
@@ -110,23 +141,17 @@ router.put("/:id", upload.array("files"), async (req: Request, res: Response) =>
     }
 
     // Exclui os anexos que não vieram na lista de kept_attachments
-    await prisma.wzDispatchAttachment.deleteMany({
-      where: {
-        dispatch_id: id,
-        id: { notIn: keptIds }
-      }
-    });
+    await supabase.from("wz_dispatch_attachments").delete().eq("dispatch_id", id).not("id", "in", `(${keptIds.join(",")})`);
+    // Se a lista de mantidos for vazia, exclui todos
+    if (keptIds.length === 0) {
+      await supabase.from("wz_dispatch_attachments").delete().eq("dispatch_id", id);
+    } else {
+      await supabase.from("wz_dispatch_attachments").delete().eq("dispatch_id", id).not("id", "in", `(${keptIds.join(",")})`);
+    }
 
-    const newAttachments = files.map((file) => ({
-      type: getAttachmentType(file.mimetype),
-      filename: file.originalname,
-      filepath: file.path,
-      mimetype: file.mimetype,
-    }));
-
-    const dispatch = await prisma.wzDispatch.update({
-      where: { id },
-      data: {
+    const { error: uError } = await supabase
+      .from("wz_dispatches")
+      .update({
         title,
         content: content || null,
         type: type || "general",
@@ -135,15 +160,33 @@ router.put("/:id", upload.array("files"), async (req: Request, res: Response) =>
         target_user_id: target_user_id || null,
         status: "pending",
         error_message: null,
-        scheduled_at: new Date(scheduled_at),
-        attachments: {
-          create: newAttachments
-        }
-      },
-      include: { attachments: true, logs: true },
-    });
+        scheduled_at: new Date(scheduled_at).toISOString(),
+      })
+      .eq("id", id);
 
-    res.json(dispatch);
+    if (uError) throw uError;
+
+    if (files.length > 0) {
+      const { error: aError } = await supabase.from("wz_dispatch_attachments").insert(
+        files.map((file) => ({
+          dispatch_id: id,
+          type: getAttachmentType(file.mimetype),
+          filename: file.originalname,
+          filepath: file.path,
+          mimetype: file.mimetype,
+        }))
+      );
+      if (aError) throw aError;
+    }
+
+    // Busca atualizado
+    const { data: updated } = await supabase
+      .from("wz_dispatches")
+      .select("*, attachments:wz_dispatch_attachments(*), logs:wz_dispatch_logs(*)")
+      .eq("id", id)
+      .single();
+
+    res.json(updated);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -153,7 +196,12 @@ router.put("/:id", upload.array("files"), async (req: Request, res: Response) =>
 router.delete("/:id", async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
-    const dispatch = await prisma.wzDispatch.findUnique({ where: { id } });
+    const { data: dispatch } = await supabase
+      .from("wz_dispatches")
+      .select("status")
+      .eq("id", id)
+      .single();
+
     if (!dispatch) {
       res.status(404).json({ error: "Disparo não encontrado." });
       return;
@@ -162,7 +210,7 @@ router.delete("/:id", async (req: Request, res: Response) => {
       res.status(409).json({ error: "Não é possível excluir um disparo em andamento." });
       return;
     }
-    await prisma.wzDispatch.delete({ where: { id } });
+    await supabase.from("wz_dispatches").delete().eq("id", id);
     res.json({ ok: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -173,7 +221,12 @@ router.delete("/:id", async (req: Request, res: Response) => {
 router.post("/:id/retry", async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
-    const dispatch = await prisma.wzDispatch.findUnique({ where: { id } });
+    const { data: dispatch } = await supabase
+      .from("wz_dispatches")
+      .select("status")
+      .eq("id", id)
+      .single();
+
     if (!dispatch) {
       res.status(404).json({ error: "Disparo não encontrado." });
       return;
@@ -182,11 +235,19 @@ router.post("/:id/retry", async (req: Request, res: Response) => {
       res.status(409).json({ error: "Somente disparos com erro podem ser recolocados na fila." });
       return;
     }
-    const updated = await prisma.wzDispatch.update({
-      where: { id },
-      data: { status: "pending", error_message: null, scheduled_at: new Date() },
-      include: { attachments: true, logs: true },
-    });
+    const { error: uError } = await supabase
+      .from("wz_dispatches")
+      .update({ status: "pending", error_message: null, scheduled_at: new Date().toISOString() })
+      .eq("id", id);
+
+    if (uError) throw uError;
+
+    const { data: updated } = await supabase
+      .from("wz_dispatches")
+      .select("*, attachments:wz_dispatch_attachments(*), logs:wz_dispatch_logs(*)")
+      .eq("id", id)
+      .single();
+
     res.json(updated);
   } catch (err: any) {
     res.status(500).json({ error: err.message });

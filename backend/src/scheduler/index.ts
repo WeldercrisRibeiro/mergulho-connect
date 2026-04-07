@@ -1,5 +1,4 @@
 import cron from "node-cron";
-import { prisma } from "../lib/prisma";
 import { supabase } from "../lib/supabase";
 import { isConnected, sendTextMessage, sendMediaMessage } from "../whatsapp/client";
 
@@ -141,14 +140,14 @@ async function sendDispatch(dispatch: any): Promise<void> {
   }
 
   // Persiste os logs
-  await prisma.wzDispatchLog.createMany({
-    data: logs.map((l) => ({
+  await supabase.from("wz_dispatch_logs").insert(
+    logs.map((l) => ({
       dispatch_id: dispatch.id,
       recipient: l.recipient,
       status: l.status,
       error: l.error,
-    })),
-  });
+    }))
+  );
 
   // Lança erro somente se TODOS os destinatários falharam completamente
   const allFailed = logs.every((l) => l.status === "error");
@@ -160,35 +159,36 @@ async function sendDispatch(dispatch: any): Promise<void> {
 async function processPendingDispatches(): Promise<void> {
   const now = new Date();
 
-  const pending = await prisma.wzDispatch.findMany({
-    where: { status: "pending", scheduled_at: { lte: now } },
-    include: { attachments: true },
-  });
+  const { data: pending } = await supabase
+    .from("wz_dispatches")
+    .select("*, attachments:wz_dispatch_attachments(*)")
+    .eq("status", "pending")
+    .lte("scheduled_at", now.toISOString());
 
-  if (pending.length === 0) return;
+  if (!pending || pending.length === 0) return;
 
   console.log(`[Scheduler] ${pending.length} disparo(s) prontos para processar.`);
 
   for (const dispatch of pending) {
-    await prisma.wzDispatch.update({
-      where: { id: dispatch.id },
-      data: { status: "sending" },
-    });
+    await supabase
+      .from("wz_dispatches")
+      .update({ status: "sending" })
+      .eq("id", dispatch.id);
 
     try {
       await sendDispatch(dispatch);
 
-      await prisma.wzDispatch.update({
-        where: { id: dispatch.id },
-        data: { status: "sent", sent_at: new Date(), error_message: null },
-      });
+      await supabase
+        .from("wz_dispatches")
+        .update({ status: "sent", sent_at: new Date().toISOString(), error_message: null })
+        .eq("id", dispatch.id);
 
       console.log(`[Scheduler] ✓ Disparo "${dispatch.title}" concluído.`);
     } catch (err: any) {
-      await prisma.wzDispatch.update({
-        where: { id: dispatch.id },
-        data: { status: "error", error_message: err.message },
-      });
+      await supabase
+        .from("wz_dispatches")
+        .update({ status: "error", error_message: err.message })
+        .eq("id", dispatch.id);
 
       console.error(`[Scheduler] ✗ Falha no disparo "${dispatch.title}":`, err.message);
     }
