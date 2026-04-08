@@ -44,7 +44,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 const NotificationManager = () => {
   const { toast } = useToast();
-  
+
   useEffect(() => {
     const handler = (e: any) => {
       const notice = e.detail;
@@ -86,7 +86,7 @@ const App = () => (
               <Route path="/relatorios" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
               <Route path="/arquivos" element={<ProtectedRoute><ArchivedChats /></ProtectedRoute>} />
               <Route path="/checkin-kids" element={<ProtectedRoute><KidsCheckin /></ProtectedRoute>} />
-              <Route path="/comunicados" element={<ProtectedRoute><AdminNotices /></ProtectedRoute>} />
+              <Route path="/Disparos" element={<ProtectedRoute><AdminNotices /></ProtectedRoute>} />
               <Route path="/whatsapp" element={<ProtectedRoute><AdminWhatsApp /></ProtectedRoute>} />
               <Route path="/gestao-rotinas" element={<ProtectedRoute><GroupPermissions /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />

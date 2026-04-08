@@ -55,7 +55,7 @@ const SettingsPage = () => {
     { id: "relatorios", label: "Relatórios", icon: BarChart3, description: "Dados, gráficos e estatísticas" },
     { id: "chat", label: "Chat", icon: MessageCircle, description: "Mensagens e comunicação interna" },
     { id: "kids", label: "Check-in", icon: ShieldCheck, description: "Check-in e proteção infantil" },
-    { id: "comunicados", label: "Comunicados", icon: Megaphone, description: "Mural de avisos e notificações" },
+    { id: "Disparos", label: "Disparos", icon: Megaphone, description: "Mural de avisos e notificações" },
   ];
 
   const ROLE_TYPES = [

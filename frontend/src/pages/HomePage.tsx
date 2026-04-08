@@ -44,7 +44,7 @@ const HomePage = () => {
     queryKey: ["my-announcements", user?.id],
     queryFn: async () => {
       if (!user) return [];
-      
+
       const { data: memberGroups } = await (supabase as any)
         .from("member_groups")
         .select("group_id")
@@ -126,7 +126,7 @@ const HomePage = () => {
       </div>
 
       <div className="p-4 md:p-8 max-w-4xl mx-auto -mt-4 space-y-8 relative z-20">
-        
+
         {/* Active Kids Check-in */}
         {myActiveCheckin && (
           <Card className="border-0 shadow-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/20 dark:to-emerald-900/10 overflow-hidden ring-2 ring-emerald-500/20">
@@ -164,7 +164,7 @@ const HomePage = () => {
             { icon: MessageCircle, label: "Chat", path: "/chat", color: "bg-emerald-500", routine: "chat" },
             { icon: Users, label: "Membros", path: "/membros", color: "bg-indigo-500", adminOnly: true, routine: "membros" },
             { icon: ShieldCheck, label: "Check-in", path: "/checkin-kids", color: "bg-amber-500", adminOnly: true, routine: "kids" },
-            { icon: Megaphone, label: "Avisos", path: "/comunicados", color: "bg-purple-500", routine: "comunicados" },
+            { icon: Megaphone, label: "Avisos", path: "/Disparos", color: "bg-purple-500", routine: "Disparos" },
             { icon: BarChart3, label: "Relatórios", path: "/relatorios", color: "bg-slate-700", adminOnly: true, routine: "relatorios" },
           ].filter(item => {
             if (isVisitor) return ["/agenda", "/devocionais"].includes(item.path);
@@ -256,7 +256,7 @@ const HomePage = () => {
             ) : (
               <div className="p-8 text-center text-muted-foreground text-sm border font-italic rounded-2xl">Nada em destaque no momento.</div>
             )}
-            
+
             <div className="bg-muted/20 p-5 rounded-3xl flex items-center gap-4 shadow-inner">
               <div className="bg-primary/20 p-3 rounded-full text-primary"><TrendingUp className="h-5 w-5" /></div>
               <div>

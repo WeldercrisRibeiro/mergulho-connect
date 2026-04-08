@@ -8,50 +8,50 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 
-const navGroups: { 
-  label: string; 
-  items: { 
-    path: string; 
-    icon: any; 
-    label: string; 
-    adminOnly?: boolean; 
-    routine?: string; 
-  }[] 
+const navGroups: {
+  label: string;
+  items: {
+    path: string;
+    icon: any;
+    label: string;
+    adminOnly?: boolean;
+    routine?: string;
+  }[]
 }[] = [
-  {
-    label: "Geral",
-    items: [
-      { path: "/home", icon: Home, label: "Início" },
-      { path: "/perfil", icon: User, label: "Perfil" },
-    ]
-  },
-  {
-    label: "Ministério",
-    items: [
-      { path: "/agenda", icon: Calendar, label: "Agenda", routine: "agenda" },
-      { path: "/devocionais", icon: BookOpen, label: "Devocionais", routine: "devocionais" },
-      { path: "/voluntarios", icon: HandHeart, label: "Voluntários", routine: "voluntarios" },
-      { path: "/checkin-kids", icon: ShieldCheck, label: "Check-in", routine: "kids" },
-    ]
-  },
-  {
-    label: "Comunicação",
-    items: [
-      { path: "/chat", icon: MessageCircle, label: "Chat", routine: "chat" },
-      { path: "/comunicados", icon: Megaphone, label: "Comunicados", routine: "comunicados" },
-    ]
-  },
-  {
-    label: "Administração",
-    items: [
-      { path: "/membros", icon: Users, label: "Membros", routine: "membros" },
-      { path: "/departamentos", icon: Shield, label: "Departamentos", adminOnly: true },
-      { path: "/relatorios", icon: BarChart3, label: "Relatórios", adminOnly: true, routine: "relatorios" },
-      { path: "/whatsapp", icon: Smartphone, label: "WhatsApp", adminOnly: true },
-      { path: "/configuracoes", icon: Settings, label: "Ajustes", adminOnly: true },
-    ]
-  }
-];
+    {
+      label: "Geral",
+      items: [
+        { path: "/home", icon: Home, label: "Início" },
+        { path: "/perfil", icon: User, label: "Perfil" },
+      ]
+    },
+    {
+      label: "Ministério",
+      items: [
+        { path: "/agenda", icon: Calendar, label: "Agenda", routine: "agenda" },
+        { path: "/devocionais", icon: BookOpen, label: "Devocionais", routine: "devocionais" },
+        { path: "/voluntarios", icon: HandHeart, label: "Voluntários", routine: "voluntarios" },
+        { path: "/checkin-kids", icon: ShieldCheck, label: "Check-in", routine: "kids" },
+      ]
+    },
+    {
+      label: "Comunicação",
+      items: [
+        { path: "/chat", icon: MessageCircle, label: "Chat", routine: "chat" },
+        { path: "/Disparos", icon: Megaphone, label: "Disparos", routine: "Disparos" },
+      ]
+    },
+    {
+      label: "Administração",
+      items: [
+        { path: "/membros", icon: Users, label: "Membros", routine: "membros" },
+        { path: "/departamentos", icon: Shield, label: "Departamentos", adminOnly: true },
+        { path: "/relatorios", icon: BarChart3, label: "Relatórios", adminOnly: true, routine: "relatorios" },
+        { path: "/whatsapp", icon: Smartphone, label: "WhatsApp", adminOnly: true },
+        { path: "/configuracoes", icon: Settings, label: "Ajustes", adminOnly: true },
+      ]
+    }
+  ];
 
 
 
@@ -222,7 +222,7 @@ const DesktopSidebar = () => {
                               {totalUnread > 9 ? "9+" : totalUnread}
                             </span>
                           )}
-                          {path === "/comunicados" && unreadAnnouncements > 0 && (
+                          {path === "/Disparos" && unreadAnnouncements > 0 && (
                             <span className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-blue-500 text-white text-[9px] font-bold flex items-center justify-center animate-bounce border-2 border-sidebar">
                               {unreadAnnouncements > 9 ? "9+" : unreadAnnouncements}
                             </span>
@@ -293,7 +293,7 @@ const DesktopSidebar = () => {
               </TooltipTrigger>
               <TooltipContent side="right">Alternar Tema</TooltipContent>
             </Tooltip>
-            
+
             {!collapsed && (
               <Button
                 variant="ghost"

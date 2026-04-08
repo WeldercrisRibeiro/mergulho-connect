@@ -134,7 +134,7 @@ const AdminWhatsApp = () => {
                 <div className="space-y-2">
                   <h3 className="font-semibold text-xl text-foreground">Nenhum Aparelho Vinculado</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Você precisa conectar seu smartphone capturando o QR Code para ativar o envio unificado de comunicados.
+                    Você precisa conectar seu smartphone capturando o QR Code para ativar o envio unificado de Disparos.
                   </p>
                 </div>
                 <Button

@@ -56,6 +56,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
+    // Modo Debug Admin para quando o banco está inacessível
+    const IS_DEBUG_ADMIN = localStorage.getItem("debug_admin") === "true";
+    
+    if (IS_DEBUG_ADMIN) {
+      console.warn("⚠️ MODO DEBUG ADMIN ATIVO: Ignorando autenticação Supabase.");
+      const mockUser: any = {
+        id: "00000000-0000-0000-0000-000000000000",
+        email: "admin@debug.com",
+        user_metadata: { full_name: "Administrador (Debug)" },
+        app_metadata: {},
+        aud: "authenticated",
+        created_at: new Date().toISOString()
+      };
+      
+      setUser(mockUser);
+      setSession({ user: mockUser, access_token: "debug", refresh_token: "debug" } as any);
+      setIsAdmin(true);
+      setIsGerente(true);
+      setProfile({ 
+        full_name: "Administrador (Debug)", 
+        avatar_url: null, 
+        whatsapp_phone: "5500000000000" 
+      });
+      setLoading(false);
+      return;
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -257,6 +284,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user, loading]);
 
   const signOut = async () => {
+    localStorage.removeItem("debug_admin");
     await supabase.auth.signOut();
   };
 

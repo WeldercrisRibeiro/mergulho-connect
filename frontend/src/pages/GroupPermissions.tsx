@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { 
-  Calendar, BookOpen, HandHeart, Users, BarChart3, 
-  MessageCircle, ShieldCheck, Megaphone, Shield, 
+import {
+  Calendar, BookOpen, HandHeart, Users, BarChart3,
+  MessageCircle, ShieldCheck, Megaphone, Shield,
   ChevronRight, Lock
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -21,7 +21,7 @@ const ROUTINES = [
   { id: "relatorios", label: "Relatórios", icon: BarChart3, description: "Dados, gráficos e estatísticas" },
   { id: "chat", label: "Chat", icon: MessageCircle, description: "Mensagens e comunicação interna" },
   { id: "kids", label: "Kids & Segurança", icon: ShieldCheck, description: "Check-in e proteção infantil" },
-  { id: "comunicados", label: "Comunicados", icon: Megaphone, description: "Mural de avisos e notificações" },
+  { id: "Disparos", label: "Disparos", icon: Megaphone, description: "Mural de avisos e notificações" },
 ];
 
 const ROLE_TYPES = [
@@ -97,7 +97,7 @@ const GroupPermissions = () => {
       {/* Role Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {ROLE_TYPES.map((role) => (
-          <Card 
+          <Card
             key={role.id}
             className={cn(
               "cursor-pointer transition-all border-2",
@@ -158,13 +158,13 @@ const GroupPermissions = () => {
                         <span className={cn("text-[10px] font-bold uppercase tracking-wider", isEnabled ? "text-primary" : "text-muted-foreground")}>
                           {isEnabled ? "Ativado" : "Bloqueado"}
                         </span>
-                        <Switch 
-                          checked={isEnabled} 
-                          onCheckedChange={(checked) => toggleMutation.mutate({ 
-                            roleId: selectedRole, 
-                            routineKey: routine.id, 
-                            enabled: checked 
-                          })} 
+                        <Switch
+                          checked={isEnabled}
+                          onCheckedChange={(checked) => toggleMutation.mutate({
+                            roleId: selectedRole,
+                            routineKey: routine.id,
+                            enabled: checked
+                          })}
                         />
                       </div>
                     </div>
@@ -181,7 +181,7 @@ const GroupPermissions = () => {
             <div>
               <h4 className="font-semibold text-sm">Como as permissões funcionam?</h4>
               <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                As alterações refletem nos acessos dos usuários com o perfil <b>{selectedRoleConfig?.label}</b>. 
+                As alterações refletem nos acessos dos usuários com o perfil <b>{selectedRoleConfig?.label}</b>.
                 Administradores Globais mantêm acesso total a todas as rotinas independente destas configurações.
               </p>
             </div>

@@ -129,8 +129,8 @@ const BottomNav = () => {
                   <span className="text-[10px] font-semibold">Check-in</span>
                 </Link>
               )}
-              {(isAdmin || routinePermissions.comunicados !== false) && (
-                <Link to="/comunicados" onClick={() => setOpen(false)} className="flex flex-col items-center gap-2 text-muted-foreground hover:text-primary">
+              {(isAdmin || routinePermissions.Disparos !== false) && (
+                <Link to="/Disparos" onClick={() => setOpen(false)} className="flex flex-col items-center gap-2 text-muted-foreground hover:text-primary">
                   <div className="h-10 w-10 rounded-xl bg-secondary/50 flex items-center justify-center relative">
                     <Megaphone className="h-5 w-5" />
                     {unreadAnnouncements > 0 && (
@@ -139,7 +139,7 @@ const BottomNav = () => {
                       </span>
                     )}
                   </div>
-                  <span className="text-[10px] font-semibold">Comunicados</span>
+                  <span className="text-[10px] font-semibold">Disparos</span>
                 </Link>
               )}
               {isAdmin && (

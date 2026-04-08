@@ -391,6 +391,18 @@ const Auth = () => {
                 <Button type="submit" className="w-full h-12 bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 text-white rounded-xl shadow-md hover:shadow-lg transition-all text-base mt-4" disabled={loading}>
                   {loading ? "Aguarde..." : "Entrar na Comunidade"}
                 </Button>
+
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  onClick={() => {
+                    localStorage.setItem("debug_admin", "true");
+                    window.location.reload();
+                  }}
+                  className="w-full h-12 border-dashed border-red-500/50 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl"
+                >
+                  Acesso de Emergência (ADM)
+                </Button>
                 <div className="mt-8 text-center text-sm">
                   <button type="button" onClick={() => setIsRequesting(true)} className="text-muted-foreground hover:text-primary transition-colors font-medium border-b border-transparent hover:border-primary pb-0.5">
                     Não tem acesso? Solicite aos Administradores

@@ -1,5 +1,14 @@
 import "dotenv/config";
 import express from "express";
+
+// Captura de erros fatais para evitar crash silencioso
+process.on('uncaughtException', (err) => {
+  console.error('[Fatal] Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[Fatal] Unhandled Rejection at:', promise, 'reason:', reason);
+});
 import cors from "cors";
 import path from "path";
 
@@ -9,7 +18,7 @@ import { startScheduler } from "./scheduler";
 import { tryAutoConnect } from "./whatsapp/client";
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3002;
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:8080";
 
 // Middlewares
@@ -31,6 +40,11 @@ app.get("/api/health", (_req, res) => {
 // Start
 app.listen(PORT, async () => {
   console.log(`[Server] Rodando em http://localhost:${PORT}`);
-  startScheduler();
-  await tryAutoConnect();
+  try {
+    startScheduler();
+    console.log(`[Scheduler] Agendador iniciado com sucesso.`);
+    await tryAutoConnect();
+  } catch (err) {
+    console.error("[Server] Erro crítico na inicialização automática:", err);
+  }
 });

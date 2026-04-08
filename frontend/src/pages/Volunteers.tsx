@@ -108,23 +108,23 @@ const Volunteers = () => {
     queryKey: ["department-members", scheduleGroupId],
     queryFn: async () => {
       if (!scheduleGroupId) return [];
-      
+
       // Passo 1: Busca apenas os IDs dos usuários no grupo
       const { data: groupLinks, error: linkErr } = await supabase
         .from("member_groups")
         .select("user_id")
         .eq("group_id", scheduleGroupId);
-      
+
       if (linkErr || !groupLinks || groupLinks.length === 0) return [];
-      
+
       const userIds = groupLinks.map(l => l.user_id);
-      
+
       // Passo 2: Busca os perfis desses usuários
       const { data: profiles, error: profErr } = await supabase
         .from("profiles")
         .select("user_id, full_name")
         .in("user_id", userIds);
-      
+
       if (profErr) return [];
 
       // Retorna no formato esperado pelo Select m.profiles.full_name
@@ -389,7 +389,7 @@ const Volunteers = () => {
 
   const activeTabsCount = [
     showUser, // Escala
-    showUser, // Comunicados
+    showUser, // Disparos
     showTrain, // Treinamento
     showAdmin, // Gerenciar
     showAdmin  // Escalas-adm
@@ -424,7 +424,7 @@ const Volunteers = () => {
       <Tabs
         defaultValue={(isAdmin || isGerente) ? "gerenciar" : "escala"}
         onValueChange={(val) => {
-          if (val === "comunicados") {
+          if (val === "Disparos") {
             localStorage.setItem("last_checked_announcements", new Date().toISOString());
             // Trigger a potential re-render in sidebar if needed, 
             // though AuthContext polls or we can use an event
@@ -446,8 +446,8 @@ const Volunteers = () => {
             </TabsTrigger>
           )}
           {(isActive || isAdmin || isGerente) && (
-            <TabsTrigger value="comunicados" className="rounded-xl flex items-center gap-1 text-xs relative">
-              <Megaphone className="h-3.5 w-3.5" /> Comunicados
+            <TabsTrigger value="Disparos" className="rounded-xl flex items-center gap-1 text-xs relative">
+              <Megaphone className="h-3.5 w-3.5" /> Disparos
               {(unreadAnnouncements > 0) && (
                 <span className="absolute -top-1 -right-1 h-3 w-3 bg-blue-500 rounded-full animate-bounce border-2 border-background" />
               )}
@@ -517,9 +517,9 @@ const Volunteers = () => {
           )}
         </TabsContent>
 
-        {/* Comunicados Tab */}
-        <TabsContent value="comunicados" className="space-y-4 pt-4">
-          <h2 className="text-lg font-bold">Comunicados</h2>
+        {/* Disparos Tab */}
+        <TabsContent value="Disparos" className="space-y-4 pt-4">
+          <h2 className="text-lg font-bold">Disparos</h2>
           {announcements?.length === 0 ? (
             <Card className="border-0 bg-muted/30">
               <CardContent className="p-6 text-center text-muted-foreground">
@@ -554,7 +554,7 @@ const Volunteers = () => {
               <Loader2 className="h-12 w-12 mx-auto text-blue-500 animate-spin" />
               <h3 className="font-extrabold text-xl font-display text-blue-600">Você já está no caminho!</h3>
               <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                Fique atento aos comunicados e instruções do pastor. Quando o treinamento for concluído, você terá acesso completo à escala e comunicados.
+                Fique atento aos Disparos e instruções do pastor. Quando o treinamento for concluído, você terá acesso completo à escala e Disparos.
               </p>
             </CardContent>
           </Card>
