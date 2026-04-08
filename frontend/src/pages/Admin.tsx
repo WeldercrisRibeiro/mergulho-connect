@@ -13,7 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Shield, Plus, Users, Calendar, BookOpen, Trash2, Edit2 } from "lucide-react";
+import { Shield, Plus, Users, Calendar, BookOpen, Trash2, Edit2, Key } from "lucide-react";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { useToast } from "@/hooks/use-toast";
 
 const Admin = () => {
@@ -503,6 +504,7 @@ const AdminMembers = () => {
   const [editPhone, setEditPhone] = useState("");
   const [editRole, setEditRole] = useState("membro");
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
+  const [resettingPasswordMember, setResettingPasswordMember] = useState<any>(null);
 
   const { data: allGroups } = useQuery({
     queryKey: ["admin-groups-list"],
@@ -582,11 +584,32 @@ const AdminMembers = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-members"] });
-      toast({ title: "Membro removido!" });
+      toast({ title: "Perfil removido", description: "Conta de acesso pode precisar ser removida manualmente no Supabase." });
+    }
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: async (m: any) => {
+      // Use phone based email if username is not present, following the pattern in createMemberMutation
+      const login = m.username || m.whatsapp_phone?.replace(/\D/g, "");
+      const email = (login + "@mergulhoconnect.com").toLowerCase();
+      
+      const { error } = await supabase.rpc("admin_manage_user" as any, {
+        email,
+        password: "123456",
+        target_user_id: m.user_id
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setResettingPasswordMember(null);
+      toast({ 
+        title: "Senha resetada!", 
+        description: "A senha do usuário voltou para o padrão: 123456" 
+      });
     },
     onError: (err: any) => {
-      queryClient.invalidateQueries({ queryKey: ["admin-members"] });
-      toast({ title: "Perfil removido", description: "Conta de acesso pode precisar ser removida manualmente no Supabase." });
+      toast({ title: "Erro ao resetar senha", description: err.message, variant: "destructive" });
     }
   });
 
@@ -657,6 +680,12 @@ const AdminMembers = () => {
                 </div>
               </div>
               <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" 
+                  onClick={() => setResettingPasswordMember(m)}
+                  title="Resetar Senha"
+                >
+                  <Key className="h-4 w-4 text-amber-500" />
+                </Button>
                 <Button variant="ghost" size="icon" onClick={() => handleEdit(m)}>
                   <Edit2 className="h-4 w-4 text-primary" />
                 </Button>
@@ -788,6 +817,16 @@ const AdminMembers = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!resettingPasswordMember}
+        title="Resetar Senha"
+        description={`Deseja resetar a senha de ${resettingPasswordMember?.full_name}? A senha voltará para o padrão: 123456`}
+        confirmLabel="Resetar"
+        variant="default"
+        onConfirm={() => resetPasswordMutation.mutate(resettingPasswordMember)}
+        onCancel={() => setResettingPasswordMember(null)}
+      />
     </div>
   );
 };

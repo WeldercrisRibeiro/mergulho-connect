@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { Users, Search, Phone, Edit2, Trash2, Plus, CheckCircle } from "lucide-react";
+import { Users, Search, Phone, Edit2, Trash2, Plus, CheckCircle, Key } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +31,7 @@ const Members = () => {
   const [editRole, setEditRole] = useState("membro");
   const [selectedGroups, setSelectedGroups] = useState<{ id: string; role: string }[]>([]);
   const [deletingMember, setDeletingMember] = useState<any>(null);
+  const [resettingPasswordMember, setResettingPasswordMember] = useState<any>(null);
 
   if (!isAdmin && !isGerente) {
     return <Navigate to="/home" replace />;
@@ -198,6 +199,27 @@ const Members = () => {
     }
   });
 
+  const resetPasswordMutation = useMutation({
+    mutationFn: async (m: any) => {
+      const { error } = await supabase.rpc("admin_manage_user" as any, {
+        email: (m.username + "@mergulhoconnect.com").toLowerCase(),
+        password: "123456",
+        target_user_id: m.user_id
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setResettingPasswordMember(null);
+      toast({ 
+        title: "Senha resetada!", 
+        description: "A senha do usuário voltou para o padrão: 123456" 
+      });
+    },
+    onError: (err: any) => {
+      toast({ title: "Erro ao resetar senha", description: err.message, variant: "destructive" });
+    }
+  });
+
   const GroupCheckboxes = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
       {allGroups?.map(g => {
@@ -342,6 +364,12 @@ const Members = () => {
               </div>
               {isAdmin && (
                 <div className="flex items-center gap-1 shrink-0">
+                  <Button variant="ghost" size="icon" 
+                    onClick={() => setResettingPasswordMember(member)}
+                    title="Resetar Senha"
+                  >
+                    <Key className="h-4 w-4 text-amber-500" />
+                  </Button>
                   <Button variant="ghost" size="icon" onClick={() => handleEdit(member)}>
                     <Edit2 className="h-4 w-4 text-primary" />
                   </Button>
@@ -371,6 +399,17 @@ const Members = () => {
         variant="danger"
         onConfirm={() => deleteMutation.mutate(deletingMember)}
         onCancel={() => setDeletingMember(null)}
+      />
+
+      {/* Confirm Password Reset */}
+      <ConfirmDialog
+        open={!!resettingPasswordMember}
+        title="Resetar Senha"
+        description={`Deseja resetar a senha de ${resettingPasswordMember?.full_name}? A senha voltará para o padrão: 123456`}
+        confirmLabel="Resetar"
+        variant="default"
+        onConfirm={() => resetPasswordMutation.mutate(resettingPasswordMember)}
+        onCancel={() => setResettingPasswordMember(null)}
       />
 
       {/* Edit Dialog */}
