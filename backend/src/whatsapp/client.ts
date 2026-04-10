@@ -212,25 +212,50 @@ export async function sendTextMessage(phone: string, text: string): Promise<void
 export async function sendMediaMessage(
   phone: string,
   caption: string | undefined,
-  attachment: { type: string; filepath: string; mimetype: string; filename: string }
+  attachment: {
+    type: string;
+    filepath: string;
+    mimetype: string;
+    filename: string;
+    audioBuffer?: Buffer;   // Buffer pré-convertido para áudio PTT (OGG/Opus)
+  }
 ): Promise<void> {
   if (!socket || !isConnected()) throw new Error("WhatsApp não está conectado");
 
-  const buffer = fs.readFileSync(attachment.filepath);
   let content: AnyMessageContent;
 
   switch (attachment.type) {
-    case "image":
+    case "image": {
+      const buffer = fs.readFileSync(attachment.filepath);
       content = { image: buffer, caption };
       break;
-    case "video":
+    }
+    case "video": {
+      const buffer = fs.readFileSync(attachment.filepath);
       content = { video: buffer, caption, mimetype: attachment.mimetype };
       break;
-    case "audio":
-      content = { audio: buffer, mimetype: attachment.mimetype, ptt: true };
+    }
+    case "audio": {
+      // Usa o buffer já convertido (OGG/Opus) se disponível,
+      // caso contrário lê o arquivo (fallback).
+      const buffer = attachment.audioBuffer ?? fs.readFileSync(attachment.filepath);
+      content = {
+        audio: buffer,
+        mimetype: "audio/ogg; codecs=opus",
+        ptt: true,
+      };
       break;
-    default: // document
-      content = { document: buffer, mimetype: attachment.mimetype, fileName: attachment.filename, caption };
+    }
+    default: {
+      // document
+      const buffer = fs.readFileSync(attachment.filepath);
+      content = {
+        document: buffer,
+        mimetype: attachment.mimetype,
+        fileName: attachment.filename,
+        caption,
+      };
+    }
   }
 
   await socket.sendMessage(formatJid(phone), content);

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,13 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import {
   Megaphone, Send, User, Trash2, Loader2, Inbox, RefreshCw, CheckCircle2,
-  CalendarClock, Mic, X, Paperclip, Square, Smile, FileText, Video, Image as ImageIcon, AlertCircle, Edit3
+  CalendarClock, Mic, X, Paperclip, Square, Smile, FileText, Video, Image as ImageIcon, AlertCircle, Edit3, Play, Pause
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { safeFormat } from "@/lib/dateUtils";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
 
 type AttachmentType = "image" | "video" | "document" | "audio";
@@ -91,8 +92,90 @@ async function apiDelete(url: string) {
   return res.json();
 }
 
+// Player de áudio estilo WhatsApp com botão play/pause visível
+function AudioBubblePlayer({ src }: { src: string }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+
+  const toggle = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playing) { audio.pause(); } else { audio.play(); }
+    setPlaying(!playing);
+  };
+
+  const formatSecs = (s: number) => {
+    if (!s || !isFinite(s)) return "0:00";
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${sec < 10 ? "0" : ""}${sec}`;
+  };
+
+  const handleTimeUpdate = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    setCurrentTime(audio.currentTime);
+    setProgress(audio.duration ? (audio.currentTime / audio.duration) * 100 : 0);
+  };
+
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    const audio = audioRef.current;
+    if (!audio || !audio.duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    audio.currentTime = pct * audio.duration;
+  };
+
+  return (
+    <div className="flex items-center gap-2.5 px-2 py-1.5 min-w-[220px]">
+      <audio
+        ref={audioRef}
+        src={src}
+        preload="metadata"
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={() => setDuration(audioRef.current?.duration || 0)}
+        onEnded={() => { setPlaying(false); setProgress(0); setCurrentTime(0); }}
+      />
+      <button
+        type="button"
+        onClick={toggle}
+        className="h-10 w-10 shrink-0 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-md hover:bg-[#1DA851] transition-colors"
+      >
+        {playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
+      </button>
+      <div className="flex-1 flex flex-col gap-1">
+        {/* Barra de progresso estilo waveform */}
+        <div className="flex items-center gap-1.5 h-[18px]" onClick={handleSeek} style={{ cursor: "pointer" }}>
+          {Array.from({ length: 28 }).map((_, i) => {
+            const pct = (i / 28) * 100;
+            const heights = [6, 10, 14, 8, 16, 12, 18, 10, 6, 14, 18, 10, 8, 16, 12, 6, 14, 10, 18, 8, 12, 16, 6, 10, 14, 8, 18, 12];
+            return (
+              <div
+                key={i}
+                className="rounded-full transition-colors duration-150"
+                style={{
+                  width: 2.5,
+                  height: heights[i % heights.length],
+                  backgroundColor: pct <= progress ? "#25D366" : "#B0B0B0",
+                  opacity: pct <= progress ? 1 : 0.45,
+                }}
+              />
+            );
+          })}
+        </div>
+        <span className="text-[10px] text-[#666] font-medium leading-none">
+          {playing || currentTime > 0 ? formatSecs(currentTime) : formatSecs(duration)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 const AdminNotices = () => {
-  const { user, isAdmin, isGerente, managedGroupIds } = useAuth();
+  const { user, profile, isAdmin, isGerente, managedGroupIds } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -109,6 +192,13 @@ const AdminNotices = () => {
 
   const [attachments, setAttachments] = useState<LocalAttachment[]>([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const cursorPositionRef = useRef<number>(0);
+  const [signEnabled, setSignEnabled] = useState(false);
+
+  const signatureName = useMemo(() => {
+    return profile?.full_name || user?.user_metadata?.full_name || "";
+  }, [profile, user]);
 
   // Audio Recording
   const [isRecording, setIsRecording] = useState(false);
@@ -144,7 +234,17 @@ const AdminNotices = () => {
   const { data: dispatches, isLoading } = useQuery<Dispatch[]>({
     queryKey: ["wz-dispatches"],
     queryFn: () => apiGet("/api/dispatches"),
-    refetchInterval: 15000, // recarrega a cada 15s para ver status atualizado
+    // Polling adaptativo: 3s quando há dispatches ativos/iminentes, 10s caso contrário
+    refetchInterval: (query) => {
+      const data = query.state.data as Dispatch[] | undefined;
+      if (!data) return 5000;
+      const hasActive = data.some((d) => {
+        if (d.status === "sending") return true;
+        if (d.status === "pending" && new Date(d.scheduled_at) <= new Date()) return true;
+        return false;
+      });
+      return hasActive ? 3000 : 10000;
+    },
   });
 
   const sendMutation = useMutation({
@@ -163,7 +263,12 @@ const AdminNotices = () => {
 
       const formData = new FormData();
       formData.append("title", title);
-      formData.append("content", content);
+
+      // Se "Assinar" está ativo, prefixa o conteúdo com o nome do remetente
+      const finalContent = (signEnabled && signatureName && content)
+        ? `*${signatureName}:*\n${content}`
+        : content;
+      formData.append("content", finalContent);
       formData.append("type", type);
       formData.append("priority", priority);
       formData.append("scheduled_at", new Date(scheduledAt).toISOString());
@@ -233,13 +338,23 @@ const AdminNotices = () => {
       setScheduledAt("");
     }
 
-    const mappedAtts: LocalAttachment[] = dispatch.attachments.map(a => ({
-      id: a.id,
-      existingApiId: a.id,
-      type: a.type,
-      url: a.filepath,
-      name: a.filename
-    }));
+    const mappedAtts: LocalAttachment[] = dispatch.attachments.map(a => {
+      // filepath from backend is like "uploads/uuid.ext" — we need to serve it via the API
+      let url = a.filepath;
+      if (url && !url.startsWith('http') && !url.startsWith('blob:')) {
+        // Normalize path separators and strip leading directory
+        const normalized = url.replace(/\\/g, '/');
+        const filename = normalized.includes('/') ? normalized.split('/').pop()! : normalized;
+        url = `/api/uploads/${filename}`;
+      }
+      return {
+        id: a.id,
+        existingApiId: a.id,
+        type: a.type,
+        url,
+        name: a.filename
+      };
+    });
     setAttachments(mappedAtts);
     setIsOpen(true);
   };
@@ -307,7 +422,35 @@ const AdminNotices = () => {
     return `${mins}:${rs < 10 ? "0" : ""}${rs}`;
   };
 
-  const handleEmojiClick = (emojiData: EmojiClickData) => setContent((prev) => prev + emojiData.emoji);
+  const handleContentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setContent(e.target.value);
+    cursorPositionRef.current = e.target.selectionStart;
+  }, []);
+
+  const handleContentSelect = useCallback((e: React.SyntheticEvent<HTMLTextAreaElement>) => {
+    cursorPositionRef.current = (e.target as HTMLTextAreaElement).selectionStart;
+  }, []);
+
+  const handleEmojiClick = useCallback((emojiData: EmojiClickData) => {
+    const pos = cursorPositionRef.current;
+    setContent((prev) => {
+      const before = prev.slice(0, pos);
+      const after = prev.slice(pos);
+      const newContent = before + emojiData.emoji + after;
+      // Update cursor position to be after the inserted emoji
+      cursorPositionRef.current = pos + emojiData.emoji.length;
+      return newContent;
+    });
+    // Restore focus and cursor position after emoji insertion
+    requestAnimationFrame(() => {
+      const ta = textareaRef.current;
+      if (ta) {
+        ta.focus();
+        const newPos = cursorPositionRef.current;
+        ta.setSelectionRange(newPos, newPos);
+      }
+    });
+  }, []);
 
   const renderWhatsAppText = (text: string) => {
     if (!text) return null;
@@ -343,10 +486,10 @@ const AdminNotices = () => {
                   <CalendarClock className="h-4 w-4" /> Novo Disparo
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[1050px] p-0 rounded-3xl border-0 shadow-2xl overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-[650px]">
+              <DialogContent className="w-[95vw] max-w-[1300px] p-0 rounded-3xl border-0 shadow-2xl overflow-hidden flex flex-col md:flex-row" style={{ height: 'min(90vh, 820px)' }}>
 
                 {/* LADO ESQUERDO: FORMULÁRIO */}
-                <div className="flex-1 flex flex-col bg-card w-full md:w-[60%]">
+                <div className="flex-1 flex flex-col bg-card min-w-0">
                   <div className="p-6 pb-2 border-b">
                     <DialogTitle className="text-xl font-bold flex items-center gap-2 text-[#25D366]">
                       {editId ? <Edit3 className="h-5 w-5" /> : <Send className="h-5 w-5" />}
@@ -432,13 +575,17 @@ const AdminNotices = () => {
                       )}
 
                       <Textarea
+                        ref={textareaRef}
                         placeholder="Mensagem do WhatsApp. Formatações: *negrito*, _itálico_, ~tachado~, ```código```"
                         className={cn("min-h-[140px] border-0 focus-visible:ring-0 resize-none py-3 px-4 bg-transparent text-[14.5px] leading-relaxed", attachments.length === 0 ? "rounded-t-2xl" : "")}
                         value={content}
-                        onChange={(e) => setContent(e.target.value)}
+                        onChange={handleContentChange}
+                        onSelect={handleContentSelect}
+                        onClick={handleContentSelect}
+                        onKeyUp={handleContentSelect}
                       />
 
-                      <div className="flex bg-slate-50 p-2 border-t gap-1.5 items-center relative rounded-b-2xl">
+                      <div className="flex bg-slate-50 p-2 border-t gap-1.5 items-center relative rounded-b-2xl flex-wrap">
                         <div className="relative">
                           <Button type="button" variant="ghost" size="icon" onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="h-9 w-9 text-slate-500 hover:text-slate-800 hover:bg-slate-200">
                             <Smile className="h-5 w-5" />
@@ -455,6 +602,23 @@ const AdminNotices = () => {
                           <Paperclip className="h-5 w-5" />
                           <input type="file" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx" className="hidden" onChange={handleFileUpload} />
                         </Label>
+
+                        {/* Toggle Assinar — identifica o remetente na mensagem */}
+                        <div
+                          className={cn(
+                            "flex items-center gap-1.5 px-2.5 py-1 rounded-lg border shadow-sm select-none cursor-pointer transition-colors",
+                            signEnabled ? "bg-[#25D366]/10 border-[#25D366]/30" : "bg-white border-slate-200"
+                          )}
+                          title={signEnabled ? `Assinando como: ${signatureName}` : "Clique para assinar com seu nome"}
+                          onClick={() => setSignEnabled(!signEnabled)}
+                        >
+                          <span className={cn("text-[11px] font-semibold tracking-wide", signEnabled ? "text-[#075E54]" : "text-slate-500")}>Assinar</span>
+                          <Switch
+                            checked={signEnabled}
+                            onCheckedChange={setSignEnabled}
+                            className="h-4 w-7 data-[state=checked]:bg-[#25D366]"
+                          />
+                        </div>
 
                         <button
                           type="button"
@@ -488,7 +652,7 @@ const AdminNotices = () => {
                 </div>
 
                 {/* LADO DIREITO: PREVIEW WHATSAPP */}
-                <div className="hidden md:flex w-[400px] bg-[#EFEAE2] shrink-0 border-l relative overflow-hidden flex-col shadow-inner">
+                <div className="hidden md:flex bg-[#EFEAE2] shrink-0 border-l relative overflow-hidden flex-col shadow-inner" style={{ width: 'clamp(280px, 38%, 480px)' }}>
                   <div className="bg-[#075E54] text-white px-4 py-3 shadow flex items-center gap-3 z-10">
                     <div className="h-10 w-10 bg-white/20 rounded-full flex items-center justify-center">
                       <User className="h-6 w-6 text-white" />
@@ -510,6 +674,12 @@ const AdminNotices = () => {
                         {content && (
                           <WaBubble time={new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}>
                             <p className="px-1.5 py-0.5 text-[15px] leading-snug text-[#111111]" style={{ wordBreak: "break-word" }}>
+                              {signEnabled && signatureName && (
+                                <>
+                                  <strong className="text-[#075E54]">{signatureName}:</strong>
+                                  <br />
+                                </>
+                              )}
                               {renderWhatsAppText(content)}
                             </p>
                           </WaBubble>
@@ -520,7 +690,7 @@ const AdminNotices = () => {
                           <WaBubble key={att.id} time={new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}>
                             {att.type === "image" && <img src={att.url} alt="anexo" className="w-full object-cover max-h-[200px] rounded-lg" />}
                             {att.type === "video" && <video src={att.url} className="w-full max-h-[160px] rounded-lg" controls />}
-                            {att.type === "audio" && <audio controls src={att.url} className="h-10 w-full bg-white rounded-lg p-1" />}
+                            {att.type === "audio" && <AudioBubblePlayer src={att.url} />}
                             {att.type === "document" && (
                               <div className="flex items-center gap-3 p-2 bg-black/5 rounded-lg">
                                 <div className="h-9 w-9 bg-rose-500 rounded flex items-center justify-center shrink-0"><FileText className="h-4 w-4 text-white" /></div>
@@ -608,33 +778,75 @@ const AdminNotices = () => {
                       </div>
 
                       {/* Logs por destinatário */}
-                      {dispatch.logs.length > 0 && (
-                        <div className="mt-3 space-y-1">
-                          <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">Resultado por destinatário</p>
-                          {dispatch.logs.map((log) => (
-                            <div key={log.id} className={cn("flex items-start gap-2 text-xs rounded px-2 py-1", log.status === "success" ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700")}>
-                              {log.status === "success"
-                                ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                                : <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />}
-                              <span className="font-mono">{log.recipient}</span>
-                              {log.error && <span className="text-[10px] opacity-80 ml-1 truncate max-w-[200px]">{log.error}</span>}
+                      {dispatch.logs.length > 0 && (() => {
+                        const successCount = dispatch.logs.filter(l => l.status === "success").length;
+                        const errorCount = dispatch.logs.filter(l => l.status === "error").length;
+                        const hasErrors = errorCount > 0;
+
+                        // Nome legível do destino
+                        const targetLabel = dispatch.type === "general"
+                          ? "Geral"
+                          : dispatch.type === "group"
+                            ? (groups?.find(g => g.id === dispatch.target_group_id)?.name || "Departamento")
+                            : (members?.find(m => m.user_id === dispatch.target_user_id)?.full_name || "Membro");
+
+                        return (
+                          <div className="mt-3 space-y-1.5">
+                            <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">Resultado do Envio</p>
+
+                            {/* Resumo compacto */}
+                            <div className={cn("flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium", hasErrors ? "bg-rose-50 border border-rose-100" : "bg-emerald-50 border border-emerald-100")}>
+                              {hasErrors
+                                ? <AlertCircle className="h-4 w-4 text-rose-500 shrink-0" />
+                                : <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />}
+                              <span className={hasErrors ? "text-rose-700" : "text-emerald-700"}>
+                                <span className="font-bold">{targetLabel}</span>
+                                {" • "}
+                                {successCount > 0 && <span>{successCount} enviado{successCount !== 1 ? "s" : ""}</span>}
+                                {successCount > 0 && errorCount > 0 && " / "}
+                                {errorCount > 0 && <span className="text-rose-600">{errorCount} falha{errorCount !== 1 ? "s" : ""}</span>}
+                              </span>
                             </div>
-                          ))}
-                        </div>
-                      )}
+
+                            {/* Detalhe só de erros (com número mascarado) */}
+                            {hasErrors && dispatch.logs.filter(l => l.status === "error").map((log) => {
+                              const masked = log.recipient.length > 6
+                                ? log.recipient.slice(0, 4) + "•••" + log.recipient.slice(-4)
+                                : log.recipient;
+                              return (
+                                <div key={log.id} className="flex items-start gap-2 text-xs rounded px-2 py-1 bg-rose-50 text-rose-700">
+                                  <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                                  <span className="font-mono opacity-70">{masked}</span>
+                                  {log.error && <span className="text-[10px] opacity-70 ml-1 truncate max-w-[200px]">{log.error}</span>}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
+
 
                       <div className="mt-5 flex justify-end gap-3 w-full">
-                        {(dispatch.status === "pending" || dispatch.status === "error") && (
-                          <Button variant="outline" size="sm" onClick={() => handleEdit(dispatch)} className="text-blue-700 bg-blue-50 hover:bg-blue-100 border-blue-200">
-                             <Edit3 className="h-4 w-4 mr-2" /> Editar
-                          </Button>
-                        )}
+                        {/* Editar só disponível para pending cujo horário ainda não chegou, ou erros */}
+                        {(() => {
+                          const isOverdue = dispatch.status === "pending" && new Date(dispatch.scheduled_at) <= new Date();
+                          const canEdit = (dispatch.status === "pending" && !isOverdue) || dispatch.status === "error";
+                          return canEdit ? (
+                            <Button variant="outline" size="sm" onClick={() => handleEdit(dispatch)} className="text-blue-700 bg-blue-50 hover:bg-blue-100 border-blue-200">
+                              <Edit3 className="h-4 w-4 mr-2" /> Editar
+                            </Button>
+                          ) : isOverdue ? (
+                            <span className="text-xs text-amber-600 font-medium flex items-center gap-1 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg animate-pulse">
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Aguardando envio pelo bot...
+                            </span>
+                          ) : null;
+                        })()}
                         {dispatch.status === "error" && (
                           <Button variant="outline" size="sm" onClick={() => retryMutation.mutate(dispatch.id)} disabled={retryMutation.isPending} className="text-amber-700 bg-amber-50 hover:bg-amber-100 border-amber-200">
                             <RefreshCw className={cn("h-4 w-4 mr-2", retryMutation.isPending && "animate-spin")} /> Reparar
                           </Button>
                         )}
-                        {dispatch.status !== "sending" && (
+                        {isAdmin && dispatch.status !== "sending" && (
                           <Button variant="ghost" size="sm" onClick={() => deleteMutation.mutate(dispatch.id)} disabled={deleteMutation.isPending} className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
                             <Trash2 className="h-4 w-4 mr-2" /> Excluir
                           </Button>

@@ -1,6 +1,8 @@
 import cron from "node-cron";
 import { supabase } from "../lib/supabase";
 import { isConnected, sendTextMessage, sendMediaMessage } from "../whatsapp/client";
+import { processAudioOgg, needsConversion } from "../utils/convertAudio";
+
 
 async function getRecipientPhones(dispatch: {
   type: string;
@@ -69,19 +71,29 @@ async function sendToRecipient(
   // 2. Cada anexo enviado individualmente — falha em um não bloqueia os outros.
   for (const att of attachments) {
     try {
-      // Áudio gravado pelo browser chega como audio/webm.
-      // Baileys PTT funciona melhor com opus; forçamos o mimetype correto.
-      const mimetype =
-        att.type === "audio"
-          ? "audio/ogg; codecs=opus"
-          : att.mimetype;
+      if (att.type === "audio") {
+        // Converte WebM/qualquer formato → OGG/Opus em memória (sem arquivo temporário)
+        // Compatível com iOS e Android do WhatsApp.
+        if (needsConversion(att.filepath, att.mimetype)) {
+          console.log(`[Scheduler] Convertendo áudio para OGG/Opus PTT: ${att.filename}`);
+        }
+        const oggBuffer = await processAudioOgg(att.filepath);
 
-      await sendMediaMessage(phone, undefined, {
-        type: att.type,
-        filepath: att.filepath,
-        mimetype,
-        filename: att.filename,
-      });
+        await sendMediaMessage(phone, undefined, {
+          type: "audio",
+          filepath: att.filepath,   // mantido para referência; não usado quando buffer presente
+          mimetype: "audio/ogg; codecs=opus",
+          filename: (att.filename || "audio").replace(/\.(mp3|wav|m4a|aac|wma|ogg|opus|webm)$/i, "") + ".ogg",
+          audioBuffer: oggBuffer,
+        });
+      } else {
+        await sendMediaMessage(phone, undefined, {
+          type: att.type,
+          filepath: att.filepath,
+          mimetype: att.mimetype,
+          filename: att.filename,
+        });
+      }
 
       await sleep(1500);
     } catch (err: any) {
