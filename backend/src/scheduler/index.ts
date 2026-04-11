@@ -1,8 +1,11 @@
 import cron from "node-cron";
 import { supabase } from "../lib/supabase";
-import { isConnected, sendTextMessage, sendMediaMessage } from "../whatsapp/client";
+import {
+  isConnected,
+  sendTextMessage,
+  sendMediaMessage,
+} from "../whatsapp/client";
 import { processAudioOgg, needsConversion } from "../utils/convertAudio";
-
 
 async function getRecipientPhones(dispatch: {
   type: string;
@@ -16,8 +19,9 @@ async function getRecipientPhones(dispatch: {
       .from("profiles")
       .select("whatsapp_phone")
       .not("whatsapp_phone", "is", null);
-    (data || []).forEach((p: any) => { if (p.whatsapp_phone) phones.push(p.whatsapp_phone); });
-
+    (data || []).forEach((p: any) => {
+      if (p.whatsapp_phone) phones.push(formatPhoneNumber(p.whatsapp_phone));
+    });
   } else if (dispatch.type === "group" && dispatch.target_group_id) {
     const { data: memberData } = await supabase
       .from("member_groups")
@@ -30,16 +34,19 @@ async function getRecipientPhones(dispatch: {
         .select("whatsapp_phone")
         .in("user_id", userIds)
         .not("whatsapp_phone", "is", null);
-      (data || []).forEach((p: any) => { if (p.whatsapp_phone) phones.push(p.whatsapp_phone); });
+      (data || []).forEach((p: any) => {
+        if (p.whatsapp_phone) phones.push(formatPhoneNumber(p.whatsapp_phone));
+      });
     }
-
   } else if (dispatch.type === "individual" && dispatch.target_user_id) {
     const { data } = await supabase
       .from("profiles")
       .select("whatsapp_phone")
       .eq("user_id", dispatch.target_user_id)
       .single();
-    if (data?.whatsapp_phone) phones.push(data.whatsapp_phone);
+    if (data?.whatsapp_phone) {
+      phones.push(formatPhoneNumber(data.whatsapp_phone));
+    }
   }
 
   return [...new Set(phones)];
@@ -52,7 +59,7 @@ async function getRecipientPhones(dispatch: {
 async function sendToRecipient(
   phone: string,
   content: string | null,
-  attachments: any[]
+  attachments: any[],
 ): Promise<string[]> {
   const errors: string[] = [];
 
@@ -64,7 +71,10 @@ async function sendToRecipient(
       await sleep(1200);
     } catch (err: any) {
       errors.push(`Texto: ${err.message}`);
-      console.error(`[Scheduler] Falha ao enviar texto para ${phone}:`, err.message);
+      console.error(
+        `[Scheduler] Falha ao enviar texto para ${phone}:`,
+        err.message,
+      );
     }
   }
 
@@ -75,15 +85,21 @@ async function sendToRecipient(
         // Converte WebM/qualquer formato → OGG/Opus em memória (sem arquivo temporário)
         // Compatível com iOS e Android do WhatsApp.
         if (needsConversion(att.filepath, att.mimetype)) {
-          console.log(`[Scheduler] Convertendo áudio para OGG/Opus PTT: ${att.filename}`);
+          console.log(
+            `[Scheduler] Convertendo áudio para OGG/Opus PTT: ${att.filename}`,
+          );
         }
         const oggBuffer = await processAudioOgg(att.filepath);
 
         await sendMediaMessage(phone, undefined, {
           type: "audio",
-          filepath: att.filepath,   // mantido para referência; não usado quando buffer presente
+          filepath: att.filepath, // mantido para referência; não usado quando buffer presente
           mimetype: "audio/ogg; codecs=opus",
-          filename: (att.filename || "audio").replace(/\.(mp3|wav|m4a|aac|wma|ogg|opus|webm)$/i, "") + ".ogg",
+          filename:
+            (att.filename || "audio").replace(
+              /\.(mp3|wav|m4a|aac|wma|ogg|opus|webm)$/i,
+              "",
+            ) + ".ogg",
           audioBuffer: oggBuffer,
         });
       } else {
@@ -98,7 +114,10 @@ async function sendToRecipient(
       await sleep(1500);
     } catch (err: any) {
       errors.push(`Anexo "${att.filename}": ${err.message}`);
-      console.error(`[Scheduler] Falha ao enviar anexo "${att.filename}" para ${phone}:`, err.message);
+      console.error(
+        `[Scheduler] Falha ao enviar anexo "${att.filename}" para ${phone}:`,
+        err.message,
+      );
     }
   }
 
@@ -112,15 +131,18 @@ async function sendDispatch(dispatch: any): Promise<void> {
 
   const phones = await getRecipientPhones(dispatch);
   if (phones.length === 0) {
-    throw new Error("Nenhum destinatário com número de WhatsApp cadastrado encontrado.");
+    throw new Error(
+      "Nenhum destinatário com número de WhatsApp cadastrado encontrado.",
+    );
   }
 
   const attachments: any[] = dispatch.attachments || [];
-  const logs: { recipient: string; status: string; error: string | null }[] = [];
+  const logs: { recipient: string; status: string; error: string | null }[] =
+    [];
 
   console.log(
     `[Scheduler] Enviando "${dispatch.title}" para ${phones.length} destinatário(s). ` +
-    `Texto: ${!!dispatch.content} | Anexos: ${attachments.length}`
+      `Texto: ${!!dispatch.content} | Anexos: ${attachments.length}`,
   );
 
   for (const phone of phones) {
@@ -141,9 +163,13 @@ async function sendDispatch(dispatch: any): Promise<void> {
       });
 
       if (!partialSuccess) {
-        console.error(`[Scheduler] Falha total para ${phone}: ${errors.join(" | ")}`);
+        console.error(
+          `[Scheduler] Falha total para ${phone}: ${errors.join(" | ")}`,
+        );
       } else {
-        console.warn(`[Scheduler] Envio parcial para ${phone}: ${errors.join(" | ")}`);
+        console.warn(
+          `[Scheduler] Envio parcial para ${phone}: ${errors.join(" | ")}`,
+        );
       }
     }
 
@@ -158,13 +184,15 @@ async function sendDispatch(dispatch: any): Promise<void> {
       recipient: l.recipient,
       status: l.status,
       error: l.error,
-    }))
+    })),
   );
 
   // Lança erro somente se TODOS os destinatários falharam completamente
   const allFailed = logs.every((l) => l.status === "error");
   if (allFailed) {
-    throw new Error("Falha total: nenhum destinatário recebeu as mensagens. Veja os logs.");
+    throw new Error(
+      "Falha total: nenhum destinatário recebeu as mensagens. Veja os logs.",
+    );
   }
 }
 
@@ -179,7 +207,9 @@ async function processPendingDispatches(): Promise<void> {
 
   if (!pending || pending.length === 0) return;
 
-  console.log(`[Scheduler] ${pending.length} disparo(s) prontos para processar.`);
+  console.log(
+    `[Scheduler] ${pending.length} disparo(s) prontos para processar.`,
+  );
 
   for (const dispatch of pending) {
     await supabase
@@ -192,7 +222,11 @@ async function processPendingDispatches(): Promise<void> {
 
       await supabase
         .from("wz_dispatches")
-        .update({ status: "sent", sent_at: new Date().toISOString(), error_message: null })
+        .update({
+          status: "sent",
+          sent_at: new Date().toISOString(),
+          error_message: null,
+        })
         .eq("id", dispatch.id);
 
       console.log(`[Scheduler] ✓ Disparo "${dispatch.title}" concluído.`);
@@ -202,7 +236,10 @@ async function processPendingDispatches(): Promise<void> {
         .update({ status: "error", error_message: err.message })
         .eq("id", dispatch.id);
 
-      console.error(`[Scheduler] ✗ Falha no disparo "${dispatch.title}":`, err.message);
+      console.error(
+        `[Scheduler] ✗ Falha no disparo "${dispatch.title}":`,
+        err.message,
+      );
     }
   }
 }
@@ -221,4 +258,24 @@ export function startScheduler(): void {
   });
 
   console.log("[Scheduler] Iniciado. Verificando disparos a cada minuto.");
+}
+
+function formatPhoneNumber(phone: string): string {
+  const cleaned = phone.replace(/\D/g, "");
+
+  let number = cleaned;
+
+  if (number.startsWith("55")) {
+    number = number.slice(2);
+  }
+
+  if (number.length !== 11) {
+    throw new Error("Número inválido. Esperado: DDD + 9 + número (11 dígitos)");
+  }
+
+  const ddd = number.slice(0, 2);
+  const rest = number.slice(3);
+  const withoutNine = ddd + rest;
+
+  return `55${withoutNine}`;
 }
