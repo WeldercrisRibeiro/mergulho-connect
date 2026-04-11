@@ -235,23 +235,31 @@ const Landing = () => {
 
           {/* Testimonials */}
           {testimonials && testimonials.length > 0 && (
-            <div className="mt-16">
-              <h3 className="text-center text-xl font-bold mb-8 text-muted-foreground">O que dizem nossos membros</h3>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-32 mb-16 px-0 md:px-4">
+              <div className="text-center mb-12 px-4">
+                <h3 className="text-3xl md:text-4xl lg:text-5xl font-black text-foreground tracking-tight mb-4 leading-tight">
+                  Conheça as histórias da nossa comunidade
+                </h3>
+                <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                  Temos membros de todas as idades e lugares sendo transformados pelo evangelho. Cada testemunho é uma nova jornada.
+                </p>
+              </div>
+
+              {/* Horizontal Scroll Layout */}
+              <div className="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-12 pt-4 px-6 md:px-12 w-full custom-scrollbar items-stretch" style={{ scrollPaddingLeft: "1.5rem" }}>
                 {testimonials.map((t: any) => (
-                  <div key={t.id} className="relative bg-card/60 backdrop-blur-sm border border-border/50 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                    <Quote className="h-8 w-8 text-primary/30 absolute top-4 right-4" />
-                    <p className="text-muted-foreground text-sm leading-relaxed italic mb-4">
-                      &ldquo;{t.text}&rdquo;
-                    </p>
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shrink-0">
-                        <span className="text-white font-bold text-sm">{(t.name || "?").charAt(0)}</span>
-                      </div>
-                      <div>
-                        <p className="font-semibold text-sm">{t.name}</p>
-                        {t.role && <p className="text-xs text-muted-foreground">{t.role}</p>}
-                      </div>
+                  <div 
+                    key={t.id} 
+                    className="relative bg-background border border-border rounded-3xl p-8 shadow-sm hover:shadow-lg transition-all duration-300 w-[300px] lg:w-[380px] shrink-0 flex flex-col justify-between snap-start"
+                  >
+                    <div>
+                      <p className="text-muted-foreground text-[15px] leading-relaxed mb-10 text-pretty">
+                        {t.text}
+                      </p>
+                    </div>
+                    <div className="flex flex-col">
+                      <p className="font-bold text-foreground text-lg tracking-tight">{t.name}</p>
+                      {t.role && <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">{t.role}</p>}
                     </div>
                   </div>
                 ))}

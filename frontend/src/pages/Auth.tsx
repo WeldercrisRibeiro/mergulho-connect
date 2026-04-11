@@ -61,9 +61,9 @@ const Auth = () => {
       const cleanUsername = username.trim().toLowerCase();
 
       // Se já for um e-mail completo, usa ele. Se não, adiciona o domínio padrão.
-      const loginEmail = cleanUsername.includes("@") 
-        ? cleanUsername 
-        : cleanUsername.replace(/\s+/g, ".") + "@mergulhoconnect.com";
+      const loginEmail = cleanUsername.includes("@")
+        ? cleanUsername
+        : cleanUsername.replace(/\s+/g, ".") + "@ccmergulho.com";
 
       const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
 
@@ -72,13 +72,13 @@ const Auth = () => {
         const phoneDigits = cleanUsername.replace(/\D/g, "");
         if (phoneDigits.length >= 8) {
           // Tenta com os dígitos exatos (pode ter 55 ou não)
-          const phoneEmail = phoneDigits + "@mergulhoconnect.com";
+          const phoneEmail = phoneDigits + "@ccmergulho.com";
           const { error: phoneError } = await supabase.auth.signInWithPassword({ email: phoneEmail, password });
-          
+
           if (phoneError) {
             // Se falhou, e NÃO começa com 55, tenta adicionar 55 (padrão Brasil)
             if (!phoneDigits.startsWith("55")) {
-              const phoneEmail55 = "55" + phoneDigits + "@mergulhoconnect.com";
+              const phoneEmail55 = "55" + phoneDigits + "@ccmergulho.com";
               const { error: phoneError55 } = await supabase.auth.signInWithPassword({ email: phoneEmail55, password });
               if (phoneError55) throw error; // Lança o erro original
             } else {
@@ -109,10 +109,10 @@ const Auth = () => {
 
     try {
       const cleanUsername = username.trim().toLowerCase();
-      const loginEmail = cleanUsername.replace(/\s+/g, ".") + "@mergulhoconnect.com";
+      const loginEmail = cleanUsername.replace(/\s+/g, ".") + "@ccmergulho.com";
       const phoneDigits = cleanUsername.replace(/\D/g, "");
-      const phoneEmail = phoneDigits + "@mergulhoconnect.com";
-      const phoneEmail55 = "55" + phoneDigits + "@mergulhoconnect.com";
+      const phoneEmail = phoneDigits + "@ccmergulho.com";
+      const phoneEmail55 = "55" + phoneDigits + "@ccmergulho.com";
 
       // 1. Tenta verificar a senha atual com o formato de username
       let { error: signInError } = await supabase.auth.signInWithPassword({
@@ -247,25 +247,25 @@ const Auth = () => {
               <form onSubmit={handleRequestAccess} className="space-y-5">
                 <div className="space-y-2 text-left">
                   <Label htmlFor="name">Nome completo</Label>
-                  <Input 
-                    id="name" 
-                    className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium" 
-                    value={fullName} 
-                    onChange={(e) => setFullName(e.target.value)} 
-                    placeholder="Seu nome completo" 
-                    required 
+                  <Input
+                    id="name"
+                    className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Seu nome completo"
+                    required
                   />
                 </div>
                 <div className="space-y-2 text-left">
                   <Label htmlFor="reqPhone">WhatsApp com DDD</Label>
-                  <Input 
-                    id="reqPhone" 
-                    type="tel" 
-                    className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium" 
-                    value={reqPhone} 
-                    onChange={(e) => setReqPhone(e.target.value)} 
-                    placeholder="Seu melhor contato" 
-                    required 
+                  <Input
+                    id="reqPhone"
+                    type="tel"
+                    className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium"
+                    value={reqPhone}
+                    onChange={(e) => setReqPhone(e.target.value)}
+                    placeholder="Seu melhor contato"
+                    required
                   />
                 </div>
                 <Button type="submit" className="w-full h-12 bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 text-white rounded-xl shadow-md hover:shadow-lg transition-all text-base mt-4" disabled={loading}>
@@ -281,13 +281,13 @@ const Auth = () => {
               <form onSubmit={handleChangePassword} className="space-y-5">
                 <div className="space-y-2 text-left">
                   <Label htmlFor="ch-username">Seu Nome de Usuário</Label>
-                  <Input 
-                    id="ch-username" 
-                    className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium" 
-                    value={username} 
-                    onChange={(e) => setUsername(e.target.value)} 
-                    placeholder="usuário ou telefone" 
-                    required 
+                  <Input
+                    id="ch-username"
+                    className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="usuário ou telefone"
+                    required
                   />
                 </div>
                 <div className="space-y-2 text-left">
@@ -392,16 +392,16 @@ const Auth = () => {
                   {loading ? "Aguarde..." : "Entrar na Comunidade"}
                 </Button>
 
-                <Button 
-                  type="button" 
+                <Button
+                  type="button"
                   variant="outline"
                   onClick={() => {
                     localStorage.setItem("debug_admin", "true");
                     window.location.reload();
                   }}
-                  className="w-full h-12 border-dashed border-red-500/50 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl"
+                  className="w-full h-12 border-dashed border-rose-500/50 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-xl"
                 >
-                  Acesso de Emergência (ADM)
+                  Acesso de Emergência (CCM)
                 </Button>
                 <div className="mt-8 text-center text-sm">
                   <button type="button" onClick={() => setIsRequesting(true)} className="text-muted-foreground hover:text-primary transition-colors font-medium border-b border-transparent hover:border-primary pb-0.5">

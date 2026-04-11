@@ -1,6 +1,7 @@
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import BottomNav from "./BottomNav";
 import DesktopSidebar from "./DesktopSidebar";
+import TopBar from "./TopBar";
 import DevotionalWelcome from "./DevotionalWelcome";
 import { PwaPrompt } from "./PwaPrompt";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 const AppLayout = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -88,11 +90,14 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
 
   return (
     <div className="flex min-h-screen">
-      <DesktopSidebar />
-      <main className="flex-1 pb-20 md:pb-0 relative">
-        {children}
-        <PwaPrompt />
-      </main>
+      <DesktopSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(c => !c)} />
+      <div className="flex-1 flex flex-col min-w-0">
+        <TopBar onToggleSidebar={() => setSidebarCollapsed(c => !c)} />
+        <main className="flex-1 pb-20 md:pb-0 relative overflow-auto">
+          {children}
+          <PwaPrompt />
+        </main>
+      </div>
       <BottomNav />
       <DevotionalWelcome />
     </div>

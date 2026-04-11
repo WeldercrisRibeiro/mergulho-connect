@@ -654,12 +654,12 @@ const AdminNotices = () => {
                 {/* LADO DIREITO: PREVIEW WHATSAPP */}
                 <div className="hidden md:flex bg-[#EFEAE2] shrink-0 border-l relative overflow-hidden flex-col shadow-inner" style={{ width: 'clamp(280px, 38%, 480px)' }}>
                   <div className="bg-[#075E54] text-white px-4 py-3 shadow flex items-center gap-3 z-10">
-                    <div className="h-10 w-10 bg-white/20 rounded-full flex items-center justify-center">
-                      <User className="h-6 w-6 text-white" />
+                    <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center overflow-hidden border border-white/20 shadow-sm shrink-0">
+                      <img src="/idvmergulho/logo.png" alt="CC Mergulho" className="h-7 w-7 object-contain" />
                     </div>
                     <div className="flex-1">
-                      <div className="font-semibold text-[15.5px] leading-snug truncate pr-2">Igreja Central (Bot Oficial)</div>
-                      <div className="text-white/80 text-xs truncate">Toque para dados do contato</div>
+                      <div className="font-semibold text-[15.5px] leading-snug truncate pr-2">CC Mergulho Oficial</div>
+                      <div className="text-white/80 text-xs truncate">Mergulhando no evangelho</div>
                     </div>
                   </div>
 

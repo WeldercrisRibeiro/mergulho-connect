@@ -57,6 +57,7 @@ self.addEventListener('fetch', (event) => {
     );
     return;
   }
+});
 
 // Background Push Handling
 self.addEventListener('push', (event) => {

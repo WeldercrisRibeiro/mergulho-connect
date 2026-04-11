@@ -65,14 +65,19 @@ const Volunteers = () => {
     queryFn: async () => {
       let query = (supabase as any)
         .from("volunteer_schedules")
-        .select("*, volunteers(full_name), profiles:item_user_id(full_name), groups(name)")
+        .select("*, volunteers!volunteer_schedules_volunteer_id_fkey(full_name), profiles!volunteer_schedules_item_user_id_fkey(full_name), groups(name)")
         .order("schedule_date", { ascending: true });
 
       if (!isAdmin) {
         query = query.in("group_id", userGroupIds);
       }
 
-      const { data } = await query;
+      const { data, error } = await query;
+      console.log("RAW SCHEDULES RESPONSE:", data, "ERROR:", error, "isAdmin:", isAdmin, "userGroupIds:", userGroupIds);
+      if (error) {
+         console.error("Volunteer Schedules Query Error:", error);
+         throw error;
+      }
       return data || [];
     },
   });
@@ -109,6 +114,14 @@ const Volunteers = () => {
     queryFn: async () => {
       if (!scheduleGroupId) return [];
 
+      if (scheduleGroupId === "general") {
+         const { data: allProfiles } = await supabase.from("profiles").select("user_id, full_name").order("full_name");
+         return allProfiles?.map(p => ({
+           user_id: p.user_id,
+           profiles: { full_name: p.full_name }
+         })) || [];
+      }
+
       // Passo 1: Busca apenas os IDs dos usuários no grupo
       const { data: groupLinks, error: linkErr } = await supabase
         .from("member_groups")
@@ -123,7 +136,8 @@ const Volunteers = () => {
       const { data: profiles, error: profErr } = await supabase
         .from("profiles")
         .select("user_id, full_name")
-        .in("user_id", userIds);
+        .in("user_id", userIds)
+        .order("full_name");
 
       if (profErr) return [];
 
@@ -218,11 +232,13 @@ const Volunteers = () => {
 
   const saveScheduleMutation = useMutation({
     mutationFn: async () => {
-      // Find if we are using a volunteer ID (legacy) or a direct profile ID
-      // For new entries, we'll prefer linking to item_user_id (profiles) which represents department members
+      const finalGroupId = scheduleGroupId === "general" || !scheduleGroupId ? null : scheduleGroupId;
+      const volRecord = volunteers?.find((v: any) => v.user_id === scheduleVolunteerId);
+
       const payload = {
-        item_user_id: scheduleVolunteerId, // This will now hold a profile.id
-        group_id: scheduleGroupId || null,
+        item_user_id: scheduleVolunteerId,
+        volunteer_id: volRecord?.id || null,
+        group_id: finalGroupId,
         schedule_date: scheduleDate,
         role_function: scheduleRole,
         created_by: user!.id,
@@ -389,7 +405,6 @@ const Volunteers = () => {
 
   const activeTabsCount = [
     showUser, // Escala
-    showUser, // Disparos
     showTrain, // Treinamento
     showAdmin, // Gerenciar
     showAdmin  // Escalas-adm
@@ -443,14 +458,6 @@ const Volunteers = () => {
           {(isActive || isAdmin || isGerente) && (
             <TabsTrigger value="escala" className="rounded-xl flex items-center gap-1 text-xs">
               <CalendarDays className="h-3.5 w-3.5" /> Escala
-            </TabsTrigger>
-          )}
-          {(isActive || isAdmin || isGerente) && (
-            <TabsTrigger value="Disparos" className="rounded-xl flex items-center gap-1 text-xs relative">
-              <Megaphone className="h-3.5 w-3.5" /> Disparos
-              {(unreadAnnouncements > 0) && (
-                <span className="absolute -top-1 -right-1 h-3 w-3 bg-blue-500 rounded-full animate-bounce border-2 border-background" />
-              )}
             </TabsTrigger>
           )}
           {volunteerStatus === "in_progress" && !isAdmin && (
@@ -517,36 +524,7 @@ const Volunteers = () => {
           )}
         </TabsContent>
 
-        {/* Disparos Tab */}
-        <TabsContent value="Disparos" className="space-y-4 pt-4">
-          <h2 className="text-lg font-bold">Disparos</h2>
-          {announcements?.length === 0 ? (
-            <Card className="border-0 bg-muted/30">
-              <CardContent className="p-6 text-center text-muted-foreground">
-                Nenhum comunicado disponível.
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {announcements?.map((a: any) => (
-                <Card key={a.id} className="neo-shadow-sm border-0">
-                  <CardContent className="p-4 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-sm">{a.title}</h3>
-                      {a.priority === "urgent" && <Badge variant="destructive" className="text-[10px]">Urgente</Badge>}
-                    </div>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{a.content}</p>
-                    <p className="text-[10px] text-muted-foreground">
-                      {a.created_at && format(new Date(a.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        {/* Treinamento Tab (in_progress only) */}
+      {/* Treinamento Tab (in_progress only) */}
         <TabsContent value="treinamento" className="space-y-4 pt-4">
           <h2 className="text-lg font-bold">Treinamento</h2>
           <Card className="border-0 neo-shadow-sm">
@@ -554,7 +532,7 @@ const Volunteers = () => {
               <Loader2 className="h-12 w-12 mx-auto text-blue-500 animate-spin" />
               <h3 className="font-extrabold text-xl font-display text-blue-600">Você já está no caminho!</h3>
               <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                Fique atento aos Disparos e instruções do pastor. Quando o treinamento for concluído, você terá acesso completo à escala e Disparos.
+                Fique atento às instruções do pastor. Quando o treinamento for concluído, você terá acesso completo à escala.
               </p>
             </CardContent>
           </Card>
@@ -587,21 +565,21 @@ const Volunteers = () => {
               return (
                 <Card key={v.id} className="neo-shadow-sm border-0">
                   <CardContent className="p-4 flex items-start justify-between">
-                    <div className="space-y-1 flex-1">
-                      <p className="font-semibold flex items-center gap-2">
-                        <User className="h-4 w-4 text-primary" /> {v.full_name}
+                    <div className="flex-1 min-w-0 mr-4 space-y-1">
+                      <p className="font-bold text-sm text-foreground truncate flex items-center gap-2">
+                        <User className="h-4 w-4 text-primary shrink-0" /> {v.full_name}
                       </p>
-                      {v.phone && <p className="text-xs text-muted-foreground">📱 {v.phone}</p>}
+                      {v.phone && <p className="text-[11px] text-muted-foreground font-medium">📱 {v.phone}</p>}
                       <div className="flex flex-wrap gap-1 mt-1">
-                        <Badge className={`text-[10px] ${sc.color}`}>
-                          <StatusIcon className="h-3 w-3 mr-1" /> {sc.label}
+                        <Badge className={cn("text-[9px] px-2 py-0.5 uppercase tracking-tighter shadow-sm font-black", sc.color)}>
+                          <StatusIcon className="h-2.5 w-2.5 mr-1" /> {sc.label}
                         </Badge>
                         {v.interest_areas?.map((area: string) => (
-                          <Badge key={area} variant="secondary" className="text-[10px] uppercase font-bold">{area}</Badge>
+                          <Badge key={area} variant="secondary" className="text-[9px] px-2 py-0.5 uppercase font-black tracking-tighter bg-muted/50 border-0">{area}</Badge>
                         ))}
                       </div>
-                      {v.availability && <p className="text-xs text-muted-foreground mt-1">Disponibilidade: {v.availability}</p>}
-                      <p className="text-[10px] text-muted-foreground">
+                      {v.availability && <p className="text-[10px] text-muted-foreground mt-1 truncate">📅 {v.availability}</p>}
+                      <p className="text-[9px] font-medium text-muted-foreground/60">
                         Inscrito em {format(new Date(v.created_at), "dd/MM/yyyy", { locale: ptBR })}
                       </p>
                     </div>
@@ -720,35 +698,40 @@ const Volunteers = () => {
       }}>
         <DialogContent className="sm:max-w-[600px] rounded-3xl border-0 shadow-2xl">
           <DialogHeader><DialogTitle className="text-xl font-bold">{editingSchedule ? "Editar Escala" : "Nova Escala de Voluntários"}</DialogTitle></DialogHeader>
-          <div className="space-y-6 py-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Departamento / Grupo</Label>
-                <Select value={scheduleGroupId} onValueChange={setScheduleGroupId}>
-                  <SelectTrigger className="rounded-xl h-11"><SelectValue placeholder="Selecione o Departamento" /></SelectTrigger>
-                  <SelectContent>
-                    {groups?.map(g => (
-                      <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+          <div className="space-y-4 py-4">
+            {isAdmin && (
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-md p-3 text-sm text-amber-600 mb-2">
+                <p className="font-bold">Aviso para Admin:</p>
+                Deseja que esta escala seja Geral (visível para todos)? Deixe o grupo em branco.
               </div>
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Membro do Departamento</Label>
-                <Select value={scheduleVolunteerId} onValueChange={setScheduleVolunteerId} disabled={!scheduleGroupId}>
-                  <SelectTrigger className="rounded-xl h-11"><SelectValue placeholder={scheduleGroupId ? "Selecione o Membro" : "Selecione o departamento primeiro"} /></SelectTrigger>
-                  <SelectContent>
-                    {departmentMembers?.map((m: any) => {
-                      const isApprovedVolunteer = volunteers?.some((v: any) => v.user_id === m.user_id && v.status === "completed");
-                      return (
-                        <SelectItem key={m.user_id} value={m.user_id}>
-                          {m.profiles?.full_name} {isApprovedVolunteer && "✅"}
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              </div>
+            )}
+            <div className="space-y-2">
+              <Label>Departamento da Escala</Label>
+              <Select value={scheduleGroupId} onValueChange={setScheduleGroupId}>
+                <SelectTrigger><SelectValue placeholder="Selecione o departamento" /></SelectTrigger>
+                <SelectContent>
+                  {isAdmin && <SelectItem value="general">Geral / Sem Grupo Específico</SelectItem>}
+                  {groups?.map((g: any) => (
+                    <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Membro do Departamento</Label>
+              <Select value={scheduleVolunteerId} onValueChange={setScheduleVolunteerId} disabled={!scheduleGroupId}>
+                <SelectTrigger className="rounded-xl h-11"><SelectValue placeholder={scheduleGroupId ? "Selecione o Membro" : "Selecione o departamento primeiro"} /></SelectTrigger>
+                <SelectContent>
+                  {departmentMembers?.map((m: any) => {
+                    const isApprovedVolunteer = volunteers?.some((v: any) => v.user_id === m.user_id && v.status === "completed");
+                    return (
+                      <SelectItem key={m.user_id} value={m.user_id}>
+                        {m.profiles?.full_name} {isApprovedVolunteer && "✅"}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -763,8 +746,8 @@ const Volunteers = () => {
           </div>
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setCreatingSchedule(false)} className="rounded-xl border-2">Cancelar</Button>
-            <Button onClick={() => saveScheduleMutation.mutate()} disabled={!scheduleVolunteerId || !scheduleDate || !scheduleRole || saveScheduleMutation.isPending} className="rounded-xl px-8 font-bold">
-              {saveScheduleMutation.isPending ? "Salvando..." : "Confirmar Escala"}
+            <Button onClick={() => saveScheduleMutation.mutate()} disabled={(!isAdmin && !scheduleGroupId) || !scheduleVolunteerId || !scheduleDate || !scheduleRole || saveScheduleMutation.isPending} className="rounded-xl px-8 font-bold">
+              {saveScheduleMutation.isPending ? "Salvando..." : "Salvar Escala"}
             </Button>
           </DialogFooter>
         </DialogContent>

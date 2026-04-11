@@ -7,14 +7,16 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   isAdmin: boolean;
+  isAdminCCM: boolean;
   isGerente: boolean;
   isVisitor: boolean;
   managedGroupIds: string[];
   userGroupIds: string[];
-  profile: { full_name: string; avatar_url: string | null; whatsapp_phone: string | null } | null;
+   profile: { full_name: string; avatar_url: string | null; whatsapp_phone: string | null; username: string | null } | null;
   routinePermissions: Record<string, boolean>;
   unreadAnnouncements: number;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -22,6 +24,7 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   loading: true,
   isAdmin: false,
+  isAdminCCM: false,
   isGerente: false,
   isVisitor: false,
   managedGroupIds: [],
@@ -30,6 +33,7 @@ const AuthContext = createContext<AuthContextType>({
   routinePermissions: {},
   unreadAnnouncements: 0,
   signOut: async () => {},
+  refreshProfile: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -39,6 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdminCCM, setIsAdminCCM] = useState(false);
   const [isGerente, setIsGerente] = useState(false);
   const [isVisitor, setIsVisitor] = useState(false);
   const [managedGroupIds, setManagedGroupIds] = useState<string[]>([]);
@@ -48,6 +53,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [unreadAnnouncements, setUnreadAnnouncements] = useState(0);
 
   const playNotificationSound = () => {
+    const isNotifyEnabled = localStorage.getItem("notify_enabled") !== "false";
+    if (!isNotifyEnabled) return;
+    
     try {
       const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
       audio.volume = 0.5;
@@ -64,7 +72,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const mockUser: any = {
         id: "00000000-0000-0000-0000-000000000000",
         email: "admin@debug.com",
-        user_metadata: { full_name: "Administrador (Debug)" },
+        user_metadata: { full_name: "Debug" },
         app_metadata: {},
         aud: "authenticated",
         created_at: new Date().toISOString()
@@ -74,10 +82,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession({ user: mockUser, access_token: "debug", refresh_token: "debug" } as any);
       setIsAdmin(true);
       setIsGerente(true);
+      setIsAdminCCM(true);
       setProfile({ 
-        full_name: "Administrador (Debug)", 
+        full_name: "Gestor Master (Emergência)", 
         avatar_url: null, 
-        whatsapp_phone: "5500000000000" 
+        whatsapp_phone: "5500000000000",
+        username: "ccm"
       });
       setLoading(false);
       return;
@@ -147,10 +157,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .eq("user_id", userId);
 
       const rolesList = roles?.map((r: any) => r.role) || [];
-      const hasAdmin = rolesList.includes("admin");
+      const hasAdminCCM = rolesList.includes("admin_ccm");
+      const hasAdmin = rolesList.includes("admin") || hasAdminCCM;
       const hasGerente = rolesList.includes("gerente");
       const hasVisitante = rolesList.includes("visitante");
 
+      setIsAdminCCM(hasAdminCCM);
       setIsAdmin(hasAdmin);
       setIsVisitor(hasVisitante);
 
@@ -288,12 +300,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await supabase.auth.signOut();
   };
 
+  const refreshProfile = async () => {
+    if (user) await fetchProfile(user.id);
+  };
+
   return (
     <AuthContext.Provider value={{ 
-      user, session, loading, isAdmin, isGerente, isVisitor, 
+      user, session, loading, isAdmin, isAdminCCM, isGerente, isVisitor, 
       managedGroupIds: managedGroupIds || [], 
       userGroupIds: userGroupIds || [],
-      profile, routinePermissions, unreadAnnouncements, signOut 
+      profile, routinePermissions, unreadAnnouncements, signOut, refreshProfile
     }}>
       {children}
     </AuthContext.Provider>

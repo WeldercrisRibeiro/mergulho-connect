@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Home, Calendar, BookOpen, MessageCircle, User, Users, LogOut, ChevronLeft, ChevronRight, Bell, BellOff, Shield, ShieldCheck, Settings, Sun, Moon, HandHeart, BarChart3, Archive, Megaphone, Smartphone } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Home, Calendar, BookOpen, MessageCircle, User, Users, LogOut, Shield, ShieldCheck, Settings, HandHeart, BarChart3, Megaphone, Smartphone, FileSearch } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -31,7 +31,7 @@ const navGroups: {
         { path: "/agenda", icon: Calendar, label: "Agenda", routine: "agenda" },
         { path: "/devocionais", icon: BookOpen, label: "Devocionais", routine: "devocionais" },
         { path: "/voluntarios", icon: HandHeart, label: "Voluntários", routine: "voluntarios" },
-        { path: "/checkin-kids", icon: ShieldCheck, label: "Check-in", routine: "kids" },
+        { path: "/checkin-kids", icon: ShieldCheck, label: "Validação", routine: "kids" },
       ]
     },
     {
@@ -44,10 +44,11 @@ const navGroups: {
     {
       label: "Administração",
       items: [
-        { path: "/membros", icon: Users, label: "Membros", routine: "membros" },
+        { path: "/membros", icon: Users, label: "Membros", adminOnly: true },
         { path: "/departamentos", icon: Shield, label: "Departamentos", adminOnly: true },
         { path: "/relatorios", icon: BarChart3, label: "Relatórios", adminOnly: true, routine: "relatorios" },
         { path: "/whatsapp", icon: Smartphone, label: "WhatsApp", adminOnly: true },
+        { path: "/auditoria", icon: FileSearch, label: "Auditoria", adminOnly: true },
         { path: "/configuracoes", icon: Settings, label: "Ajustes", adminOnly: true },
       ]
     }
@@ -55,14 +56,15 @@ const navGroups: {
 
 
 
-const DesktopSidebar = () => {
+interface DesktopSidebarProps {
+  collapsed?: boolean;
+  onToggle?: () => void;
+}
+
+const DesktopSidebar = ({ collapsed = false, onToggle }: DesktopSidebarProps) => {
   const location = useLocation();
   const { isAdmin, isGerente, isVisitor, signOut, profile, user, routinePermissions, unreadAnnouncements } = useAuth();
-  const { theme, toggleTheme } = useTheme();
-  const [collapsed, setCollapsed] = useState(false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(
-    typeof window !== "undefined" && "Notification" in window && (window as any).Notification.permission === "granted"
-  );
+  const { theme } = useTheme();
   const [totalUnread, setTotalUnread] = useState(0);
 
   // Poll for unread counts from localStorage + messages
@@ -125,23 +127,6 @@ const DesktopSidebar = () => {
     return () => clearInterval(interval);
   }, [user]);
 
-  const handleNotificationToggle = async () => {
-    if (typeof window === "undefined" || !("Notification" in window)) {
-      alert("Seu navegador não suporta notificações nativas.");
-      return;
-    }
-    if (!notificationsEnabled) {
-      const perm = await (window as any).Notification.requestPermission();
-      if (perm === "granted") {
-        setNotificationsEnabled(true);
-      } else {
-        alert("Permissão negada pelo navegador. Ative nas configurações do seu browser.");
-      }
-    } else {
-      setNotificationsEnabled(false);
-    }
-  };
-
   return (
     <TooltipProvider delayDuration={0}>
       <aside
@@ -169,16 +154,7 @@ const DesktopSidebar = () => {
           )}
         </div>
 
-        {/* Toggle button - Melhorado Visualmente */}
-        {/* Toggle button - Melhorado Visualmente */}
-        <Button
-          variant="secondary"
-          size="icon"
-          className="absolute -right-4 top-16 h-8 w-8 rounded-full border border-sidebar-border bg-sidebar-accent shadow-xl shadow-black/10 z-50 hover:scale-110 active:scale-95 transition-all text-sidebar-primary flex items-center justify-center"
-          onClick={() => setCollapsed(!collapsed)}
-        >
-          {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
-        </Button>
+
 
         {/* Nav */}
         <nav className="flex-1 px-2 py-4 space-y-6 overflow-y-auto custom-scrollbar">
@@ -187,7 +163,16 @@ const DesktopSidebar = () => {
               const visitorAllowed = ["/home", "/agenda", "/devocionais", "/perfil"].includes(item.path);
               if (isVisitor && !visitorAllowed) return false;
               if (item.adminOnly && !isAdmin) return false;
-              if (item.routine && !isAdmin && routinePermissions[item.routine] === false) return false;
+              // Rotinas abertas por padrão para não-admin (agenda, devocionais, chat, voluntarios)
+              const openByDefault = ["/agenda", "/devocionais", "/chat", "/voluntarios"].includes(item.path);
+              // Se tem routine key e não é admin: exige permissão explícita (true)
+              if (item.routine && !isAdmin && !openByDefault) {
+                if (routinePermissions[item.routine] !== true) return false;
+              }
+              // Se tem routine key, não é admin, é rota aberta por padrão: esconde apenas se explicitamente false
+              if (item.routine && !isAdmin && openByDefault) {
+                if (routinePermissions[item.routine] === false) return false;
+              }
               return true;
             });
 
@@ -251,83 +236,14 @@ const DesktopSidebar = () => {
           })}
         </nav>
 
-        {/* Bottom */}
-        <div className={cn("p-3 border-t border-sidebar-border space-y-2", collapsed && "flex flex-col items-center")}>
-          {/* Notifications */}
+        {/* Bottom: Sign Out */}
+        <div className={cn("p-3 border-t border-sidebar-border", collapsed && "flex flex-col items-center")}>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 size={collapsed ? "icon" : "sm"}
-                className={cn("transition-colors", !collapsed && "w-full justify-start")}
-                onClick={handleNotificationToggle}
-              >
-                {notificationsEnabled
-                  ? <Bell className="h-4 w-4 text-primary shrink-0" />
-                  : <BellOff className="h-4 w-4 text-muted-foreground shrink-0" />
-                }
-                {!collapsed && (
-                  <span className="ml-2 text-xs">{notificationsEnabled ? "Notificações ativas" : "Notificações off"}</span>
-                )}
-              </Button>
-            </TooltipTrigger>
-            {collapsed && <TooltipContent side="right">Notificações: {notificationsEnabled ? "ativas" : "desativadas"}</TooltipContent>}
-          </Tooltip>
-
-          {/* Theme Toggle */}
-          <div className={cn("flex items-center", collapsed ? "justify-center" : "justify-between px-1")}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 rounded-full hover:bg-primary/5 transition-colors"
-                  onClick={toggleTheme}
-                >
-                  {theme === "light" ? (
-                    <Moon className="h-4 w-4 text-slate-700 shrink-0" />
-                  ) : (
-                    <Sun className="h-4 w-4 text-yellow-400 shrink-0" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">Alternar Tema</TooltipContent>
-            </Tooltip>
-
-            {!collapsed && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full text-muted-foreground hover:text-blue-500 transition-colors"
-                onClick={() => setNotificationsEnabled(!notificationsEnabled)}
-              >
-                {notificationsEnabled ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4 opacity-50" />}
-              </Button>
-            )}
-          </div>
-
-          {/* User + Logout */}
-          {!collapsed && (
-            <div className="flex items-center gap-2 px-1">
-              <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <User className="h-4 w-4 text-primary" />
-              </div>
-              <span className="text-xs font-medium truncate flex-1 leading-tight">
-                {profile?.full_name || "Membro"}
-                <br />
-                <span className="text-[9px] text-muted-foreground uppercase tracking-tighter">
-                  {isAdmin ? "Administrador" : isGerente ? "Gerente" : "Membro"}
-                </span>
-              </span>
-            </div>
-          )}
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size={collapsed ? "icon" : "sm"}
-                className={cn(!collapsed && "w-full justify-start")}
+                className={cn("text-muted-foreground hover:text-destructive transition-colors", !collapsed && "w-full justify-start")}
                 onClick={signOut}
               >
                 <LogOut className="h-4 w-4 shrink-0" />

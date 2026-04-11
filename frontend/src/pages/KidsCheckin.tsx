@@ -9,11 +9,15 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ShieldCheck, UserPlus, Search, QrCode, Phone, CheckCircle2, XCircle, Loader2, Package } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { ShieldCheck, UserPlus, Search, QrCode, Phone, CheckCircle2, XCircle, Loader2, Package, ScanLine, Hash, Monitor, ClipboardList, Trash2 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { safeFormatTime } from "@/lib/dateUtils";
 import { cn } from "@/lib/utils";
+import { logAudit } from "@/lib/auditLogger";
+import QRScanner from "@/components/QRScanner";
 
 const KidsCheckin = () => {
   const { user, isAdmin, isGerente } = useAuth();
@@ -26,6 +30,12 @@ const KidsCheckin = () => {
   const [itemsInfo, setItemsInfo] = useState("");
   const [guardianSearch, setGuardianSearch] = useState("");
   const [selectedGuardian, setSelectedGuardian] = useState<any>(null);
+  const [showScanner, setShowScanner] = useState(false);
+  const [tokenInput, setTokenInput] = useState("");
+  const [callingItem, setCallingItem] = useState<any>(null);
+  const [callMessage, setCallMessage] = useState("");
+  const [retrievalItem, setRetrievalItem] = useState<any>(null);
+  const [retrievalToken, setRetrievalToken] = useState("");
 
   // Fetch events for selection
   const { data: events } = useQuery({
@@ -68,7 +78,7 @@ const KidsCheckin = () => {
     queryFn: async () => {
       let query = (supabase as any)
         .from("kids_checkins")
-        .select("*, profiles:guardian_id(full_name, whatsapp_phone)")
+        .select("*, profiles!kids_checkins_guardian_id_fkey(full_name, whatsapp_phone)")
         .eq("status", "active")
         .eq("category", category);
 
@@ -76,10 +86,14 @@ const KidsCheckin = () => {
         query = query.eq("event_id", selectedEventId);
       }
 
-      const { data } = await query.order("created_at", { ascending: false });
+      const { data, error } = await query.order("created_at", { ascending: false });
+      if (error) {
+         console.error("Kids Checkin Query Error:", error);
+         throw error;
+      }
       return data || [];
     },
-    refetchInterval: 5000,
+    refetchInterval: 15000,
     enabled: !!selectedEventId,
   });
 
@@ -91,6 +105,13 @@ const KidsCheckin = () => {
       
       const token = Math.floor(100000 + Math.random() * 900000).toString();
       
+      // VALIDAÇÃO DE DUPLICIDADE
+      const childNameClean = childName.trim().toUpperCase();
+      const alreadyCheckedIn = activeCheckins?.find(c => c.child_name?.toUpperCase() === childNameClean);
+      if (alreadyCheckedIn) {
+        throw new Error(`Esta criança (${alreadyCheckedIn.child_name}) já possui um check-in ativo neste evento!`);
+      }
+
       const { error } = await (supabase as any).from("kids_checkins").insert({
         child_name: childName,
         guardian_id: selectedGuardian.user_id,
@@ -111,21 +132,45 @@ const KidsCheckin = () => {
       // Invalida a query específica para forçar o refresh
       queryClient.invalidateQueries({ queryKey: ["active-checkins"] });
       toast({ title: "Check-in realizado!", description: `Registrado em ${category === "kids" ? "Kids" : "Volumes"}.` });
+      logAudit("create", "validacao", { childName, category, eventId: selectedEventId });
     },
     onError: (err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" })
   });
 
   const callGuardianMutation = useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async (item: any) => {
+      // 1. Marca como "call_requested"
       const { error } = await (supabase as any)
         .from("kids_checkins")
         .update({ call_requested: true })
-        .eq("id", id);
+        .eq("id", item.id);
       if (error) throw error;
+
+      // 2. Cria o disparo agendado para 2 minutos
+      const scheduledAt = new Date(Date.now() + 2 * 60000).toISOString();
+      const formData = new FormData();
+      formData.append("title", "Chamada Urgente: Validação");
+      formData.append("content", callMessage);
+      formData.append("type", "individual");
+      formData.append("priority", "urgent");
+      formData.append("scheduled_at", scheduledAt);
+      formData.append("target_user_id", item.guardian_id);
+      if (user?.id) formData.append("created_by", user.id);
+
+      const res = await fetch("/api/dispatches", { method: "POST", body: formData });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Falha ao gravar envio.");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["active-checkins"] });
-      toast({ title: "Chamada enviada!", description: "O responsável receberá uma notificação." });
+      queryClient.invalidateQueries({ queryKey: ["wz-dispatches"] }); // Atualiza log de envios do sistema inteiro
+      setCallingItem(null);
+      toast({ title: "Chamada iniciada!", description: "Tela atualizada e mensagem de WhatsApp agendada na fila." });
+    },
+    onError: (err: any) => {
+      toast({ title: "Falha na chamada", description: err.message, variant: "destructive" });
     }
   });
 
@@ -143,6 +188,18 @@ const KidsCheckin = () => {
     }
   });
 
+  // Token/QR validation (for gerentes)
+  const handleValidateToken = async (token: string) => {
+    const match = activeCheckins?.find((c: any) => c.validation_token === token);
+    if (match) {
+      toast({ title: `✅ Token válido!`, description: `${match.child_name} — Fazendo checkout...` });
+      checkoutMutation.mutate(match.id);
+      setRetrievalItem(null); // Fecha modal imediatamente
+    } else {
+      toast({ title: "Token inválido", description: "Nenhum registro encontrado.", variant: "destructive" });
+    }
+  };
+
   if (!isAdmin && !isGerente) return <div className="p-8 text-center text-muted-foreground font-medium bg-card rounded-2xl border border-dashed">Acesso restrito ao ministério de segurança e líderes.</div>;
 
   return (
@@ -153,7 +210,7 @@ const KidsCheckin = () => {
             <ShieldCheck className="h-8 w-8" />
           </div>
           <div>
-            <h1 className="text-2xl font-black tracking-tight">Check-in Mergulho</h1>
+            <h1 className="text-2xl font-black tracking-tight">Validação de Fluxo</h1>
             <p className="text-muted-foreground text-sm">Segurança de crianças e controle de pertences.</p>
           </div>
         </div>
@@ -186,167 +243,335 @@ const KidsCheckin = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Registration Form */}
-        <div className="lg:col-span-1">
-          <Card className="border-0 shadow-xl overflow-hidden">
-            <div className={cn("h-1.5 w-full", category === "kids" ? "bg-primary" : "bg-orange-500")} />
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <UserPlus className="h-5 w-5" />
-                Nova Entrada — {category === "kids" ? "Criança" : "Volume"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>{category === "kids" ? "Nome da Criança" : "Identificação do Volume"}</Label>
-                <Input 
-                  placeholder={category === "kids" ? "Ex: Joãozinho Silva" : "Ex: Carrinho de Bebê / Mochila"} 
-                  value={childName} 
-                  onChange={(e) => setChildName(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Responsável</Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    className="pl-9"
-                    placeholder="Buscar por nome..." 
-                    value={guardianSearch}
-                    onChange={(e) => setGuardianSearch(e.target.value)}
-                  />
-                </div>
-                
-                {guardians && guardians.length > 0 && !selectedGuardian && (
-                  <div className="mt-1 border rounded-xl overflow-hidden bg-background shadow-2xl z-50 relative">
-                    {guardians.map((g) => (
-                      <button
-                        key={g.user_id}
-                        className="w-full text-left px-4 py-3 hover:bg-primary/5 text-sm border-b last:border-0 transition-colors"
-                        onClick={() => {
-                          setSelectedGuardian(g);
-                          setGuardianSearch(g.full_name);
-                        }}
-                      >
-                        <p className="font-bold">{g.full_name}</p>
-                        <p className="text-[10px] text-muted-foreground">{g.whatsapp_phone || "Sem telefone"}</p>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {selectedGuardian && (
-                <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 flex justify-between items-center animate-in fade-in zoom-in-95">
-                  <div className="flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center font-bold text-xs text-primary">
-                      {selectedGuardian.full_name.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold leading-none">{selectedGuardian.full_name}</p>
-                      <p className="text-[10px] text-muted-foreground">{selectedGuardian.whatsapp_phone}</p>
-                    </div>
-                  </div>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setSelectedGuardian(null)}>
-                    <XCircle className="h-4 w-4 text-muted-foreground" />
-                  </Button>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label>Observações (Opcional)</Label>
-                <Input 
-                  placeholder="Ex: Alergias, objetos dentro etc" 
-                  value={itemsInfo} 
-                  onChange={(e) => setItemsInfo(e.target.value)}
-                />
-              </div>
-
-              <Button 
-                className={cn("w-full h-12 font-bold shadow-lg transition-all", category === "volume" && "bg-orange-500 hover:bg-orange-600")} 
-                onClick={() => checkinMutation.mutate()}
-                disabled={!childName || !selectedGuardian || !selectedEventId || checkinMutation.isPending}
+      <Tabs defaultValue="entrada" className="w-full">
+        <TabsList className="grid grid-cols-2 w-full max-w-md bg-muted/50 p-1 rounded-2xl h-12 mb-8">
+          <TabsTrigger value="entrada" className="rounded-xl font-bold flex items-center gap-2">
+            <UserPlus className="h-4 w-4" /> Entrada / Nova Liberação
+          </TabsTrigger>
+          <TabsTrigger value="retirada" className="rounded-xl font-bold flex items-center gap-2 relative group">
+            <ClipboardList className="h-4 w-4" /> 
+            <span>Ativos / Retirada</span>
+            {activeCheckins && activeCheckins.length > 0 && (
+              <Badge 
+                variant="destructive" 
+                className="absolute -top-2 -right-2 px-1.5 py-0 min-w-[1.2rem] h-5 justify-center rounded-full text-[10px] border-2 border-background shadow-lg animate-pulse"
               >
-                {checkinMutation.isPending ? "Processando..." : `Realizar Check-in ${category === "kids" ? "Kids" : ""}`}
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+                {activeCheckins.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
 
-        {/* Active List */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between px-1">
-            <h3 className="font-bold text-lg flex items-center gap-2">
-              <CheckCircle2 className={cn("h-5 w-5", category === "kids" ? "text-emerald-500" : "text-orange-500")} />
-              Pendentes de Retirada ({activeCheckins?.length || 0})
-            </h3>
-          </div>
-          
-          {loadingCheckins ? (
-            <div className="flex justify-center p-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-          ) : !activeCheckins || activeCheckins.length === 0 ? (
-            <Card className="border-dashed bg-muted/20 border-2 rounded-3xl h-64 flex items-center justify-center">
-              <div className="text-center space-y-2">
-                <Package className="h-10 w-10 text-muted-foreground/30 mx-auto" />
-                <p className="text-muted-foreground italic text-sm">Nenhum registro ativo para este evento.</p>
-              </div>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {activeCheckins.map((item: any) => (
-                <Card key={item.id} className={cn("border-0 shadow-lg relative overflow-hidden group transition-all hover:translate-y-[-2px]", item.call_requested && "ring-2 ring-rose-500")}>
-                  {item.call_requested && (
-                    <div className="absolute top-0 right-0 bg-rose-500 text-white text-[10px] px-3 py-1 font-black animate-pulse uppercase tracking-wider">Chamado!</div>
-                  )}
-                  <CardContent className="p-5 space-y-5">
-                    <div className="flex justify-between items-start">
-                      <div className="min-w-0">
-                        <h4 className="font-black text-lg leading-tight uppercase truncate">{item.child_name}</h4>
-                        <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1 font-bold">
-                          RESPONSÁVEL: {item.profiles?.full_name?.split(' ')[0]}
-                        </p>
-                      </div>
-                      <Badge className={cn("text-white font-mono text-lg px-3 py-1 border-0 shadow-md", category === "kids" ? "bg-primary" : "bg-orange-500")}>
-                        {item.validation_token}
-                      </Badge>
+        <TabsContent value="entrada">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Registration Form */}
+            <div className="lg:col-span-1">
+              <Card className="border-0 shadow-xl overflow-hidden rounded-[2.5rem] bg-card/50 backdrop-blur-md">
+                <div className={cn("h-2 w-full", category === "kids" ? "bg-primary" : "bg-orange-500")} />
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-xl font-black uppercase tracking-tight">
+                    <Monitor className="h-5 w-5 text-primary" /> Identificação
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{category === 'kids' ? 'Nome da Criança' : 'Identificação do Volume'}</Label>
+                    <Input 
+                      placeholder="Ex: Joãozinho, Bolsa azul etc" 
+                      value={childName} 
+                      onChange={(e) => setChildName(e.target.value)}
+                      className="h-12 rounded-xl focus:ring-2 ring-primary/20 border-border/50 text-base font-medium"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Localizar Responsável</Label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        placeholder="Nome ou telefone..." 
+                        value={guardianSearch} 
+                        onChange={(e) => setGuardianSearch(e.target.value)}
+                        className="h-12 pl-10 rounded-xl focus:ring-2 ring-primary/20 border-border/50 text-base"
+                      />
                     </div>
-
-                    {item.items_description && (
-                      <div className="bg-muted/30 p-2 rounded-lg text-[11px] leading-relaxed italic border-l-2 border-primary/40">
-                        "{item.items_description}"
+                    {guardians && guardians.length > 0 && !selectedGuardian && (
+                      <div className="mt-2 space-y-1 bg-muted/30 p-2 rounded-2xl border border-dashed border-primary/20 max-h-48 overflow-y-auto shadow-inner">
+                        {guardians.map((g: any) => (
+                          <div 
+                            key={g.user_id} 
+                            onClick={() => { setSelectedGuardian(g); setGuardianSearch(""); }}
+                            className="p-3 hover:bg-card rounded-xl cursor-pointer transition-all flex items-center justify-between group"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-xs text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                                {g.full_name?.charAt(0)}
+                              </div>
+                              <span className="text-sm font-bold">{g.full_name}</span>
+                            </div>
+                            <span className="text-xs text-muted-foreground">{g.whatsapp_phone}</span>
+                          </div>
+                        ))}
                       </div>
                     )}
+                  </div>
 
-                    <div className="flex gap-2 pt-2 border-t mt-4">
-                      <Button 
-                        size="sm" 
-                        variant={item.call_requested ? "destructive" : "secondary"}
-                        className="flex-1 h-11 gap-2 font-black shadow-sm"
-                        onClick={() => callGuardianMutation.mutate(item.id)}
-                        disabled={callGuardianMutation.isPending}
-                      >
-                        <Phone className="h-4 w-4" />
-                        Chamar
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        className="flex-1 h-11 gap-2 bg-emerald-600 hover:bg-emerald-700 font-black shadow-sm text-white"
-                        onClick={() => checkoutMutation.mutate(item.id)}
-                        disabled={checkoutMutation.isPending}
-                      >
-                        <ShieldCheck className="h-4 w-4" />
-                        Retirar
+                  {selectedGuardian && (
+                    <div className="p-4 bg-primary/5 rounded-2xl border border-primary/20 flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center font-bold text-xs text-primary">
+                          {selectedGuardian.full_name.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold leading-none">{selectedGuardian.full_name}</p>
+                          <p className="text-[10px] text-muted-foreground">{selectedGuardian.whatsapp_phone}</p>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setSelectedGuardian(null)}>
+                        <XCircle className="h-4 w-4 text-muted-foreground" />
                       </Button>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
+                  )}
+
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Observações (Geral)</Label>
+                    <Input 
+                      placeholder="Alguma observação extra?" 
+                      value={itemsInfo} 
+                      onChange={(e) => setItemsInfo(e.target.value)}
+                      className="h-12 rounded-xl focus:ring-2 ring-primary/20 border-border/50 text-sm"
+                    />
+                  </div>
+
+                  <Button 
+                    className={cn("w-full h-14 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]", category === "volume" ? "bg-orange-500 hover:bg-orange-600" : "bg-primary hover:bg-primary/90")} 
+                    onClick={() => checkinMutation.mutate()}
+                    disabled={!childName || !selectedGuardian || !selectedEventId || checkinMutation.isPending}
+                  >
+                    {checkinMutation.isPending ? <Loader2 className="animate-spin" /> : (
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="h-6 w-6" />
+                        REALIZAR CHECK-IN
+                      </div>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
-          )}
-        </div>
-      </div>
+
+            {/* Dashboard / Info Section */}
+            <div className="lg:col-span-2 space-y-6">
+              <Card className="border-0 bg-primary/5 rounded-[2.5rem] p-8 border-4 border-dashed border-primary/10">
+                <div className="text-center space-y-4">
+                  <Monitor className="h-16 w-16 text-primary mx-auto opacity-20" />
+                  <h3 className="text-xl font-bold opacity-70">Painel de Segurança Administrador</h3>
+                  <p className="text-muted-foreground text-sm max-w-sm mx-auto">
+                    Acompanhe em tempo real quem está no culto e gerencie as autorizações de saída com o modo seguro de 6 dígitos.
+                  </p>
+                </div>
+              </Card>
+              
+              <div className="grid grid-cols-2 gap-4">
+                 <div className="bg-card p-6 rounded-[2rem] border shadow-sm flex flex-col items-center justify-center text-center">
+                    <h4 className="text-3xl font-black text-primary">{activeCheckins?.filter((c: any) => c.category === 'kids').length || 0}</h4>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Crianças Ativas</p>
+                 </div>
+                 <div className="bg-card p-6 rounded-[2rem] border shadow-sm flex flex-col items-center justify-center text-center">
+                    <h4 className="text-3xl font-black text-orange-500">{activeCheckins?.filter((c: any) => c.category === 'volume').length || 0}</h4>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Volumes Ativos</p>
+                 </div>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="retirada">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between px-1">
+              <h3 className="font-black text-2xl flex items-center gap-3 uppercase tracking-tighter">
+                <CheckCircle2 className={cn("h-7 w-7", category === "kids" ? "text-emerald-500" : "text-orange-500")} />
+                Pendentes de Retirada ({activeCheckins?.length || 0})
+              </h3>
+              <div className="flex gap-2">
+                <Button variant="outline" className="rounded-xl h-10 font-bold border-2" onClick={() => setShowScanner(true)}>
+                  <ScanLine className="h-4 w-4 mr-2" /> SCANNER QR
+                </Button>
+              </div>
+            </div>
+
+            {loadingCheckins ? (
+              <div className="flex justify-center p-24"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>
+            ) : !activeCheckins || activeCheckins.length === 0 ? (
+              <Card className="border-dashed bg-muted/20 border-4 border-muted rounded-[3rem] h-80 flex items-center justify-center">
+                <div className="text-center space-y-3">
+                  <Package className="h-16 w-16 text-muted-foreground/20 mx-auto" />
+                  <p className="text-muted-foreground font-bold text-xl uppercase tracking-tighter italic opacity-50">Tudo limpo! Nenhum registro ativo.</p>
+                </div>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {activeCheckins.map((item: any) => (
+                  <Card key={item.id} className={cn("border-0 shadow-2xl relative overflow-hidden group transition-all hover:translate-y-[-4px] rounded-[2.5rem]", item.call_requested && "ring-4 ring-rose-500 ring-offset-4")}>
+                    {item.call_requested && (
+                      <div className="absolute top-0 right-0 bg-rose-500 text-white text-[12px] px-4 py-1.5 font-black animate-pulse uppercase tracking-widest z-10 rounded-bl-2xl">Chamado!</div>
+                    )}
+                    <CardContent className="p-8 space-y-6">
+                      <div className="flex justify-between items-start">
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-black text-primary uppercase tracking-[0.2em] mb-1">{item.category === 'kids' ? 'CRIANÇA' : 'IDENTIFICAÇÃO'}</p>
+                          <h4 className="font-black text-2xl leading-tight uppercase truncate text-slate-800 dark:text-slate-100">{item.child_name}</h4>
+                          <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-2 font-black uppercase tracking-widest">
+                            <ShieldCheck className="h-3 w-3" /> RESP.: {item.profiles?.full_name?.split(' ')[0]}
+                          </p>
+                        </div>
+                        <div className="shrink-0 h-14 w-14 bg-muted rounded-2xl flex items-center justify-center font-black text-xl text-muted-foreground/50 border-2 border-dashed border-muted-foreground/20">
+                          {item.id.substring(0,2)}
+                        </div>
+                      </div>
+
+                      <div className="p-4 bg-muted/30 rounded-2xl space-y-1">
+                        <p className="text-[10px] font-black text-muted-foreground uppercase">Observações:</p>
+                        <p className="text-sm font-medium italic text-slate-600 dark:text-slate-400">
+                          {item.items_description || "Nenhuma observação."}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 pt-2">
+                        <Button 
+                          variant="secondary" 
+                          className="h-14 rounded-2xl gap-2 font-black uppercase text-xs tracking-tighter"
+                          onClick={() => {
+                            setCallingItem(item);
+                            setCallMessage(`⚠️ Olá, o responsável por ${item.child_name || "seu item"} favor dirigir-se ao local para retirada da liberação.`);
+                          }}
+                        >
+                          <Phone className="h-4 w-4" />
+                          Chamar
+                        </Button>
+                        <Button 
+                          className="h-14 rounded-2xl gap-2 bg-emerald-600 hover:bg-emerald-700 font-black shadow-lg text-white uppercase text-xs tracking-tighter ring-emerald-500/10 ring-4"
+                          onClick={() => {
+                            setRetrievalItem(item);
+                            setRetrievalToken("");
+                          }}
+                          disabled={checkoutMutation.isPending}
+                        >
+                          <ShieldCheck className="h-4 w-4" />
+                          Retirar
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
+
+
+      {/* QR Scanner Modal */}
+      {showScanner && (
+        <QRScanner
+          onScan={(decoded) => {
+            setShowScanner(false);
+            handleValidateToken(decoded);
+          }}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
+
+      {/* modal de Chamar Responsável */}
+      <Dialog open={!!callingItem} onOpenChange={(val) => { if (!val) setCallingItem(null); }}>
+        <DialogContent className="sm:max-w-[500px] rounded-3xl border-0 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <Phone className="h-5 w-5 text-amber-500" />
+              Notificar Responsável
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-3">
+            <p className="text-sm text-muted-foreground">
+              Esta ação ativará o modo de chamada na tela e enviará uma mensagem no WhatsApp do responsável (<strong>{callingItem?.profiles?.full_name}</strong>) agendada para daqui a <strong>2 minutos</strong>.
+            </p>
+            <div className="space-y-2">
+              <Label>Mensagem Padrão (pode ser ajustada)</Label>
+              <Textarea 
+                value={callMessage}
+                onChange={(e) => setCallMessage(e.target.value)}
+                className="h-28 rounded-xl resize-none"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setCallingItem(null)} className="rounded-xl" disabled={callGuardianMutation.isPending}>
+              Cancelar
+            </Button>
+            <Button 
+              className="rounded-xl px-6 bg-amber-500 hover:bg-amber-600 font-bold text-white shadow-md gap-2" 
+              onClick={() => callingItem && callGuardianMutation.mutate(callingItem)}
+              disabled={callGuardianMutation.isPending || !callMessage.trim()}
+            >
+              {callGuardianMutation.isPending ? "Processando..." : "Confirmar e Enviar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* modal de Confirmação de Retirada */}
+      <Dialog open={!!retrievalItem} onOpenChange={(val) => { if (!val) setRetrievalItem(null); }}>
+        <DialogContent className="sm:max-w-[450px] rounded-3xl border-0 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-emerald-500" />
+              Confirmar Retirada
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-3">
+            <div className="p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 text-center">
+              <p className="text-sm text-muted-foreground uppercase font-bold tracking-wider">Item / Criança</p>
+              <p className="text-2xl font-black text-emerald-700">{retrievalItem?.child_name?.toUpperCase()}</p>
+              <p className="text-xs text-emerald-600 mt-1">Responsável: {retrievalItem?.profiles?.full_name}</p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase text-muted-foreground">Token de Segurança (6 dígitos)</Label>
+              <div className="flex gap-2">
+                <Input 
+                  placeholder="000000"
+                  maxLength={6}
+                  value={retrievalToken}
+                  onChange={(e) => setRetrievalToken(e.target.value.replace(/\D/g, ""))}
+                  className="text-center text-2xl font-black h-14 tracking-widest rounded-xl"
+                />
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="h-14 w-14 rounded-xl shrink-0"
+                  onClick={() => setShowScanner(true)}
+                >
+                  <Monitor className="h-6 w-6" />
+                </Button>
+              </div>
+              <p className="text-[10px] text-muted-foreground text-center italic">
+                Peça ao responsável para mostrar o QR Code ou informar os 6 números no app dele.
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setRetrievalItem(null)} className="rounded-xl" disabled={checkoutMutation.isPending}>
+              Cancelar
+            </Button>
+            <Button 
+              className="rounded-xl px-6 bg-emerald-600 hover:bg-emerald-700 font-bold text-white shadow-md" 
+              onClick={() => handleValidateToken(retrievalToken)}
+              disabled={checkoutMutation.isPending || retrievalToken.length < 6}
+            >
+              {checkoutMutation.isPending ? "Validando..." : "Confirmar Retirada"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

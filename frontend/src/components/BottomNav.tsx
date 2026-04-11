@@ -1,4 +1,4 @@
-import { Home, Calendar, BookOpen, MessageCircle, User, ShieldCheck, Users, Settings, Target, HandHeart, BarChart3, Megaphone, Smartphone } from "lucide-react";
+import { Home, Calendar, BookOpen, MessageCircle, User, ShieldCheck, Users, Settings, Target, HandHeart, BarChart3, Megaphone, Smartphone, FileSearch } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -81,7 +81,7 @@ const BottomNav = () => {
                   <span className="text-[10px] font-semibold">Departamentos</span>
                 </Link>
               )}
-              {(isAdmin || (routinePermissions.membros !== false && !isVisitor)) && (
+              {isAdmin && (
                 <Link to="/membros" onClick={() => setOpen(false)} className="flex flex-col items-center gap-2 text-muted-foreground hover:text-primary">
                   <div className="h-10 w-10 rounded-xl bg-secondary/50 flex items-center justify-center">
                     <Users className="h-5 w-5" />
@@ -89,7 +89,7 @@ const BottomNav = () => {
                   <span className="text-[10px] font-semibold">Membros</span>
                 </Link>
               )}
-              {(isAdmin || routinePermissions.voluntarios !== false) && (
+              {(isAdmin || routinePermissions.voluntarios === true) && (
                 <Link to="/voluntarios" onClick={() => setOpen(false)} className="flex flex-col items-center gap-2 text-muted-foreground hover:text-primary">
                   <div className="h-10 w-10 rounded-xl bg-secondary/50 flex items-center justify-center">
                     <HandHeart className="h-5 w-5" />
@@ -121,15 +121,15 @@ const BottomNav = () => {
                   <span className="text-[10px] font-semibold">WhatsApp</span>
                 </Link>
               )}
-              {(isAdmin || routinePermissions.kids !== false) && (
+              {isAdmin && (
                 <Link to="/checkin-kids" onClick={() => setOpen(false)} className="flex flex-col items-center gap-2 text-muted-foreground hover:text-primary">
                   <div className="h-10 w-10 rounded-xl bg-secondary/50 flex items-center justify-center">
                     <ShieldCheck className="h-5 w-5" />
                   </div>
-                  <span className="text-[10px] font-semibold">Check-in</span>
+                  <span className="text-[10px] font-semibold">Validação</span>
                 </Link>
               )}
-              {(isAdmin || routinePermissions.Disparos !== false) && (
+              {isAdmin && (
                 <Link to="/Disparos" onClick={() => setOpen(false)} className="flex flex-col items-center gap-2 text-muted-foreground hover:text-primary">
                   <div className="h-10 w-10 rounded-xl bg-secondary/50 flex items-center justify-center relative">
                     <Megaphone className="h-5 w-5" />
@@ -140,6 +140,14 @@ const BottomNav = () => {
                     )}
                   </div>
                   <span className="text-[10px] font-semibold">Disparos</span>
+                </Link>
+              )}
+              {isAdmin && (
+                <Link to="/auditoria" onClick={() => setOpen(false)} className="flex flex-col items-center gap-2 text-muted-foreground hover:text-primary">
+                  <div className="h-10 w-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                    <FileSearch className="h-5 w-5 text-amber-600" />
+                  </div>
+                  <span className="text-[10px] font-semibold">Auditoria</span>
                 </Link>
               )}
               {isAdmin && (

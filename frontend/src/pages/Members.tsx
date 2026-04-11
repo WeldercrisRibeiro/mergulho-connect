@@ -12,13 +12,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { Users, Search, Phone, Edit2, Trash2, Plus, CheckCircle, Key } from "lucide-react";
+import { Users, Search, Phone, Edit2, Trash2, Plus, CheckCircle, Key, Monitor, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 const Members = () => {
   const [search, setSearch] = useState("");
-  const { isAdmin, isGerente } = useAuth();
+  const { isAdmin, isGerente, isAdminCCM } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [nivelFilter, setNivelFilter] = useState("all");
@@ -32,6 +32,7 @@ const Members = () => {
   const [selectedGroups, setSelectedGroups] = useState<{ id: string; role: string }[]>([]);
   const [deletingMember, setDeletingMember] = useState<any>(null);
   const [resettingPasswordMember, setResettingPasswordMember] = useState<any>(null);
+  const [removePhoto, setRemovePhoto] = useState(false);
 
   if (!isAdmin && !isGerente) {
     return <Navigate to="/home" replace />;
@@ -81,14 +82,16 @@ const Members = () => {
     setEditPhone(m.whatsapp_phone || "");
     setEditRole(m.roles?.[0]?.role || "membro");
     setSelectedGroups(m.group_ids || []);
+    setRemovePhoto(false);
   };
 
   const updateMutation = useMutation({
     mutationFn: async () => {
       if (!editingMember) return;
 
-      const cleanUsername = (editUsername || "").trim().toLowerCase().replace(/\s+/g, ".");
-      const email = cleanUsername + "@mergulhoconnect.com";
+      const phoneDigits = editPhone.replace(/\D/g, "");
+      const cleanUsername = (editUsername || "").trim().toLowerCase().replace("@ccmergulho.com", "").replace(/\s+/g, ".") || phoneDigits;
+      const email = cleanUsername + "@ccmergulho.com";
 
       // 1. Sincroniza com Auth via RPC sem trocar a senha atual
       const { error: rpcErr } = await supabase.rpc("admin_manage_user" as any, {
@@ -103,24 +106,24 @@ const Members = () => {
       const { error: profErr } = await supabase.from("profiles").update({
         full_name: editName,
         whatsapp_phone: editPhone,
-        username: editUsername
+        username: cleanUsername
       } as any).eq("user_id", editingMember.user_id);
 
       if (profErr) throw profErr;
 
       // 3. Atualiza Role de forma robusta (Upsert para evitar duplicatas ou conflitos)
-      const { error: roleErr } = await (supabase as any).from("user_roles").upsert({ 
-        user_id: editingMember.user_id, 
-        role: editRole as any 
+      const { error: roleErr } = await (supabase as any).from("user_roles").upsert({
+        user_id: editingMember.user_id,
+        role: editRole as any
       }, { onConflict: "user_id" });
-      
+
       if (roleErr) throw roleErr;
 
       // 4. Atualiza departamentos com cargos
       await supabase.from("member_groups").delete().eq("user_id", editingMember.user_id);
       if (selectedGroups.length > 0) {
-        const inserts = selectedGroups.map(g => ({ 
-          user_id: editingMember.user_id, 
+        const inserts = selectedGroups.map(g => ({
+          user_id: editingMember.user_id,
           group_id: g.id,
           role: g.role || "member"
         }));
@@ -139,8 +142,9 @@ const Members = () => {
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      const cleanUsername = editUsername.trim().toLowerCase().replace(/\s+/g, ".");
-      const email = cleanUsername + "@mergulhoconnect.com";
+      const phoneDigits = editPhone.replace(/\D/g, "");
+      const cleanUsername = (editUsername || "").trim().toLowerCase().replace(/\s+/g, ".") || phoneDigits;
+      const email = cleanUsername + "@ccmergulho.com";
       const { data, error } = await supabase.rpc("admin_manage_user" as any, {
         email,
         password: "123456",
@@ -157,16 +161,16 @@ const Members = () => {
       if (profileError) throw profileError;
 
       // 3. Salva a role selecionada (Membro, Gerente, Moderador ou Admin)
-      await (supabase as any).from("user_roles").upsert({ 
-        user_id: newUserId, 
-        role: editRole as any 
+      await (supabase as any).from("user_roles").upsert({
+        user_id: newUserId,
+        role: editRole as any
       }, { onConflict: "user_id" });
 
       if (selectedGroups.length > 0) {
-        await supabase.from("member_groups").insert(selectedGroups.map(g => ({ 
-          user_id: newUserId, 
+        await supabase.from("member_groups").insert(selectedGroups.map(g => ({
+          user_id: newUserId,
           group_id: g.id,
-          role: g.role || "member" 
+          role: g.role || "member"
         })) as any);
       }
     },
@@ -202,7 +206,7 @@ const Members = () => {
   const resetPasswordMutation = useMutation({
     mutationFn: async (m: any) => {
       const { error } = await supabase.rpc("admin_manage_user" as any, {
-        email: (m.username + "@mergulhoconnect.com").toLowerCase(),
+        email: (m.username + "@ccmergulho.com").toLowerCase(),
         password: "123456",
         target_user_id: m.user_id
       });
@@ -210,9 +214,9 @@ const Members = () => {
     },
     onSuccess: () => {
       setResettingPasswordMember(null);
-      toast({ 
-        title: "Senha resetada!", 
-        description: "A senha do usuário voltou para o padrão: 123456" 
+      toast({
+        title: "Senha resetada!",
+        description: "A senha do usuário voltou para o padrão: 123456"
       });
     },
     onError: (err: any) => {
@@ -225,12 +229,12 @@ const Members = () => {
       {allGroups?.map(g => {
         const isSelected = selectedGroups.some(sg => sg.id === g.id);
         const currentGroup = selectedGroups.find(sg => sg.id === g.id);
-        
+
         return (
           <div key={g.id} className="flex items-center justify-between p-2 rounded-lg border bg-muted/30">
             <div className="flex items-center space-x-2">
-              <Checkbox 
-                id={`mg-${g.id}`} 
+              <Checkbox
+                id={`mg-${g.id}`}
                 checked={isSelected}
                 onCheckedChange={(checked) => {
                   if (checked) setSelectedGroups([...selectedGroups, { id: g.id, role: "member" }]);
@@ -239,7 +243,7 @@ const Members = () => {
               />
               <label htmlFor={`mg-${g.id}`} className="text-sm font-medium">{g.name}</label>
             </div>
-            
+
             {isSelected && (editRole === "gerente" || editRole === "admin") && (
               <div className="flex bg-muted rounded-md p-0.5 border">
                 <button
@@ -312,68 +316,82 @@ const Members = () => {
 
       <div className="grid gap-3 sm:grid-cols-2">
         {filtered?.map((member) => (
-          <Card key={member.id} className="neo-shadow-sm border-0">
+          <Card key={member.id} className="border-0 bg-muted/30 shadow-sm hover:bg-muted/40 transition-colors rounded-2xl overflow-hidden">
             <CardContent className="flex items-center gap-4 p-4">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
                 {member.avatar_url ? (
                   <img src={member.avatar_url} alt="" className="h-12 w-12 rounded-full object-cover" />
                 ) : (
-                  <span className="text-primary font-bold text-lg">
+                  <span className="text-primary font-black text-lg">
                     {(member.full_name || "?").charAt(0).toUpperCase()}
                   </span>
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="font-medium truncate">{member.full_name}</p>
-                  {member.username && (
-                    <span className="text-xs text-muted-foreground font-normal bg-muted/50 px-1.5 py-0.5 rounded">
-                      @{member.username}
-                    </span>
+                {/* Name specialized row */}
+                <div className="mb-1">
+                  <p className="font-black text-sm text-foreground uppercase tracking-tight truncate">
+                    {member.full_name || "Sem nome"}
+                  </p>
+                </div>
+                
+                {/* Info row */}
+                <div className="flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
+                  {member.whatsapp_phone && (
+                    <div className="flex items-center gap-1 bg-background/50 px-2 py-0.5 rounded-lg border border-border/10">
+                      <Phone className="h-2.5 w-2.5" />
+                      <span>{member.whatsapp_phone}</span>
+                    </div>
+                  )}
+                  {(member.username || member.full_name) && (
+                    <div className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-0.5 rounded-lg border border-primary/20 font-bold">
+                      <User className="h-2.5 w-2.5" />
+                      <span>
+                        @{((member.username && !/^\d{8,}$/.test(member.username)) 
+                          ? member.username 
+                          : (member.full_name?.trim().toLowerCase().replace(/\s+/g, ".") || member.username)).toLowerCase()}
+                      </span>
+                    </div>
                   )}
                 </div>
-                {member.whatsapp_phone && (
-                  <a
-                    href={`https://wa.me/${member.whatsapp_phone.replace(/\D/g, "")}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-primary flex items-center gap-1 hover:underline"
-                  >
-                    <Phone className="h-3 w-3" />
-                    {member.whatsapp_phone}
-                  </a>
-                )}
-                <div className="flex gap-1 mt-1 flex-wrap">
-                  {member.roles?.some((r: any) => r.role === "admin") && (
-                    <Badge variant="default" className="uppercase text-[10px]">Admin</Badge>
-                  )}
+
+                <div className="flex gap-1 mt-2 flex-wrap">
+                  {member.roles?.some((r: any) => r.role === "admin_ccm") ? (
+                    <Badge variant="default" className="bg-rose-600 text-white hover:bg-rose-700 uppercase text-[9px] px-2 font-black">ADM CCM</Badge>
+                  ) : member.roles?.some((r: any) => r.role === "admin") ? (
+                    <Badge variant="default" className="uppercase text-[9px] px-2 font-black">Admin</Badge>
+                  ) : null}
                   {member.roles?.some((r: any) => r.role === "gerente") && (
-                    <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 uppercase text-[10px]">
+                    <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 uppercase text-[9px] font-black">
                       Gerente
                     </Badge>
                   )}
                   {(!member.roles || member.roles.length === 0 || member.roles.every((r: any) => r.role === "membro")) && (
-                    <Badge variant="outline" className="uppercase text-[10px] text-muted-foreground">
+                    <Badge variant="outline" className="uppercase text-[9px] text-muted-foreground font-bold">
                       Membro
                     </Badge>
                   )}
                   {(member as any).groups?.map((name: string) => (
-                    <Badge key={name} variant="outline" className="text-xs">{name}</Badge>
+                    <Badge key={name} variant="outline" className="text-[9px] bg-background/50 font-medium">{name}</Badge>
                   ))}
                 </div>
               </div>
               {isAdmin && (
                 <div className="flex items-center gap-1 shrink-0">
-                  <Button variant="ghost" size="icon" 
+                  <Button variant="ghost" size="icon"
+                    className="hover:bg-amber-500/10"
                     onClick={() => setResettingPasswordMember(member)}
                     title="Resetar Senha"
                   >
                     <Key className="h-4 w-4 text-amber-500" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleEdit(member)}>
+                  <Button variant="ghost" size="icon" 
+                    className="hover:bg-primary/10"
+                    onClick={() => handleEdit(member)}>
                     <Edit2 className="h-4 w-4 text-primary" />
                   </Button>
                   <Button variant="ghost" size="icon"
+                    className="hover:bg-destructive/10"
                     onClick={() => setDeletingMember(member)}
                     disabled={deleteMutation.isPending}
                   >
@@ -424,7 +442,14 @@ const Members = () => {
               </div>
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Nome de Usuário (Login)</Label>
-                <Input value={editUsername} onChange={e => setEditUsername(e.target.value)} placeholder="ex: joao.silva" className="rounded-xl h-11" />
+                <Input
+                  value={editUsername}
+                  onChange={e => setEditUsername(e.target.value)}
+                  placeholder="ex: joao.silva"
+                  className="rounded-xl h-11"
+                  readOnly={!isAdminCCM}
+                />
+                {!isAdminCCM && <p className="text-[10px] text-amber-600 font-medium">Somente ADM CCM pode alterar o login/email.</p>}
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -440,6 +465,9 @@ const Members = () => {
                     <SelectItem value="membro">Membro</SelectItem>
                     <SelectItem value="gerente">Líder (Gerente)</SelectItem>
                     <SelectItem value="admin">Administrador</SelectItem>
+                    {isAdminCCM && (
+                      <SelectItem value="admin_ccm">Administrador CCM (Gestor Master)</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -496,6 +524,9 @@ const Members = () => {
                     <SelectItem value="gerente">Líder (Gerente)</SelectItem>
                     <SelectItem value="moderador">Moderador</SelectItem>
                     <SelectItem value="admin">Administrador</SelectItem>
+                    {isAdminCCM && (
+                      <SelectItem value="admin_ccm">Administrador CCM (Gestor Master)</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>

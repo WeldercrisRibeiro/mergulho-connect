@@ -11,7 +11,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { Shield, Plus, Edit2, Trash2, Users } from "lucide-react";
+import { Shield, Plus, Edit2, Trash2, Users, Camera, Upload } from "lucide-react";
+import { useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 const Groups = () => {
@@ -24,9 +25,11 @@ const Groups = () => {
   const [managingGroup, setManagingGroup] = useState<any>(null);
   const [groupName, setGroupName] = useState("");
   const [groupDesc, setGroupDesc] = useState("");
-  const [groupIcon, setGroupIcon] = useState("🌊");
+  const [groupIcon, setGroupIcon] = useState("");
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [deletingGroup, setDeletingGroup] = useState<any>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isAdmin) return <Navigate to="/home" replace />;
 
@@ -100,6 +103,31 @@ const Groups = () => {
     onError: (err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" }),
   });
 
+  const handleIconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const fileName = `group_icon_${Date.now()}.${ext}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from("group-icons")
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from("group-icons").getPublicUrl(fileName);
+      setGroupIcon(urlData.publicUrl);
+      toast({ title: "Foto selecionada!", description: "Clique em Salvar para confirmar." });
+    } catch (err: any) {
+      toast({ title: "Erro no upload", description: err.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       await supabase.from("member_groups").delete().eq("group_id", id);
@@ -136,11 +164,17 @@ const Groups = () => {
           <Card key={g.id} className="neo-shadow-sm border-0">
             <CardHeader className="pb-2">
               <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">{g.icon || "🌊"}</span>
+                <div className="flex items-center gap-3">
+                  <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center overflow-hidden border-2 border-primary/20 shrink-0">
+                    {g.icon && (g.icon.startsWith('http') || g.icon.startsWith('/')) ? (
+                      <img src={g.icon} alt={g.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <Users className="h-7 w-7 text-primary" />
+                    )}
+                  </div>
                   <div>
-                    <CardTitle className="text-base">{g.name}</CardTitle>
-                    {g.description && <p className="text-xs text-muted-foreground mt-0.5">{g.description}</p>}
+                    <CardTitle className="text-lg tracking-tight font-black">{g.name}</CardTitle>
+                    {g.description && <p className="text-[10px] text-muted-foreground uppercase font-medium leading-tight mt-0.5">{g.description}</p>}
                   </div>
                 </div>
                 <Badge variant="secondary" className="text-xs">{g.memberCount} membros</Badge>
@@ -174,6 +208,9 @@ const Groups = () => {
             groupIcon={groupIcon} setGroupIcon={setGroupIcon}
             groupName={groupName} setGroupName={setGroupName}
             groupDesc={groupDesc} setGroupDesc={setGroupDesc}
+            handleIconUpload={handleIconUpload}
+            uploading={uploading}
+            fileInputRef={fileInputRef}
           />
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setCreatingGroup(false)} className="rounded-xl border-2">Cancelar</Button>
@@ -203,6 +240,9 @@ const Groups = () => {
             groupIcon={groupIcon} setGroupIcon={setGroupIcon}
             groupName={groupName} setGroupName={setGroupName}
             groupDesc={groupDesc} setGroupDesc={setGroupDesc}
+            handleIconUpload={handleIconUpload}
+            uploading={uploading}
+            fileInputRef={fileInputRef}
           />
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setEditingGroup(null)} className="rounded-xl border-2">Cancelar</Button>
@@ -255,21 +295,51 @@ const Groups = () => {
 
 export default Groups;
 
-const GroupForm = ({ groupIcon, setGroupIcon, groupName, setGroupName, groupDesc, setGroupDesc }: any) => (
+const GroupForm = ({ groupIcon, setGroupIcon, groupName, setGroupName, groupDesc, setGroupDesc, handleIconUpload, uploading, fileInputRef }: any) => (
   <div className="space-y-6 py-4">
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <div className="space-y-2 md:col-span-1">
-        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Ícone (emoji)</Label>
-        <Input value={groupIcon} onChange={e => setGroupIcon(e.target.value)} placeholder="🌊" className="rounded-xl h-11 text-center text-xl" />
+    <div className="flex flex-col items-center justify-center gap-4 py-4 mb-2 bg-muted/20 rounded-3xl border border-dashed border-border/50">
+      <div 
+        className="h-24 w-24 rounded-3xl bg-primary/10 flex items-center justify-center overflow-hidden border-2 border-primary/20 relative cursor-pointer group"
+        onClick={() => fileInputRef.current?.click()}
+      >
+        {groupIcon && (groupIcon.startsWith('http') || groupIcon.startsWith('/')) ? (
+          <img src={groupIcon} alt="Preview" className="h-full w-full object-cover" />
+        ) : (
+          <Users className="h-10 w-10 text-primary" />
+        )}
+        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+          <Camera className="h-6 w-6 text-white" />
+        </div>
+        {uploading && (
+          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+            <div className="h-6 w-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          </div>
+        )}
       </div>
-      <div className="space-y-2 md:col-span-3">
+      <div className="text-center">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="rounded-xl border-2 gap-2 h-9" 
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+        >
+          <Upload className="h-4 w-4" /> 
+          {groupIcon ? 'Trocar Foto' : 'Carregar Foto'}
+        </Button>
+      </div>
+      <input type="file" hidden ref={fileInputRef} onChange={handleIconUpload} accept="image/*" />
+    </div>
+
+    <div className="space-y-4">
+      <div className="space-y-2">
         <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Nome do Departamento</Label>
         <Input value={groupName} onChange={e => setGroupName(e.target.value)} placeholder="Nome do departamento" className="rounded-xl h-11" />
       </div>
-    </div>
-    <div className="space-y-2">
-      <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Descrição (opcional)</Label>
-      <Input value={groupDesc} onChange={e => setGroupDesc(e.target.value)} placeholder="Descreva brevemente a função deste departamento..." className="rounded-xl h-11" />
+      <div className="space-y-2">
+        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Descrição (opcional)</Label>
+        <Input value={groupDesc} onChange={e => setGroupDesc(e.target.value)} placeholder="Descreva brevemente a função deste departamento..." className="rounded-xl h-11" />
+      </div>
     </div>
   </div>
 );

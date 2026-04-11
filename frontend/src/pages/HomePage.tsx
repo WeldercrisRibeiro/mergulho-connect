@@ -1,15 +1,16 @@
+import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, BookOpen, Users, MessageCircle, ArrowRight, Star, TrendingUp, ShieldCheck, QrCode, Phone, Megaphone, HandHeart, BarChart3 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Calendar, BookOpen, Users, MessageCircle, ArrowRight, Star, TrendingUp, ShieldCheck, Phone, Megaphone, HandHeart, BarChart3 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTheme } from "@/components/ThemeProvider";
 import { cn } from "@/lib/utils";
 import { safeFormatMonth, safeFormatDay, safeFormatTime } from "@/lib/dateUtils";
-import { QRCodeSVG } from "qrcode.react";
 
 const HomePage = () => {
   const { profile, user, isVisitor, isAdmin, userGroupIds, routinePermissions } = useAuth();
@@ -30,6 +31,7 @@ const HomePage = () => {
       return data;
     },
     enabled: !!user,
+    refetchInterval: 15000,
   });
 
   const { data: siteSettings } = useQuery({
@@ -102,46 +104,60 @@ const HomePage = () => {
   return (
     <div className="min-h-screen bg-background pb-12">
       {/* Hero Welcome Section */}
-      <div className="relative overflow-hidden bg-primary px-4 py-12 md:px-8 md:py-16 text-primary-foreground">
+      <div className="relative overflow-hidden bg-primary px-4 py-8 md:px-8 md:py-10 text-primary-foreground">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-cyan-400/20 mix-blend-overlay" />
         <div className="relative z-10 max-w-4xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
               <p className="text-blue-100 font-medium tracking-wider mb-2 flex items-center gap-2">
                 <Star className="h-4 w-4 fill-blue-200 text-blue-200" />
-                BEM-VINDO AO CONECTA
+                BEM-VINDO AO MERGULHO CONNECT
               </p>
-              <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight">
+              <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight z-20 relative">
                 Olá, {profile?.full_name?.split(' ')[0] || "Mergulhador"}! 👋
               </h1>
-              <p className="text-blue-100/80 mt-3 text-lg font-medium">
+              <p className="text-blue-100/80 mt-3 text-lg font-medium relative z-20">
                 Sua vida cristã em um só lugar.
               </p>
             </div>
-            <div className="hidden md:block">
-              <img src="/idvmergulho/logo-white.png" alt="Logo" className="h-20 w-auto drop-shadow-2xl opacity-90" />
+            
+            <div className="hidden md:block relative z-20">
+              <img src="/idvmergulho/logo-white.png" alt="Logo" className="h-14 w-auto drop-shadow-2xl opacity-90" />
             </div>
           </div>
         </div>
       </div>
 
-      <div className="p-4 md:p-8 max-w-4xl mx-auto -mt-4 space-y-8 relative z-20">
+      {/* Billboard Section (Outdoor Style) */}
+      {siteSettings?.homepage_banner && (
+        <div className="px-4 mt-6">
+          <div className="max-w-6xl mx-auto rounded-[2.5rem] overflow-hidden shadow-2xl ring-4 ring-white/10 dark:ring-white/5 border-4 border-muted/20 bg-muted/10">
+            <img 
+              src={siteSettings.homepage_banner} 
+              alt="Mural Mergulho" 
+              className="w-full h-auto max-h-[600px] object-cover hover:scale-105 transition-transform duration-700 aspect-[16/9] md:aspect-[16/6]"
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-8 relative z-20">
 
         {/* Active Kids Check-in */}
         {myActiveCheckin && (
           <Card className="border-0 shadow-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/20 dark:to-emerald-900/10 overflow-hidden ring-2 ring-emerald-500/20">
             <CardContent className="p-6">
               <div className="flex flex-col md:flex-row items-center gap-6">
-                <div className="bg-white dark:bg-card p-3 rounded-2xl shadow-lg border-4 border-emerald-500/20 shrink-0">
-                  <QRCodeSVG value={myActiveCheckin.validation_token} size={100} />
+                <div className="bg-emerald-500/10 p-3 rounded-2xl flex items-center justify-center shrink-0">
+                  <ShieldCheck className="h-16 w-16 text-emerald-600" />
                 </div>
                 <div className="flex-1 text-center md:text-left">
                   <Badge className="bg-emerald-500 hover:bg-emerald-600 border-0 mb-3 uppercase tracking-tighter">Check-in Ativo</Badge>
                   <h3 className="text-2xl font-black text-emerald-900 dark:text-emerald-300 leading-none mb-2">
                     {myActiveCheckin.child_name?.toUpperCase()}
                   </h3>
-                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-emerald-700 dark:text-emerald-400 font-bold text-sm">
-                    <QrCode className="h-4 w-4" /> TOKEN: {myActiveCheckin.validation_token}
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-emerald-700 dark:text-emerald-400 font-black text-lg">
+                    TOKEN: {myActiveCheckin.validation_token}
                   </div>
                   {myActiveCheckin.call_requested && (
                     <div className="mt-4 p-3 bg-rose-500 text-white rounded-xl flex items-center gap-2 animate-bounce shadow-lg">

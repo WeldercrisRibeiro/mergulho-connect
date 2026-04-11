@@ -12,17 +12,26 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { Settings, ImagePlus, MessageSquareQuote, Trash2, Plus, Edit2, ChevronLeft, ChevronRight, Upload, Mail, CheckCircle, Archive, Video, Youtube, Shield, Users, Calendar, BookOpen, HandHeart, BarChart3, MessageCircle, ShieldCheck, Megaphone, Lock, ChevronRight as ChevronRightIcon } from "lucide-react";
+import { Settings, ImagePlus, MessageSquareQuote, Trash2, Plus, Edit2, ChevronLeft, ChevronRight, Upload, Mail, CheckCircle, Archive, Video, Youtube, Shield, Users, Calendar, BookOpen, HandHeart, BarChart3, MessageCircle, ShieldCheck, Megaphone, Lock, ChevronRight as ChevronRightIcon, Bell, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import VideoPlayer from "@/components/VideoPlayer";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
 const SettingsPage = () => {
-  const { isAdmin } = useAuth();
+  const { user, profile, isAdmin, isGerente, refreshProfile } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+  const { data: userGroupIds } = useQuery({
+    queryKey: ["user-group-ids", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("member_groups").select("group_id").eq("user_id", user?.id);
+      return data?.map(d => d.group_id) || [];
+    },
+    enabled: !!user?.id
+  });
 
   // Photo state
   const [photoCaption, setPhotoCaption] = useState("");
@@ -36,6 +45,7 @@ const SettingsPage = () => {
   const [testName, setTestName] = useState("");
   const [testRole, setTestRole] = useState("");
   const [testText, setTestText] = useState("");
+  const [nativeNotifications, setNativeNotifications] = useState(() => localStorage.getItem("notify_enabled") !== "false");
   const [editingTest, setEditingTest] = useState<any>(null);
   const [deletingTest, setDeletingTest] = useState<any>(null);
   const [testDialogOpen, setTestDialogOpen] = useState(false);
@@ -246,6 +256,27 @@ const SettingsPage = () => {
     }
   };
 
+  const handleSiteSettingUpload = async (e: React.ChangeEvent<HTMLInputElement>, settingKey: string) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const fileName = `${settingKey}_${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("event-banners").upload(fileName, file, { upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from("event-banners").getPublicUrl(fileName);
+      await (supabase as any).from("site_settings").upsert({ id: settingKey, value: urlData.publicUrl });
+      queryClient.invalidateQueries({ queryKey: ["site-settings"] });
+      toast({ title: "Imagem da Home atualizada!" });
+    } catch (err: any) {
+      toast({ title: "Erro no upload", description: err.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const deletePhotoMutation = useMutation({
     mutationFn: async (p: any) => {
       const filename = p.url.split("/").pop();
@@ -262,9 +293,11 @@ const SettingsPage = () => {
     mutationFn: async () => {
       const payload = { name: testName, role: testRole, text: testText };
       if (editingTest) {
-        await (supabase as any).from("landing_testimonials").update(payload).eq("id", editingTest.id);
+        const { error } = await (supabase as any).from("landing_testimonials").update(payload).eq("id", editingTest.id);
+        if (error) throw error;
       } else {
-        await (supabase as any).from("landing_testimonials").insert(payload);
+        const { error } = await (supabase as any).from("landing_testimonials").insert(payload);
+        if (error) throw error;
       }
     },
     onSuccess: () => {
@@ -278,21 +311,45 @@ const SettingsPage = () => {
 
   const deleteTestMutation = useMutation({
     mutationFn: async (id: string) => {
-      await (supabase as any).from("landing_testimonials").delete().eq("id", id);
+      const { error } = await (supabase as any).from("landing_testimonials").delete().eq("id", id);
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["landing-testimonials"] });
-      toast({ title: "Depoimento removido!" });
-    }
+      toast({ title: "Depoimento excluído!" });
+    },
+  });
+
+  const handleToggleNotifications = (val: boolean) => {
+    setNativeNotifications(val);
+    localStorage.setItem("notify_enabled", val.toString());
+    toast({
+      title: val ? "Notificações ativadas" : "Notificações silenciadas",
+      description: val ? "Você receberá avisos sonoros." : "Os avisos sonoros foram desativados."
+    });
+  };
+
+  
+  const removeMyPhotoMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) return;
+      const { error } = await supabase.from("profiles").update({ avatar_url: null } as any).eq("user_id", user.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      refreshProfile();
+      toast({ title: "Sua foto foi removida!" });
+    },
+    onError: (err: any) => toast({ title: "Erro ao remover foto", description: err.message, variant: "destructive" }),
   });
 
   const approveContactMutation = useMutation({
     mutationFn: async (m: any) => {
       const phoneDigits = m.phone?.replace(/\D/g, "");
       const nameSlug = m.name?.trim().toLowerCase().replace(/\s+/g, ".");
-      const loginPrefix = phoneDigits && phoneDigits.length >= 8 ? phoneDigits : nameSlug;
+      const loginPrefix = nameSlug || phoneDigits;
 
-      const email = loginPrefix + "@mergulhoconnect.com";
+      const email = loginPrefix + "@ccmergulho.com";
       const { data, error } = await supabase.rpc("admin_manage_user" as any, {
         email, password: "123456", raw_user_meta_data: { full_name: m.name, whatsapp_phone: m.phone }
       });
@@ -332,20 +389,23 @@ const SettingsPage = () => {
       </h1>
 
       <Tabs defaultValue="site">
-        <TabsList className="grid grid-cols-3 md:grid-cols-6 w-full max-w-3xl bg-muted/50 p-1 rounded-2xl h-auto">
+        <TabsList className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 w-full bg-muted/50 p-1 rounded-2xl h-auto gap-1">
           <TabsTrigger value="site" className="rounded-xl flex items-center gap-2 py-2">
             <ImagePlus className="h-4 w-4" /> Layout
+          </TabsTrigger>
+          <TabsTrigger value="preferencias" className="rounded-xl flex items-center gap-2 py-2">
+            <Bell className="h-4 w-4" /> Preferências
           </TabsTrigger>
           <TabsTrigger value="video" className="rounded-xl flex items-center gap-2 py-2">
             <Video className="h-4 w-4" /> Vídeo
           </TabsTrigger>
           <TabsTrigger value="links" className="rounded-xl flex items-center gap-2 py-2">
-            <Youtube className="h-4 w-4" /> Redes
+            <Youtube className="h-4 w-4" /> Canais
           </TabsTrigger>
           <TabsTrigger value="mensagens" className="rounded-xl flex items-center gap-2 py-2 relative">
             <Mail className="h-4 w-4" /> Inbox
             {contactMessages && contactMessages.length > 0 && (
-              <span className="absolute -top-1 -right-1 h-4 w-4 bg-destructive text-white text-[8px] font-bold flex items-center justify-center rounded-full animate-bounce">
+              <span className="absolute -top-1 -right-0 h-4 w-4 bg-destructive text-white text-[8px] font-bold flex items-center justify-center rounded-full animate-bounce">
                 {contactMessages.length}
               </span>
             )}
@@ -354,9 +414,66 @@ const SettingsPage = () => {
             <Archive className="h-4 w-4" /> Arquivos
           </TabsTrigger>
           <TabsTrigger value="rotinas" className="rounded-xl flex items-center gap-2 py-2">
-            <Shield className="h-4 w-4" /> Rotinas
+            <Shield className="h-4 w-4" /> Privilégios
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="preferencias" className="pt-6">
+          <Card className="border-0 shadow-xl overflow-hidden rounded-3xl">
+            <div className="h-1.5 w-full bg-amber-500" />
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="h-5 w-5 text-amber-500" /> Notificações
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">Configure como você recebe alertas na plataforma.</p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl border border-border/50">
+                <div className="space-y-0.5">
+                  <Label className="text-base font-bold">Avisos Sonoros</Label>
+                  <p className="text-xs text-muted-foreground">Reproduzir som ao receber novas mensagens ou atualizações importantes.</p>
+                </div>
+                <Switch
+                  checked={nativeNotifications}
+                  onCheckedChange={handleToggleNotifications}
+                />
+              </div>
+
+              <div className="p-4 bg-muted/30 rounded-2xl border border-border/50">
+              {/* Account Insights Section */}
+              <div className="pt-6 border-t border-border/50">
+                <h3 className="text-sm font-bold flex items-center gap-2 mb-4">
+                  <BarChart3 className="h-4 w-4 text-primary" />
+                  Insights da Conta
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="bg-muted/30 p-4 rounded-2xl border border-border/50">
+                    <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Membro desde</p>
+                    <p className="text-sm font-bold">{profile?.created_at ? new Date(profile.created_at).toLocaleDateString('pt-BR') : 'Recentemente'}</p>
+                  </div>
+                  <div className="bg-muted/30 p-4 rounded-2xl border border-border/50">
+                    <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Departamentos</p>
+                    <p className="text-sm font-bold text-primary">{userGroupIds?.length || 0} Ativos</p>
+                  </div>
+                  <div className="sm:col-span-2 bg-primary/5 p-4 rounded-2xl border border-primary/10 flex items-center justify-between group cursor-pointer hover:bg-primary/10 transition-colors"
+                    onClick={() => window.location.href = '/perfil'}>
+                    <div>
+                      <p className="text-[10px] uppercase font-bold text-primary/70">Nível de Acesso</p>
+                      <p className="text-sm font-black uppercase text-primary">
+                        {isAdmin ? 'Administrador CCM' : isGerente ? 'Gestor de Fluxo' : 'Membro Conectado'}
+                      </p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-primary transform group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-3 italic">
+                  Seus dados de perfil e foto devem ser gerenciados na página dedicada de Perfil.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+          </Card>
+        </TabsContent>
 
 
         <TabsContent value="site" className="space-y-10 pt-6">
@@ -409,6 +526,33 @@ const SettingsPage = () => {
                   <p>Nenhuma foto cadastrada</p>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Banner da Home Page Substituição */}
+          <Card className="border-0 shadow-xl overflow-hidden rounded-3xl">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 bg-muted/20">
+              <div>
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <ImagePlus className="h-5 w-5 text-indigo-500" /> Banner da Tela Inicial
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">Foto de destaque na Home (tela principal de usuários logados).</p>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="flex items-start gap-6">
+                <div className="w-48 h-32 bg-muted rounded-xl overflow-hidden border border-dashed flex-shrink-0 relative">
+                  {siteSettings && siteSettings["homepage_banner"] ? (
+                    <img src={siteSettings["homepage_banner"]} className="w-full h-full object-cover" alt="Banner Atual" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground"><ImagePlus className="h-8 w-8 opacity-20" /></div>
+                  )}
+                </div>
+                <div className="flex-1 space-y-4">
+                  <p className="text-sm font-medium">Faça o upload do banner que ficará na recepção dos membros (Tamanho ideal: 1200x400 para efeito Outdoor centralizado).</p>
+                  <Input type="file" accept="image/*" disabled={uploading} className="h-11 rounded-xl w-full" onChange={(e) => handleSiteSettingUpload(e, "homepage_banner")} />
+                </div>
+              </div>
             </CardContent>
           </Card>
 

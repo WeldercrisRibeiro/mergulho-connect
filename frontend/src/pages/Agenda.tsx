@@ -12,8 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { safeFormat } from "@/lib/dateUtils";
-import { Calendar, MapPin, Check, X, Share2, Plus, Edit2, Trash2, Users, Ticket, Copy, QrCode, Mic2, Info, ImagePlus, Loader2, Upload, Settings } from "lucide-react";
+import { Calendar, MapPin, Check, X, Share2, Plus, Edit2, Trash2, Users, Ticket, Copy, QrCode, Mic2, Info, ImagePlus, Loader2, Upload, Settings, ScanLine, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { QRCodeSVG } from "qrcode.react";
+import { logAudit } from "@/lib/auditLogger";
+import QRScanner from "@/components/QRScanner";
 
 const EVENT_TYPE_LABELS: Record<string, string> = {
   simple: "Compromisso",
@@ -27,10 +30,22 @@ const EVENT_TYPE_COLORS: Record<string, string> = {
   conference: "bg-accent text-accent-foreground border-accent",
 };
 
+// Helper para permitir gerar IDs aleatórios mesmo no celular sem HTTPS (que bloqueia o crypto nativo)
+const generateSafeId = () => {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+  });
+};
+
 const Agenda = () => {
   const { user, isAdmin, isGerente, managedGroupIds, userGroupIds } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [cancelingRegistration, setCancelingRegistration] = useState<any>(null);
   const [filter, setFilter] = useState<string>("all");
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [creatingEvent, setCreatingEvent] = useState(false);
@@ -40,6 +55,8 @@ const Agenda = () => {
   const [pixDialogEvent, setPixDialogEvent] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [qrProjectEvent, setQrProjectEvent] = useState<any>(null);
+  const [scanningEvent, setScanningEvent] = useState<any>(null);
 
   // Form state
   const [title, setTitle] = useState("");
@@ -55,6 +72,7 @@ const Agenda = () => {
   const [pixKey, setPixKey] = useState("");
   const [pixQrcodeUrl, setPixQrcodeUrl] = useState("");
   const [mapUrl, setMapUrl] = useState("");
+  const [requireCheckin, setRequireCheckin] = useState(false);
 
   const { data: userGroups } = useQuery({
     queryKey: ["user-groups", user?.id],
@@ -84,7 +102,7 @@ const Agenda = () => {
     queryFn: async () => {
       let query = (supabase as any)
         .from("events")
-        .select("*, event_rsvps(*), groups(name)")
+        .select("*, event_rsvps(*), event_checkins(*), event_registrations(*), groups(name)")
         .order("event_date", { ascending: true });
       
       if (filter !== "all") {
@@ -95,9 +113,17 @@ const Agenda = () => {
         query = query.or(`is_general.eq.true${groupFilter ? `,${groupFilter}` : ""}`);
       }
       
-      const { data } = await query;
+      const { data, error } = await query;
+      if (error) {
+        console.error("Error fetching events:", error);
+        throw error;
+      }
       return data || [];
     },
+    meta: {
+      errorMessage: "Falha ao carregar os eventos. Verifique as permissões de acesso ao banco.",
+    },
+    refetchInterval: 15000,
   });
 
   const showFilters = isAdmin || (groups && groups.length > 1);
@@ -118,8 +144,9 @@ const Agenda = () => {
 
   const registerMutation = useMutation({
     mutationFn: async (eventId: string) => {
+      // Upsert para unificar e evitar linhas fantasmas do cache se ele cancelou e retornou
       const { error } = await (supabase as any).from("event_registrations").upsert(
-        { event_id: eventId, user_id: user!.id, payment_status: "pending" },
+        { event_id: eventId, user_id: user?.id, payment_status: "pending" },
         { onConflict: "event_id,user_id" }
       );
       if (error) throw error;
@@ -128,6 +155,23 @@ const Agenda = () => {
       queryClient.invalidateQueries({ queryKey: ["events"] });
       toast({ title: "Inscrição realizada!" });
     },
+    onError: (err: any) => toast({ title: "Erro na inscrição", description: err.message, variant: "destructive" }),
+  });
+
+  const cancelRegistrationMutation = useMutation({
+    mutationFn: async (eventId: string) => {
+      // Limpa possível scan de check-in caso a pessoa esteja testando/cancelando
+      await (supabase as any).from("event_checkins").delete().eq("event_id", eventId).eq("user_id", user?.id);
+      // Cancela a inscrição de fato
+      const { error } = await (supabase as any).from("event_registrations").delete().eq("event_id", eventId).eq("user_id", user?.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      toast({ title: "Inscrição cancelada com sucesso!" });
+      setCancelingRegistration(null);
+    },
+    onError: (err: any) => toast({ title: "Erro ao cancelar", description: err.message, variant: "destructive" }),
   });
 
   const resetForm = () => {
@@ -135,6 +179,7 @@ const Agenda = () => {
     setIsGeneral(isAdmin ? "true" : "false"); 
     setGroupId("");
     setEventType("simple"); setBannerUrl(""); setSpeakers(""); setPrice(0); setPixKey(""); setPixQrcodeUrl(""); setMapUrl("");
+    setRequireCheckin(false);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -174,6 +219,7 @@ const Agenda = () => {
     setPixKey(ev.pix_key || "");
     setPixQrcodeUrl(ev.pix_qrcode_url || "");
     setMapUrl(ev.map_url || "");
+    setRequireCheckin(ev.require_checkin || false);
     if (ev.event_date) {
       const d = new Date(ev.event_date);
       d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
@@ -198,6 +244,8 @@ const Agenda = () => {
         pix_key: pixKey.trim() || null,
         pix_qrcode_url: pixQrcodeUrl.trim() || null,
         map_url: mapUrl.trim() || null,
+        require_checkin: requireCheckin,
+        checkin_qr_secret: requireCheckin ? (editingEvent?.checkin_qr_secret || generateSafeId()) : null,
       };
       if (editingEvent) {
         const { error } = await (supabase as any).from("events").update(payload).eq("id", editingEvent.id);
@@ -213,6 +261,7 @@ const Agenda = () => {
       setCreatingEvent(false);
       resetForm();
       toast({ title: editingEvent ? "Evento atualizado!" : "Evento criado!" });
+      logAudit(editingEvent ? "update" : "create", "agenda", { title });
     },
     onError: (err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" }),
   });
@@ -225,6 +274,7 @@ const Agenda = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["events"] });
       toast({ title: "Evento removido!" });
+      logAudit("delete", "agenda", { eventId: id });
     },
   });
 
@@ -276,8 +326,10 @@ const Agenda = () => {
           const userRsvp = event.event_rsvps?.find((r: any) => r.user_id === user?.id);
           const confirmed = event.event_rsvps?.filter((r: any) => r.status === "confirmed").length || 0;
           const declined = event.event_rsvps?.filter((r: any) => r.status === "declined").length || 0;
+          const checkedInCount = event.event_checkins?.length || 0;
           const isComplex = event.event_type === "course" || event.event_type === "conference";
           const isPaid = event.price > 0;
+          const isRegistered = event.event_registrations?.some((r: any) => r.user_id === user?.id);
 
           return (
             <Card key={event.id} className={`neo-shadow-sm border-0 overflow-hidden ${isComplex ? "ring-1 ring-primary/20" : ""}`}>
@@ -342,12 +394,21 @@ const Agenda = () => {
                 {event.description && <p className="text-sm text-muted-foreground mb-3">{event.description}</p>}
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-3 text-[10px] sm:text-xs">
-                    <div className="flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full font-semibold border border-emerald-100 dark:border-emerald-900/50">
-                      <Check className="h-3 w-3" /> {confirmed}
-                    </div>
-                    <div className="flex items-center gap-1 bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 px-2 py-0.5 rounded-full font-semibold border border-rose-100 dark:border-rose-900/50">
-                      <X className="h-3 w-3" /> {declined}
-                    </div>
+                    {!event.require_checkin && (
+                      <>
+                        <div className="flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full font-semibold border border-emerald-100 dark:border-emerald-900/50">
+                          <Check className="h-3 w-3" /> {confirmed}
+                        </div>
+                        <div className="flex items-center gap-1 bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 px-2 py-0.5 rounded-full font-semibold border border-rose-100 dark:border-rose-900/50">
+                          <X className="h-3 w-3" /> {declined}
+                        </div>
+                      </>
+                    )}
+                    {event.require_checkin && (
+                      <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-full font-semibold border border-blue-100 dark:border-blue-900/50" title="Check-ins realizados">
+                        <ScanLine className="h-3 w-3" /> {checkedInCount}
+                      </div>
+                    )}
                     {(isAdmin || (isGerente && event.group_id && useAuth().managedGroupIds.includes(event.group_id))) && (
                       <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setRsvpViewEvent(event)}>
                         <Users className="h-3 w-3 mr-1" /> Lista
@@ -355,8 +416,8 @@ const Agenda = () => {
                     )}
                   </div>
                     <div className="flex gap-2 flex-wrap">
-                      {/* RSVP buttons: Only for non-conferences */}
-                      {event.event_type !== "conference" && (
+                      {/* RSVP buttons: Only for non-conferences and non-checkin events */}
+                      {event.event_type !== "conference" && !event.require_checkin && (
                         <>
                           <Button
                             size="sm"
@@ -386,14 +447,32 @@ const Agenda = () => {
                       </Button>
                     )}
                     {isComplex && (
-                      <Button size="sm" variant="secondary" onClick={() => registerMutation.mutate(event.id)}>
-                        <Ticket className="h-4 w-4 mr-1" /> Inscrever-se
-                      </Button>
+                      isRegistered ? (
+                        <Button size="sm" variant="destructive" onClick={() => setCancelingRegistration(event)}>
+                          <X className="h-4 w-4 mr-1" /> Cancelar Inscrição
+                        </Button>
+                      ) : (
+                        <Button size="sm" variant="secondary" onClick={() => registerMutation.mutate(event.id)}>
+                          <Ticket className="h-4 w-4 mr-1" /> Inscrever-se
+                        </Button>
+                      )
                     )}
 
                     <Button size="sm" variant="outline" onClick={() => shareWhatsApp(event)}>
                       <Share2 className="h-4 w-4" />
                     </Button>
+
+                    {/* QR Check-in button for members */}
+                    {event.require_checkin && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="gap-1"
+                        onClick={() => setScanningEvent(event)}
+                      >
+                        <ScanLine className="h-4 w-4" /> Check-in
+                      </Button>
+                    )}
                   </div>
                 </div>
 
@@ -401,6 +480,13 @@ const Agenda = () => {
                 {isAdmin && isComplex && (
                   <Button variant="ghost" size="sm" className="mt-2 text-xs" onClick={() => setRegistrationViewEvent(event)}>
                     <Ticket className="h-3 w-3 mr-1" /> Ver Inscritos
+                  </Button>
+                )}
+
+                {/* Admin: project QR Code */}
+                {isAdmin && event.require_checkin && event.checkin_qr_secret && (
+                  <Button variant="ghost" size="sm" className="mt-2 text-xs gap-1" onClick={() => setQrProjectEvent(event)}>
+                    <QrCode className="h-3 w-3" /> Projetar QR Code
                   </Button>
                 )}
               </CardContent>
@@ -558,6 +644,30 @@ const Agenda = () => {
                   </Select>
                 </div>
               )}
+
+              {/* QR Check-in Toggle */}
+              {isAdmin && (
+                <div className="flex items-center justify-between p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-500/10 rounded-xl">
+                      <QrCode className="h-5 w-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold">Check-in via QR Code</p>
+                      <p className="text-[10px] text-muted-foreground">Gera QR Code para confirmar presença automaticamente</p>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={requireCheckin}
+                      onChange={(e) => setRequireCheckin(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-muted rounded-full peer peer-checked:bg-emerald-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full" />
+                  </label>
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter className="gap-2 pb-2">
@@ -605,6 +715,17 @@ const Agenda = () => {
         onCancel={() => setDeletingEvent(null)}
       />
 
+      {/* Confirm Registration Cancel */}
+      <ConfirmDialog
+        open={!!cancelingRegistration}
+        title="Cancelar Inscrição"
+        description={`Tem certeza que deseja cancelar sua inscrição no evento "${cancelingRegistration?.title}"?`}
+        confirmLabel="Sim, Cancelar"
+        variant="danger"
+        onConfirm={() => cancelRegistrationMutation.mutate(cancelingRegistration?.id)}
+        onCancel={() => setCancelingRegistration(null)}
+      />
+
       {/* RSVP List Dialog */}
       <Dialog open={!!rsvpViewEvent} onOpenChange={val => !val && setRsvpViewEvent(null)}>
         <DialogContent className="sm:max-w-[600px]">
@@ -630,6 +751,53 @@ const Agenda = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* QR Code Projection Dialog (Admin) */}
+      <Dialog open={!!qrProjectEvent} onOpenChange={v => !v && setQrProjectEvent(null)}>
+        <DialogContent className="sm:max-w-md text-center">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-center gap-2">
+              <QrCode className="h-5 w-5" /> QR Code — {qrProjectEvent?.title}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-6 py-6">
+            <div className="bg-white p-6 rounded-3xl shadow-2xl">
+              <QRCodeSVG
+                value={qrProjectEvent?.checkin_qr_secret || ""}
+                size={280}
+                level="H"
+              />
+            </div>
+            <p className="text-sm text-muted-foreground">Projete este QR Code no telão para os membros escanearem</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* QR Scanner for Check-in */}
+      {scanningEvent && (
+        <QRScanner
+          onScan={async (decoded) => {
+            setScanningEvent(null);
+            // Check if decoded matches the event's secret
+            if (decoded === scanningEvent.checkin_qr_secret) {
+              try {
+                const { error } = await (supabase as any).from("event_checkins").insert(
+                  { event_id: scanningEvent.id, user_id: user!.id }
+                );
+                // PGRST error code "23505" significa Violação de Unicidade (Já estava feito o check-in)
+                if (error && error.code !== "23505") throw error;
+                toast({ title: "✅ Presença confirmada!", description: `Check-in registrado para "${scanningEvent.title}".` });
+                logAudit("create", "event_checkin", { eventId: scanningEvent.id, eventTitle: scanningEvent.title });
+              } catch (err: any) {
+                toast({ title: "Erro no check-in", description: err.message, variant: "destructive" });
+              }
+            } else {
+              toast({ title: "QR Code inválido", description: "Este QR Code não corresponde ao evento.", variant: "destructive" });
+            }
+          }}
+          onClose={() => setScanningEvent(null)}
+        />
+      )}
     </div>
   );
 };
@@ -641,7 +809,7 @@ const RsvpList = ({ event }: { event: any }) => {
     queryKey: ["rsvp-full-list", event?.id],
     queryFn: async () => {
       if (!event) return [];
-      const { data: rsvps } = await supabase.from("event_rsvps").select("user_id, status").eq("event_id", event.id);
+      
       let relevantProfiles: any[] = [];
       if (event.is_general) {
         const { data } = await supabase.from("profiles").select("user_id, full_name").order("full_name");
@@ -650,6 +818,20 @@ const RsvpList = ({ event }: { event: any }) => {
         const { data: gm } = await supabase.from("member_groups").select("user_id, profiles(full_name)").eq("group_id", event.group_id);
         relevantProfiles = gm?.map(m => ({ user_id: m.user_id, full_name: (m.profiles as any)?.full_name || "Membro" })) || [];
       }
+
+      // Se for Check-in OBRIGATÓRIO, o foco da lista visual são as Presenças (Checkins)
+      if (event.require_checkin) {
+        const { data: checkins } = await supabase.from("event_checkins").select("user_id").eq("event_id", event.id);
+        const checkinMap = new Map(checkins?.map(c => [c.user_id, true]));
+        return relevantProfiles.map(p => ({
+          user_id: p.user_id,
+          name: p.full_name,
+          status: checkinMap.has(p.user_id) ? "checked_in" : "pending"
+        }));
+      }
+
+      // Fluxo comum (RSVP / Intenção de ir)
+      const { data: rsvps } = await supabase.from("event_rsvps").select("user_id, status").eq("event_id", event.id);
       const rsvpMap = new Map(rsvps?.map(r => [r.user_id, r.status]));
       return relevantProfiles.map(p => ({
         user_id: p.user_id,
@@ -661,6 +843,19 @@ const RsvpList = ({ event }: { event: any }) => {
   });
 
   if (isLoading) return <div className="flex justify-center p-8"><span className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" /></div>;
+
+  if (!event) return null;
+
+  if (event.require_checkin) {
+    const checked = usersData?.filter(u => u.status === "checked_in") || [];
+    const pending = usersData?.filter(u => u.status === "pending") || [];
+    return (
+      <div className="space-y-6">
+        <RsvpSection label="Fizeram Check-in Oficial" items={checked} color="blue" icon={<ScanLine className="h-4 w-4" />} />
+        <RsvpSection label="Pendentes" items={pending} color="amber" icon={<Clock className="h-4 w-4" />} />
+      </div>
+    );
+  }
 
   const confirmed = usersData?.filter(u => u.status === "confirmed") || [];
   const declined = usersData?.filter(u => u.status === "declined") || [];
@@ -699,10 +894,21 @@ const RegistrationList = ({ event }: { event: any }) => {
       if (!event) return [];
       const { data } = await (supabase as any).from("event_registrations").select("*").eq("event_id", event.id);
       if (!data) return [];
+      
+      let checkinSet = new Set();
+      if (event.require_checkin) {
+        const { data: checkins } = await supabase.from("event_checkins").select("user_id").eq("event_id", event.id);
+        checkinSet = new Set(checkins?.map((c: any) => c.user_id) || []);
+      }
+
       const userIds = data.map((r: any) => r.user_id);
       const { data: profiles } = await supabase.from("profiles").select("user_id, full_name").in("user_id", userIds);
       const nameMap = new Map(profiles?.map(p => [p.user_id, p.full_name]));
-      return data.map((r: any) => ({ ...r, name: nameMap.get(r.user_id) || "Membro" }));
+      return data.map((r: any) => ({ 
+        ...r, 
+        name: nameMap.get(r.user_id) || "Membro",
+        checked_in: checkinSet.has(r.user_id)
+      }));
     },
     enabled: !!event,
   });
@@ -719,8 +925,19 @@ const RegistrationList = ({ event }: { event: any }) => {
     <div className="space-y-2">
       <p className="text-sm text-muted-foreground">{registrations?.length || 0} inscrito(s)</p>
       {registrations?.map((r: any) => (
-        <div key={r.id} className="flex items-center justify-between bg-muted/50 rounded-lg px-3 py-2">
-          <span className="text-sm font-medium">{r.name}</span>
+        <div key={r.id} className="flex flex-wrap items-center justify-between gap-2 bg-muted/50 rounded-lg px-3 py-2">
+          <div className="flex flex-col">
+            <span className="text-sm font-medium">{r.name}</span>
+            {event.require_checkin && (
+              <div className="mt-1">
+                {r.checked_in ? (
+                  <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/30">✓ Fez Check-in</Badge>
+                ) : (
+                  <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950/30">⏳ Pendente</Badge>
+                )}
+              </div>
+            )}
+          </div>
           <Select value={r.payment_status} onValueChange={v => updatePayment(r.id, v)}>
             <SelectTrigger className="w-32 h-7 text-xs">
               <SelectValue />

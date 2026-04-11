@@ -13,9 +13,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Shield, Plus, Users, Calendar, BookOpen, Trash2, Edit2, Key } from "lucide-react";
+import { Shield, Plus, Users, Calendar, BookOpen, Trash2, Edit2, Key, Archive, User, Camera, Upload } from "lucide-react";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const Admin = () => {
   const { isAdmin, user } = useAuth();
@@ -55,6 +58,9 @@ const AdminGroups = () => {
   const { toast } = useToast();
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [activeGroupForUpload, setActiveGroupForUpload] = useState<string | null>(null);
 
   const { data: groups } = useQuery({
     queryKey: ["admin-groups"],
@@ -87,6 +93,47 @@ const AdminGroups = () => {
     },
   });
 
+  const handleIconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeGroupForUpload) return;
+
+    setUploadingId(activeGroupForUpload);
+    try {
+      const ext = file.name.split(".").pop();
+      const fileName = `group_${activeGroupForUpload}_${Date.now()}.${ext}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from("group-icons")
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from("group-icons").getPublicUrl(fileName);
+      const publicUrl = urlData.publicUrl;
+
+      const { error: updateError } = await supabase
+        .from("groups")
+        .update({ icon: publicUrl })
+        .eq("id", activeGroupForUpload);
+
+      if (updateError) throw updateError;
+
+      queryClient.invalidateQueries({ queryKey: ["admin-groups"] });
+      toast({ title: "Ícone atualizado!" });
+    } catch (err: any) {
+      toast({ title: "Erro no upload", description: err.message, variant: "destructive" });
+    } finally {
+      setUploadingId(null);
+      setActiveGroupForUpload(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const triggerUpload = (groupId: string) => {
+    setActiveGroupForUpload(groupId);
+    setTimeout(() => fileInputRef.current?.click(), 100);
+  };
+
   return (
     <div className="space-y-4 mt-4">
       <Card className="neo-shadow-sm border-0">
@@ -98,16 +145,48 @@ const AdminGroups = () => {
         </CardContent>
       </Card>
       <div className="space-y-2">
+        <input 
+          type="file" 
+          hidden 
+          ref={fileInputRef} 
+          onChange={handleIconUpload} 
+          accept="image/*"
+        />
         {groups?.map((g) => (
-          <Card key={g.id} className="border-0 bg-muted/30">
+          <Card key={g.id} className="border-0 bg-muted/30 hover:bg-muted/50 transition-colors">
             <CardContent className="flex items-center justify-between p-4">
-              <div>
-                <p className="font-medium">{g.name}</p>
-                <p className="text-xs text-muted-foreground">{g.description}</p>
+              <div className="flex items-center gap-4">
+                <div 
+                  className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden border-2 border-primary/20 cursor-pointer group relative"
+                  onClick={() => triggerUpload(g.id)}
+                >
+                  {g.icon && (g.icon.startsWith('http') || g.icon.startsWith('/')) ? (
+                    <img src={g.icon} alt={g.name} className="h-full w-full object-cover" />
+                  ) : (
+                    <Users className="h-6 w-6 text-primary" />
+                  )}
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Camera className="h-5 w-5 text-white" />
+                  </div>
+                  {uploadingId === g.id && (
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                      <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <p className="font-bold text-sm tracking-tight">{g.name}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase font-black">{g.description || "Sem descrição"}</p>
+                </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(g.id)}>
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon" onClick={() => triggerUpload(g.id)} className="h-8 w-8 text-primary">
+                  <Camera className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(g.id)} className="h-8 w-8">
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -119,7 +198,7 @@ const AdminGroups = () => {
 const AdminEvents = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, isAdmin, isGerente, isAdminCCM } = useAuth();
 
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [title, setTitle] = useState("");
@@ -137,7 +216,7 @@ const AdminEvents = () => {
     },
   });
 
-  const { data: events } = useQuery({
+  const { data: adminEvents } = useQuery({
     queryKey: ["admin-events"],
     queryFn: async () => {
       const { data } = await supabase.from("events").select("*, groups(name)").order("event_date", { ascending: false });
@@ -262,7 +341,7 @@ const AdminEvents = () => {
       )}
 
       <div className="space-y-2">
-        {events?.map((ev) => (
+        {adminEvents?.map((ev) => (
           <Card key={ev.id} className="border-0 bg-muted/30">
             <CardContent className="flex items-center justify-between p-4 flex-wrap gap-4">
               <div className="flex-1">
@@ -498,13 +577,16 @@ const AdminMembers = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  const { isAdminCCM } = useAuth();
   const [editingMember, setEditingMember] = useState<any>(null);
   const [creatingMember, setCreatingMember] = useState(false);
+  const [resettingPasswordMember, setResettingPasswordMember] = useState<any>(null);
+  const [removePhoto, setRemovePhoto] = useState(false);
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
+  const [editUsername, setEditUsername] = useState("");
   const [editRole, setEditRole] = useState("membro");
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
-  const [resettingPasswordMember, setResettingPasswordMember] = useState<any>(null);
 
   const { data: allGroups } = useQuery({
     queryKey: ["admin-groups-list"],
@@ -538,14 +620,29 @@ const AdminMembers = () => {
     setEditingMember(m);
     setEditName(m.full_name || "");
     setEditPhone(m.whatsapp_phone || "");
+    
+    // Suggest name slug if current username is empty or just a phone number
+    const isPhoneLike = /^\d{8,}$/.test(m.username || "");
+    const nameSlug = (m.full_name || "").trim().toLowerCase().replace(/\s+/g, ".");
+    setEditUsername(m.username && !isPhoneLike ? m.username : (nameSlug || m.username || ""));
+    
     setEditRole(m.roles?.[0]?.role || "membro");
     setSelectedGroups(m.group_ids || []);
+    setRemovePhoto(false);
   };
 
   const updateMutation = useMutation({
     mutationFn: async () => {
       if (!editingMember) return;
-      const { error: pErr } = await supabase.from("profiles").update({ full_name: editName, whatsapp_phone: editPhone }).eq("id", editingMember.id);
+      const phoneDigits = editPhone.replace(/\D/g, "");
+      const cleanUsername = (editUsername || "").trim().toLowerCase().replace("@ccmergulho.com", "").replace(/\s+/g, ".") || phoneDigits;
+
+      const { error: pErr } = await supabase.from("profiles").update({ 
+        full_name: editName, 
+        whatsapp_phone: editPhone,
+        username: cleanUsername,
+        ... (removePhoto ? { avatar_url: null } : {})
+      } as any).eq("id", editingMember.id);
       if (pErr) throw pErr;
 
       // role
@@ -575,24 +672,36 @@ const AdminMembers = () => {
 
   const deleteMemberMutation = useMutation({
     mutationFn: async (m: any) => {
-      // Delete from profiles and roles/groups (cascades), then from auth via RPC
+      // Clean up all related data first
       await supabase.from("member_groups").delete().eq("user_id", m.user_id);
       await supabase.from("user_roles").delete().eq("user_id", m.user_id);
-      await supabase.from("profiles").delete().eq("id", m.id);
-      // Try to delete from auth profile only (auth user deletion requires service_role)
-      try { await (supabase.rpc("admin_create_user" as any, { _delete: true, user_id: m.user_id }) as any); } catch (_) { }
+      await supabase.from("events").delete().eq("created_by", m.user_id);
+      await supabase.from("devotionals").delete().eq("author_id", m.user_id);
+      
+      // Delete profile
+      const { error } = await supabase.from("profiles").delete().eq("user_id", m.user_id);
+      if (error) throw error;
+
+      // Try to delete from auth user via RPC
+      try { 
+        await (supabase.rpc("admin_manage_user" as any, { 
+          _delete: true, 
+          target_user_id: m.user_id 
+        }) as any); 
+      } catch (err) {
+        console.warn("Auth user deletion skipped or failed:", err);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-members"] });
-      toast({ title: "Perfil removido", description: "Conta de acesso pode precisar ser removida manualmente no Supabase." });
+      toast({ title: "Perfil removido com sucesso" });
     }
   });
 
   const resetPasswordMutation = useMutation({
     mutationFn: async (m: any) => {
-      // Use phone based email if username is not present, following the pattern in createMemberMutation
       const login = m.username || m.whatsapp_phone?.replace(/\D/g, "");
-      const email = (login + "@mergulhoconnect.com").toLowerCase();
+      const email = (login + "@ccmergulho.com").toLowerCase();
       
       const { error } = await supabase.rpc("admin_manage_user" as any, {
         email,
@@ -615,7 +724,7 @@ const AdminMembers = () => {
 
   const createMemberMutation = useMutation({
     mutationFn: async () => {
-      const email = editPhone.replace(/\D/g, "") + "@mergulhoconnect.com";
+      const email = editPhone.replace(/\D/g, "") + "@ccmergulho.com";
       const payload = {
         email,
         password: "123456",
@@ -626,14 +735,24 @@ const AdminMembers = () => {
       if (error) throw error;
 
       const newUserId = data as any as string;
+      const username = editPhone.replace(/\D/g, "");
 
-      // Update role & groups for new user
-      if (editRole === "admin") {
-        await supabase.from("user_roles").insert({ user_id: newUserId, role: "admin" } as any);
+      // Force update profiles to ensure username and phone are stored
+      await supabase.from("profiles").update({ 
+        full_name: editName, 
+        whatsapp_phone: editPhone, 
+        username 
+      } as any).eq("user_id", newUserId);
+
+      if (editRole === "admin_ccm" && !isAdminCCM) {
+        throw new Error("Apenas ADM CCM pode criar outros ADM CCM.");
       }
+      
+      await supabase.from("user_roles").insert({ user_id: newUserId, role: editRole as any });
+
       if (selectedGroups.length > 0) {
         const inserts = selectedGroups.map(gid => ({ user_id: newUserId, group_id: gid }));
-        await supabase.from("member_groups").insert(inserts as any);
+        await supabase.from("member_groups").insert(inserts);
       }
     },
     onSuccess: () => {
@@ -661,37 +780,71 @@ const AdminMembers = () => {
 
       <div className="space-y-2">
         {members?.map((m) => (
-          <Card key={m.id} className="border-0 bg-muted/30">
+          <Card key={m.id} className="border-0 bg-muted/30 shadow-sm hover:bg-muted/40 transition-colors">
             <CardContent className="flex items-center justify-between p-4">
-              <div>
-                <p className="font-medium">{m.full_name || "Sem nome"}</p>
-                <p className="text-xs text-muted-foreground">{m.whatsapp_phone}</p>
-                <div className="flex gap-1 mt-1 flex-wrap">
-                  {(m as any).roles?.map((r: any) => (
-                    <Badge key={r.role} variant={r.role === "admin" ? "default" : "secondary"} className="text-xs">
-                      {r.role}
-                    </Badge>
-                  ))}
-                  {(m as any).groups?.map((name: string) => (
-                    <Badge key={name} variant="outline" className="text-xs">
+              <div className="flex-1 min-w-0 mr-4">
+                {/* Full Name specialized row to prevent truncation */}
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="font-black text-base text-foreground uppercase tracking-tight truncate">
+                    {m.full_name || "Sem nome"}
+                  </h3>
+                </div>
+                
+                {/* Metadata row: Phone and Username/Email */}
+                <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                  <div className="flex items-center gap-1 bg-background/50 px-2 py-0.5 rounded-lg border border-border/10">
+                    <Phone className="h-3 w-3" />
+                    <span>{m.whatsapp_phone}</span>
+                  </div>
+                  
+                  {/* Smart Display Username */}
+                  {(m.username || m.email) && (
+                    <div className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-0.5 rounded-lg border border-primary/20 font-bold">
+                      <User className="h-3 w-3" />
+                      <span>
+                        @{((m.username && !/^\d{8,}$/.test(m.username)) 
+                          ? m.username 
+                          : (m.email?.split('@')[0] || m.username)).toLowerCase()}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Roles and Groups badges */}
+                <div className="flex gap-1 mt-2 flex-wrap">
+                  {m.roles?.some((r: any) => r.role === "admin_ccm") ? (
+                    <Badge variant="default" className="bg-rose-600 text-white hover:bg-rose-700 uppercase text-[9px] px-2 shadow-sm font-black">ADM CCM</Badge>
+                  ) : m.roles?.some((r: any) => r.role === "admin") ? (
+                    <Badge variant="default" className="uppercase text-[9px] px-2 shadow-sm font-black">Admin</Badge>
+                  ) : m.roles?.[0] ? (
+                    <Badge variant="secondary" className="uppercase text-[9px] px-2 font-black">{m.roles[0].role}</Badge>
+                  ) : null}
+                  {m.groups?.map((name: string) => (
+                    <Badge key={name} variant="outline" className="text-[9px] px-2 font-medium bg-background/50">
                       {name}
                     </Badge>
                   ))}
                 </div>
               </div>
+
               <div className="flex items-center gap-1">
                 <Button variant="ghost" size="icon" 
+                  className="hover:bg-amber-500/10"
                   onClick={() => setResettingPasswordMember(m)}
                   title="Resetar Senha"
                 >
                   <Key className="h-4 w-4 text-amber-500" />
                 </Button>
-                <Button variant="ghost" size="icon" onClick={() => handleEdit(m)}>
+                <Button variant="ghost" size="icon" 
+                  className="hover:bg-primary/10"
+                  onClick={() => handleEdit(m)}
+                >
                   <Edit2 className="h-4 w-4 text-primary" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
+                  className="hover:bg-destructive/10"
                   onClick={() => {
                     if (window.confirm(`Tem certeza que deseja excluir ${m.full_name || 'este membro'}?`)) {
                       deleteMemberMutation.mutate(m);
@@ -722,12 +875,25 @@ const AdminMembers = () => {
               <Input value={editPhone} onChange={e => setEditPhone(e.target.value)} />
             </div>
             <div className="space-y-2">
+              <Label>Login / Nome de Usuário</Label>
+              <Input 
+                value={editUsername} 
+                onChange={e => setEditUsername(e.target.value)} 
+                placeholder="Ex: joao.silva"
+              />
+              <p className="text-[10px] text-muted-foreground">O e-mail será {editUsername || "..."}@ccmergulho.com</p>
+            </div>
+            <div className="space-y-2">
               <Label>Permissão</Label>
               <Select value={editRole} onValueChange={setEditRole}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="membro">Membro / Usuário Comum</SelectItem>
                   <SelectItem value="admin">Administrador</SelectItem>
+                  {isAdminCCM && (
+                    <SelectItem value="admin_ccm">Administrador CCM (Gestor Master)</SelectItem>
+                  )}
+                  <SelectItem value="gerente">Líder / Gerente</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -744,13 +910,40 @@ const AdminMembers = () => {
                         else setSelectedGroups(selectedGroups.filter(id => id !== g.id));
                       }}
                     />
-                    <label htmlFor={`group-${g.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    <label htmlFor={`group-${g.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2">
+                      <div className="h-5 w-5 rounded bg-muted flex items-center justify-center overflow-hidden border border-border">
+                        {g.icon && (g.icon.startsWith('http') || g.icon.startsWith('/')) ? (
+                          <img src={g.icon} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          <Users className="h-3 w-3 text-muted-foreground" />
+                        )}
+                      </div>
                       {g.name}
                     </label>
                   </div>
                 ))}
               </div>
             </div>
+
+            {isAdminCCM && editingMember?.avatar_url && !removePhoto && (
+               <div className="pt-2">
+                 <Button 
+                   variant="outline" 
+                   size="sm" 
+                   className="w-full text-destructive border-destructive/20 hover:bg-destructive/10 gap-2 h-10 rounded-xl"
+                   onClick={() => setRemovePhoto(true)}
+                 >
+                   <Trash2 className="h-4 w-4" /> Remover Foto do Usuário
+                 </Button>
+               </div>
+            )}
+            
+            {removePhoto && (
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-center">
+                <p className="text-xs font-bold text-rose-600">A foto será apagada ao salvar.</p>
+                <Button variant="link" size="sm" onClick={() => setRemovePhoto(false)} className="h-6 text-[10px] text-rose-500">Cancelar</Button>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingMember(null)}>Cancelar</Button>
@@ -785,6 +978,10 @@ const AdminMembers = () => {
                 <SelectContent>
                   <SelectItem value="membro">Membro / Usuário Comum</SelectItem>
                   <SelectItem value="admin">Administrador</SelectItem>
+                  {isAdminCCM && (
+                    <SelectItem value="admin_ccm">Administrador CCM (Gestor Master)</SelectItem>
+                  )}
+                  <SelectItem value="gerente">Líder / Gerente</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -801,7 +998,14 @@ const AdminMembers = () => {
                         else setSelectedGroups(selectedGroups.filter(id => id !== g.id));
                       }}
                     />
-                    <label htmlFor={`gcreate-${g.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    <label htmlFor={`gcreate-${g.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2">
+                      <div className="h-5 w-5 rounded bg-muted flex items-center justify-center overflow-hidden border border-border">
+                        {g.icon && (g.icon.startsWith('http') || g.icon.startsWith('/')) ? (
+                          <img src={g.icon} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          <Users className="h-3 w-3 text-muted-foreground" />
+                        )}
+                      </div>
                       {g.name}
                     </label>
                   </div>
@@ -845,7 +1049,7 @@ const AdminMessages = () => {
 
   const approveMutation = useMutation({
     mutationFn: async (m: any) => {
-      const email = m.phone.replace(/\D/g, "") + "@mergulhoconnect.com";
+      const email = m.phone.replace(/\D/g, "") + "@ccmergulho.com";
       const payload = {
         email,
         password: "123456",
@@ -875,25 +1079,46 @@ const AdminMessages = () => {
   });
 
   const deleteMsgMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("contact_messages" as any).delete().eq("id", id);
-      if (error) throw error;
+    mutationFn: async (m: any) => {
+      const isArchived = m.status === 'archived';
+      if (isArchived) {
+         // Excluir definitivamente
+         const { error } = await supabase.from("contact_messages" as any).delete().eq("id", m.id);
+         if (error) throw error;
+      } else {
+         // Arquivar
+         const { error } = await supabase.from("contact_messages" as any).update({ status: 'archived' }).eq("id", m.id);
+         if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-messages"] });
+      toast({ title: "Ação concluída com sucesso!" });
     }
   });
 
+  const [activeTab, setActiveTab] = useState("inbox");
+  const filteredMessages = messages?.filter((m: any) => activeTab === "archived" ? m.status === "archived" : m.status !== "archived") || [];
+
   return (
     <div className="space-y-4 mt-4">
-      {(!messages || messages.length === 0) && (
-        <Card className="border-0 bg-muted/30">
-          <CardContent className="p-6 text-center text-muted-foreground">
-            Nenhuma mensagem de contato encontrada.
-          </CardContent>
-        </Card>
-      )}
-      {messages?.map((m: any) => (
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid grid-cols-2 bg-muted/50 p-1 rounded-xl mb-4">
+          <TabsTrigger value="inbox" className="rounded-lg">Caixa de Entrada</TabsTrigger>
+          <TabsTrigger value="archived" className="rounded-lg flex gap-2">
+            <Archive className="h-4 w-4" /> Arquivados
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value={activeTab} className="space-y-4">
+          {filteredMessages.length === 0 && (
+            <Card className="border-0 bg-muted/30">
+              <CardContent className="p-6 text-center text-muted-foreground">
+                Nenhuma mensagem {activeTab === "archived" ? "arquivada" : "na caixa de entrada"}.
+              </CardContent>
+            </Card>
+          )}
+          {filteredMessages.map((m: any) => (
         <Card key={m.id} className="border-0 bg-muted/30">
           <CardContent className="p-4">
             <div className="flex flex-col gap-2">
@@ -913,10 +1138,10 @@ const AdminMessages = () => {
                 <p className="text-muted-foreground whitespace-pre-wrap">{m.message}</p>
               </div>
               <div className="flex justify-end gap-2 mt-2">
-                <Button variant="outline" size="sm" onClick={() => deleteMsgMutation.mutate(m.id)} disabled={deleteMsgMutation.isPending}>
-                  Arquivar Mensagem
+                <Button variant="outline" size="sm" onClick={() => deleteMsgMutation.mutate(m)} disabled={deleteMsgMutation.isPending}>
+                  {m.status === 'archived' ? 'Excluir Definitivamente' : 'Arquivar Mensagem'}
                 </Button>
-                {(m.subject === "Quero me tornar Membro" || m.subject === "Contribuir/Servir") && (
+                {m.status !== 'archived' && (m.subject === "Quero me tornar Membro" || m.subject === "Contribuir/Servir") && (
                   <Button size="sm" onClick={() => approveMutation.mutate(m)} disabled={approveMutation.isPending} className="bg-emerald-500 hover:bg-emerald-600">
                     Aprovar Acesso
                   </Button>
@@ -925,7 +1150,9 @@ const AdminMessages = () => {
             </div>
           </CardContent>
         </Card>
-      ))}
+          ))}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
