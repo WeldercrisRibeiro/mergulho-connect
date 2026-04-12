@@ -12,12 +12,12 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { Settings, ImagePlus, MessageSquareQuote, Trash2, Plus, Edit2, ChevronLeft, ChevronRight, Upload, Mail, CheckCircle, Archive, Video, Youtube, Shield, Users, Calendar, BookOpen, HandHeart, BarChart3, MessageCircle, ShieldCheck, Megaphone, Lock, ChevronRight as ChevronRightIcon, Bell, ArrowRight } from "lucide-react";
+import { Settings, ImagePlus, MessageSquareQuote, Trash2, Plus, Edit2, ChevronLeft, ChevronRight, Upload, Mail, CheckCircle, Archive, Video, Youtube, Shield, Users, Calendar, BookOpen, HandHeart, BarChart3, MessageCircle, ShieldCheck, Megaphone, Lock, ChevronRight as ChevronRightIcon, Bell, ArrowRight, Wallet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import VideoPlayer from "@/components/VideoPlayer";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
-
+ 
 const SettingsPage = () => {
   const { user, profile, isAdmin, isGerente, refreshProfile } = useAuth();
   const { toast } = useToast();
@@ -32,7 +32,7 @@ const SettingsPage = () => {
     },
     enabled: !!user?.id
   });
-
+ 
   // Photo state
   const [photoCaption, setPhotoCaption] = useState("");
   const [editingPhoto, setEditingPhoto] = useState<any>(null);
@@ -40,7 +40,7 @@ const SettingsPage = () => {
   const [photoDialogOpen, setPhotoDialogOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [carouselIdx, setCarouselIdx] = useState(0);
-
+ 
   // Testimonial state
   const [testName, setTestName] = useState("");
   const [testRole, setTestRole] = useState("");
@@ -49,14 +49,14 @@ const SettingsPage = () => {
   const [editingTest, setEditingTest] = useState<any>(null);
   const [deletingTest, setDeletingTest] = useState<any>(null);
   const [testDialogOpen, setTestDialogOpen] = useState(false);
-
+ 
   // Video state
   const [tempVideoUrl, setTempVideoUrl] = useState("");
   const [tempIsVideoUpload, setTempIsVideoUpload] = useState(false);
-
+ 
   // Routine Permissions state
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
-
+ 
   const ROUTINES = [
     { id: "agenda", label: "Agenda", icon: Calendar, description: "Gestão de eventos e compromissos" },
     { id: "devocionais", label: "Devocionais", icon: BookOpen, description: "Leituras e meditações diárias" },
@@ -66,14 +66,15 @@ const SettingsPage = () => {
     { id: "chat", label: "Chat", icon: MessageCircle, description: "Mensagens e comunicação interna" },
     { id: "kids", label: "Check-in", icon: ShieldCheck, description: "Check-in e proteção infantil" },
     { id: "Disparos", label: "Disparos", icon: Megaphone, description: "Mural de avisos e notificações" },
+    { id: "tesouraria", label: "Tesouraria", icon: Wallet, description: "Gestão financeira e dízimos" },
   ];
-
+ 
   const ROLE_TYPES = [
     { id: "admin", label: "Administrador", description: "Acesso total ao sistema", color: "bg-primary" },
     { id: "gerente", label: "Líder (Gerente)", description: "Líderes de departamento", color: "bg-emerald-500" },
     { id: "membro", label: "Membro", description: "Acesso básico", color: "bg-slate-500" },
   ];
-
+ 
   const { data: photos } = useQuery({
     queryKey: ["landing-photos"],
     queryFn: async () => {
@@ -81,7 +82,7 @@ const SettingsPage = () => {
       return data || [];
     },
   });
-
+ 
   const { data: testimonials } = useQuery({
     queryKey: ["landing-testimonials"],
     queryFn: async () => {
@@ -89,7 +90,7 @@ const SettingsPage = () => {
       return data || [];
     },
   });
-
+ 
   const { data: contactMessages } = useQuery({
     queryKey: ["contact-messages"],
     queryFn: async () => {
@@ -97,7 +98,7 @@ const SettingsPage = () => {
       return data || [];
     },
   });
-
+ 
   const { data: siteSettings } = useQuery({
     queryKey: ["site-settings"],
     queryFn: async () => {
@@ -107,7 +108,7 @@ const SettingsPage = () => {
       return settings;
     },
   });
-
+ 
   const { data: permissions } = useQuery({
     queryKey: ["all-role-routines"],
     queryFn: async () => {
@@ -116,30 +117,33 @@ const SettingsPage = () => {
       return data || [];
     },
   });
-
-
+ 
+ 
   const [editWhatsApp, setEditWhatsApp] = useState("");
   const [editInstagram, setEditInstagram] = useState("");
   const [editFacebook, setEditFacebook] = useState("");
-
+  const [editPixKey, setEditPixKey] = useState("");
+ 
   useEffect(() => {
     if (siteSettings) {
       setEditWhatsApp(siteSettings.whatsapp_number || "");
       setEditInstagram(siteSettings.instagram_url || "");
       setEditFacebook(siteSettings.facebook_url || "");
+      setEditPixKey(siteSettings.pix_key || "");
       setTempVideoUrl(siteSettings.about_us_video_url || "");
       setTempIsVideoUpload(siteSettings.about_us_video_is_upload === "true");
     }
   }, [siteSettings]);
-
+ 
   if (!isAdmin) return <Navigate to="/home" replace />;
-
+ 
   const saveSettingsMutation = useMutation({
     mutationFn: async () => {
       const updates = [
         { id: "whatsapp_number", value: editWhatsApp },
         { id: "instagram_url", value: editInstagram },
         { id: "facebook_url", value: editFacebook },
+        { id: "pix_key", value: editPixKey },
       ];
       for (const u of updates) {
         await (supabase as any).from("site_settings").upsert(u);
@@ -151,7 +155,7 @@ const SettingsPage = () => {
     },
     onError: (err: any) => toast({ title: "Erro ao salvar", description: err.message, variant: "destructive" }),
   });
-
+ 
   const saveVideoSettingsMutation = useMutation({
     mutationFn: async () => {
       const updates = [
@@ -168,7 +172,7 @@ const SettingsPage = () => {
     },
     onError: (err: any) => toast({ title: "Erro ao salvar vídeo", description: err.message, variant: "destructive" }),
   });
-
+ 
   const toggleRoutineMutation = useMutation({
     mutationFn: async ({ roleId, routineKey, enabled }: { roleId: string, routineKey: string, enabled: boolean }) => {
       const { error } = await (supabase as any)
@@ -185,13 +189,13 @@ const SettingsPage = () => {
     },
     onError: (err: any) => toast({ title: "Erro ao salvar", description: err.message, variant: "destructive" }),
   });
-
+ 
   const getPermStatus = (roleId: string, routineKey: string) => {
     const perm = permissions?.find((p: any) => p.group_id === roleId && p.routine_key === routineKey);
     return perm ? perm.is_enabled : true;
   };
-
-
+ 
+ 
   const loadSettings = () => {
     if (siteSettings) {
       setEditWhatsApp(siteSettings.whatsapp_number || "");
@@ -199,7 +203,7 @@ const SettingsPage = () => {
       setEditFacebook(siteSettings.facebook_url || "");
     }
   };
-
+ 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -211,10 +215,10 @@ const SettingsPage = () => {
         .from("landing-photos")
         .upload(fileName, file, { upsert: true });
       if (uploadError) throw uploadError;
-
+ 
       const { data: urlData } = supabase.storage.from("landing-photos").getPublicUrl(fileName);
       const publicUrl = urlData.publicUrl;
-
+ 
       if (editingPhoto) {
         await (supabase as any).from("landing_photos").update({ url: publicUrl, caption: photoCaption }).eq("id", editingPhoto.id);
       } else {
@@ -231,7 +235,7 @@ const SettingsPage = () => {
       setUploading(false);
     }
   };
-
+ 
   const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -242,9 +246,9 @@ const SettingsPage = () => {
       const { error: uploadError } = await supabase.storage
         .from("devotionals")
         .upload(fileName, file, { upsert: true });
-
+ 
       if (uploadError) throw uploadError;
-
+ 
       const { data: urlData } = supabase.storage.from("devotionals").getPublicUrl(fileName);
       setTempVideoUrl(urlData.publicUrl);
       setTempIsVideoUpload(true);
@@ -255,7 +259,7 @@ const SettingsPage = () => {
       setUploading(false);
     }
   };
-
+ 
   const handleSiteSettingUpload = async (e: React.ChangeEvent<HTMLInputElement>, settingKey: string) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -265,7 +269,7 @@ const SettingsPage = () => {
       const fileName = `${settingKey}_${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage.from("event-banners").upload(fileName, file, { upsert: true });
       if (uploadError) throw uploadError;
-
+ 
       const { data: urlData } = supabase.storage.from("event-banners").getPublicUrl(fileName);
       await (supabase as any).from("site_settings").upsert({ id: settingKey, value: urlData.publicUrl });
       queryClient.invalidateQueries({ queryKey: ["site-settings"] });
@@ -276,7 +280,7 @@ const SettingsPage = () => {
       setUploading(false);
     }
   };
-
+ 
   const deletePhotoMutation = useMutation({
     mutationFn: async (p: any) => {
       const filename = p.url.split("/").pop();
@@ -288,7 +292,7 @@ const SettingsPage = () => {
       toast({ title: "Foto removida!" });
     },
   });
-
+ 
   const saveTestMutation = useMutation({
     mutationFn: async () => {
       const payload = { name: testName, role: testRole, text: testText };
@@ -308,7 +312,7 @@ const SettingsPage = () => {
     },
     onError: (err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" }),
   });
-
+ 
   const deleteTestMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await (supabase as any).from("landing_testimonials").delete().eq("id", id);
@@ -319,7 +323,7 @@ const SettingsPage = () => {
       toast({ title: "Depoimento excluído!" });
     },
   });
-
+ 
   const handleToggleNotifications = (val: boolean) => {
     setNativeNotifications(val);
     localStorage.setItem("notify_enabled", val.toString());
@@ -328,7 +332,7 @@ const SettingsPage = () => {
       description: val ? "Você receberá avisos sonoros." : "Os avisos sonoros foram desativados."
     });
   };
-
+ 
   
   const removeMyPhotoMutation = useMutation({
     mutationFn: async () => {
@@ -342,13 +346,13 @@ const SettingsPage = () => {
     },
     onError: (err: any) => toast({ title: "Erro ao remover foto", description: err.message, variant: "destructive" }),
   });
-
+ 
   const approveContactMutation = useMutation({
     mutationFn: async (m: any) => {
       const phoneDigits = m.phone?.replace(/\D/g, "");
       const nameSlug = m.name?.trim().toLowerCase().replace(/\s+/g, ".");
       const loginPrefix = nameSlug || phoneDigits;
-
+ 
       const email = loginPrefix + "@ccmergulho.com";
       const { data, error } = await supabase.rpc("admin_manage_user" as any, {
         email, password: "123456", raw_user_meta_data: { full_name: m.name, whatsapp_phone: m.phone }
@@ -363,7 +367,7 @@ const SettingsPage = () => {
     },
     onError: (err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" }),
   });
-
+ 
   const archiveContactMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await (supabase as any).from("contact_messages").delete().eq("id", id);
@@ -377,17 +381,17 @@ const SettingsPage = () => {
       toast({ title: "Erro ao arquivar", description: err.message, variant: "destructive" });
     },
   });
-
+ 
   const prev = () => setCarouselIdx(i => (i - 1 + (photos?.length || 1)) % (photos?.length || 1));
   const next = () => setCarouselIdx(i => (i + 1) % (photos?.length || 1));
-
+ 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold flex items-center gap-2">
         <Settings className="h-6 w-6 text-primary" />
         Configurações do Projeto
       </h1>
-
+ 
       <Tabs defaultValue="site">
         <TabsList className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 w-full bg-muted/50 p-1 rounded-2xl h-auto gap-1">
           <TabsTrigger value="site" className="rounded-xl flex items-center gap-2 py-2">
@@ -417,7 +421,7 @@ const SettingsPage = () => {
             <Shield className="h-4 w-4" /> Privilégios
           </TabsTrigger>
         </TabsList>
-
+ 
         <TabsContent value="preferencias" className="pt-6">
           <Card className="border-0 shadow-xl overflow-hidden rounded-3xl">
             <div className="h-1.5 w-full bg-amber-500" />
@@ -438,7 +442,7 @@ const SettingsPage = () => {
                   onCheckedChange={handleToggleNotifications}
                 />
               </div>
-
+ 
               <div className="p-4 bg-muted/30 rounded-2xl border border-border/50">
               {/* Account Insights Section */}
               <div className="pt-6 border-t border-border/50">
@@ -474,8 +478,8 @@ const SettingsPage = () => {
           </CardContent>
           </Card>
         </TabsContent>
-
-
+ 
+ 
         <TabsContent value="site" className="space-y-10 pt-6">
           {/* Photos Carousel Management */}
           <Card className="border-0 shadow-xl overflow-hidden rounded-3xl">
@@ -507,7 +511,7 @@ const SettingsPage = () => {
                       <Button size="icon" variant="secondary" className="h-10 w-10 rounded-full" onClick={next}><ChevronRight /></Button>
                     </div>
                   </div>
-
+ 
                   <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-3">
                     {photos.map((p: any, i: number) => (
                       <div key={p.id} className={cn("relative rounded-xl overflow-hidden cursor-pointer border-2 transition-all aspect-square", i === carouselIdx ? "border-primary scale-105" : "border-transparent opacity-60 hover:opacity-100")} onClick={() => setCarouselIdx(i)}>
@@ -528,7 +532,7 @@ const SettingsPage = () => {
               )}
             </CardContent>
           </Card>
-
+ 
           {/* Banner da Home Page Substituição */}
           <Card className="border-0 shadow-xl overflow-hidden rounded-3xl">
             <CardHeader className="flex flex-row items-center justify-between pb-2 bg-muted/20">
@@ -555,7 +559,7 @@ const SettingsPage = () => {
               </div>
             </CardContent>
           </Card>
-
+ 
           {/* Testimonials */}
           <Card className="border-0 shadow-xl overflow-hidden rounded-3xl">
             <CardHeader className="flex flex-row items-center justify-between pb-2 bg-muted/20">
@@ -585,7 +589,7 @@ const SettingsPage = () => {
             </CardContent>
           </Card>
         </TabsContent>
-
+ 
         <TabsContent value="video" className="pt-6">
           <Card className="border-0 shadow-xl rounded-3xl overflow-hidden">
             <div className="h-1.5 w-full bg-indigo-500" />
@@ -623,7 +627,7 @@ const SettingsPage = () => {
                     <p className="text-[10px] text-muted-foreground">O upload salva o vídeo diretamente no servidor do projeto.</p>
                   </div>
                 </div>
-
+ 
                 <div className="space-y-3">
                   <Label>Prévia do Vídeo Atual</Label>
                   <div className="aspect-video rounded-2xl overflow-hidden border-4 border-muted/50 shadow-inner bg-black">
@@ -636,7 +640,7 @@ const SettingsPage = () => {
                     )}
                   </div>
                 </div>
-
+ 
                 <Button className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 font-bold shadow-lg" onClick={() => saveVideoSettingsMutation.mutate()} disabled={saveVideoSettingsMutation.isPending}>
                   {saveVideoSettingsMutation.isPending ? "Salvando..." : "Salvar Configurações de Vídeo"}
                 </Button>
@@ -644,7 +648,7 @@ const SettingsPage = () => {
             </CardContent>
           </Card>
         </TabsContent>
-
+ 
         <TabsContent value="links" className="pt-6">
           <Card className="border-0 shadow-xl rounded-3xl overflow-hidden">
             <div className="h-1.5 w-full bg-emerald-500" />
@@ -668,6 +672,19 @@ const SettingsPage = () => {
                   <Label>Link do Facebook</Label>
                   <Input value={editFacebook} onChange={e => setEditFacebook(e.target.value)} placeholder="https://facebook.com/mergulho" />
                 </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label className="flex items-center gap-2">
+                    <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold dark:bg-emerald-900/40 dark:text-emerald-400">₢</span>
+                    Chave PIX da Igreja
+                  </Label>
+                  <Input
+                    value={editPixKey}
+                    onChange={e => setEditPixKey(e.target.value)}
+                    placeholder="CPF, CNPJ, e-mail, celular ou chave aleatória"
+                    className="font-mono"
+                  />
+                  <p className="text-[11px] text-muted-foreground">Esta chave será exibida para os membros na tela de Tesouraria para pagamento via PIX.</p>
+                </div>
               </div>
               <Button className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 font-bold" onClick={() => saveSettingsMutation.mutate()} disabled={saveSettingsMutation.isPending}>
                 Atualizar Canais
@@ -675,7 +692,7 @@ const SettingsPage = () => {
             </CardContent>
           </Card>
         </TabsContent>
-
+ 
         <TabsContent value="mensagens" className="pt-6">
           <div className="space-y-4">
             {contactMessages?.map((m: any) => (
@@ -708,7 +725,7 @@ const SettingsPage = () => {
             )}
           </div>
         </TabsContent>
-
+ 
         <TabsContent value="arquivados" className="pt-6">
           <Card className="border-0 shadow-xl rounded-3xl overflow-hidden">
             <CardHeader>
@@ -724,7 +741,7 @@ const SettingsPage = () => {
             </CardContent>
           </Card>
         </TabsContent>
-
+ 
         <TabsContent value="rotinas" className="pt-6 space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {ROLE_TYPES.map((role) => (
@@ -748,7 +765,7 @@ const SettingsPage = () => {
               </Card>
             ))}
           </div>
-
+ 
           {selectedRole ? (
             <Card className="border-0 shadow-xl rounded-3xl overflow-hidden">
               <CardHeader className="bg-muted/20 border-b pb-4">
@@ -798,10 +815,10 @@ const SettingsPage = () => {
             </div>
           )}
         </TabsContent>
-
+ 
       </Tabs>
-
-
+ 
+ 
       {/* Dialogs */}
       <Dialog open={photoDialogOpen} onOpenChange={setPhotoDialogOpen}>
         <DialogContent className="sm:max-w-md rounded-3xl border-0 shadow-2xl">
@@ -825,7 +842,7 @@ const SettingsPage = () => {
           </div>
         </DialogContent>
       </Dialog>
-
+ 
       <Dialog open={testDialogOpen} onOpenChange={setTestDialogOpen}>
         <DialogContent className="sm:max-w-lg rounded-3xl border-0 shadow-2xl">
           <DialogHeader><DialogTitle className="text-xl font-bold">Depoimento</DialogTitle></DialogHeader>
@@ -839,11 +856,15 @@ const SettingsPage = () => {
           </div>
         </DialogContent>
       </Dialog>
-
+ 
       <ConfirmDialog open={!!deletingPhoto} title="Remover Foto?" description="Essa ação é permanente." onConfirm={() => deletePhotoMutation.mutate(deletingPhoto)} onCancel={() => setDeletingPhoto(null)} />
       <ConfirmDialog open={!!deletingTest} title="Remover Depoimento?" description="Essa ação é permanente." onConfirm={() => deleteTestMutation.mutate(deletingTest?.id)} onCancel={() => setDeletingTest(null)} />
     </div>
   );
 };
-
+ 
 export default SettingsPage;
+ 
+
+
+

@@ -34,13 +34,13 @@ function markAsRead(convId: string) {
 
 function hasUnread(convId: string, lastMsgTime: string | null, lastMsgSenderId: string | null, myUserId: string): boolean {
   if (!lastMsgTime || !lastMsgSenderId) return false;
-  // Don't show unread for own messages
   if (lastMsgSenderId === myUserId) return false;
   const ts = getReadTimestamps();
   const lastRead = ts[convId];
-  if (!lastRead) return true; // never opened
+  if (!lastRead) return true;
   return new Date(lastMsgTime) > new Date(lastRead);
 }
+
 let sharedAudioCtx: AudioContext | null = null;
 function getAudioCtx(): AudioContext {
   if (!sharedAudioCtx) sharedAudioCtx = new AudioContext();
@@ -50,17 +50,11 @@ function getAudioCtx(): AudioContext {
 function playNotificationSound() {
   try {
     const ctx = getAudioCtx();
-    // Ensure context is running - some browsers need it resumed on every attempt
     const ensureResume = async () => {
       if (ctx.state === "suspended") {
-        try {
-          await ctx.resume();
-        } catch (e) {
-          console.error("Audio resume failed", e);
-        }
+        try { await ctx.resume(); } catch (e) { console.error("Audio resume failed", e); }
       }
     };
-
     const doPlay = async () => {
       await ensureResume();
       const playBeep = (startTime: number, freq: number) => {
@@ -76,14 +70,35 @@ function playNotificationSound() {
         osc.start(startTime);
         osc.stop(startTime + 0.3);
       };
-
-      // Distinct double beep: lower then higher
       playBeep(ctx.currentTime, 660);
       playBeep(ctx.currentTime + 0.2, 880);
     };
-
     doPlay();
   } catch (_) { /* ignore */ }
+}
+
+// ─── Helper: renderiza ícone do grupo (imagem, emoji ou fallback) ─────────────
+function GroupIcon({ icon, name, size = "md" }: { icon?: string | null; name?: string; size?: "sm" | "md" }) {
+  const dimension = size === "sm" ? "h-8 w-8" : "h-10 w-10";
+  const iconSize = size === "sm" ? "h-4 w-4" : "h-5 w-5";
+
+  if (icon && icon.startsWith("http")) {
+    return (
+      <div className={cn(dimension, "rounded-full overflow-hidden shrink-0")}>
+        <img
+          src={icon}
+          alt={name || "grupo"}
+          className="h-full w-full object-cover"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn(dimension, "rounded-full bg-primary/10 flex items-center justify-center text-lg shrink-0")}>
+      {icon ? <span>{icon}</span> : <Users className={cn(iconSize, "text-primary")} />}
+    </div>
+  );
 }
 
 // ─── Unread tracking (session-based) ────────────────────────────────────────
@@ -175,8 +190,7 @@ const Chat = () => {
       data?.forEach((msg) => {
         const otherId = msg.sender_id === user!.id ? msg.recipient_id : msg.sender_id;
         if (otherId && !convMap.has(otherId)) {
-          const hidden = hiddenConvs?.find(h => h.target_user_id === otherId);
-          // Only include if message is after hidden date (if not admin/if regular user)
+          const hidden = hiddenConvs?.find((h: any) => h.target_user_id === otherId);
           if (!isAdmin && hidden && new Date(msg.created_at) <= new Date(hidden.hidden_at)) return;
 
           convMap.set(otherId, {
@@ -195,7 +209,7 @@ const Chat = () => {
     refetchInterval: 5000,
   });
 
-  // ─── Group unread counts (from messages table) ────────────────────────────
+  // ─── Group unread counts ──────────────────────────────────────────────────
 
   const { data: groupLastMessages } = useQuery({
     queryKey: ["group-last-messages", groups],
@@ -208,7 +222,6 @@ const Chat = () => {
         .in("group_id", groupIds)
         .neq("sender_id", user!.id)
         .order("created_at", { ascending: false });
-      // Keep only last message per group
       const result: Record<string, { time: string; senderId: string }> = {};
       data?.forEach((m: any) => {
         if (m.group_id && !result[m.group_id]) {
@@ -221,17 +234,14 @@ const Chat = () => {
     refetchInterval: 5000,
   });
 
-  // Merge runtime unread counts with persistent localStorage-based detection
   const computedUnreads = {
     ...unreadCounts,
-    // Conversations
     ...Object.fromEntries(
       (conversations || []).map((c: any) => [
         c.userId,
         unreadCounts[c.userId] || (hasUnread(c.userId, c.time, c.lastSenderId, user!.id) ? 1 : 0),
       ])
     ),
-    // Groups
     ...Object.fromEntries(
       Object.entries(groupLastMessages || {}).map(([gid, info]: [string, any]) => [
         gid,
@@ -266,15 +276,14 @@ const Chat = () => {
       const { data } = await query;
       if (!data) return [];
 
-      const currentHidden = hiddenConvs?.find(h =>
+      const currentHidden = hiddenConvs?.find((h: any) =>
         (view.type === "group" && h.group_id === view.groupId) ||
         (view.type === "direct" && h.target_user_id === view.userId)
       );
 
-      // Filtering for regular users
       let filteredData = data;
       if (!isAdmin && currentHidden) {
-        filteredData = data.filter(m => new Date(m.created_at) > new Date(currentHidden.hidden_at));
+        filteredData = data.filter((m: any) => new Date(m.created_at) > new Date(currentHidden.hidden_at));
       }
 
       const uids = new Set(filteredData.map((m: any) => m.sender_id));
@@ -298,7 +307,6 @@ const Chat = () => {
     refetchInterval: 3000,
   });
 
-  // Mark current chat as read when entering
   useEffect(() => {
     if (view.type === "list" || !chatId) return;
     markAsRead(chatId);
@@ -336,17 +344,12 @@ const Chat = () => {
         (currentView.type === "direct" && currentView.userId === convId);
 
       if (!isCurrentChat) {
-        // Increment unread
         setUnreadCounts((prev) => ({ ...prev, [convId!]: (prev[convId!] || 0) + 1 }));
-
-        // Play sound
         playNotificationSound();
 
-        // Snapshot for closure
         const snapTargetView = targetView;
         const snapConvId = convId;
 
-        // Dispara notificação nativa se o usuário estiver fora da aba e tiver permitido
         if (document.hidden && typeof window !== "undefined" && "Notification" in window && (window as any).Notification.permission === "granted") {
           const notif = new (window as any).Notification(`💬 ${convName}`, {
             body: msg.content?.substring(0, 80) || "Nova mensagem",
@@ -372,7 +375,6 @@ const Chat = () => {
             <ToastAction
               altText="Abrir conversa"
               onClick={() => {
-                // Already handled in root onClick, but good for redundancy
                 setView(snapTargetView);
                 markAsRead(snapConvId);
                 setUnreadCounts((prev) => ({ ...prev, [snapConvId]: 0 }));
@@ -427,13 +429,10 @@ const Chat = () => {
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim() || sendMutation.isPending) return;
-
-    // Explicitly resume audio context on user gesture
     try {
       const ctx = getAudioCtx();
       if (ctx.state === "suspended") ctx.resume();
     } catch (_) { }
-
     sendMutation.mutate(message.trim());
   };
 
@@ -506,6 +505,8 @@ const Chat = () => {
     setUnreadCounts((prev) => ({ ...prev, [id]: 0 }));
   };
 
+  // ─── List View ────────────────────────────────────────────────────────────
+
   if (view.type === "list") {
     return (
       <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
@@ -527,7 +528,7 @@ const Chat = () => {
           <div className="space-y-2">
             {groups?.map((g: any) => {
               if (!g) return null;
-              const count = unreadCounts[g.id] || 0;
+              const count = computedUnreads[g.id] || 0;
               return (
                 <Card
                   key={`group-${g.id}`}
@@ -536,9 +537,8 @@ const Chat = () => {
                 >
                   <CardContent className="flex items-center gap-3 p-4">
                     <div className="relative">
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-lg">
-                        {g.icon || <Users className="h-5 w-5 text-primary" />}
-                      </div>
+                      {/* ✅ CORRIGIDO: usa componente GroupIcon que renderiza imagem se for URL */}
+                      <GroupIcon icon={g.icon} name={g.name} size="md" />
                       {count > 0 && (
                         <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center animate-pulse">
                           {count > 9 ? "9+" : count}
@@ -666,6 +666,11 @@ const Chat = () => {
 
   const chatName = view.type === "group" ? view.groupName : view.userName;
 
+  // Encontra o grupo atual para exibir o ícone no header
+  const currentGroup = view.type === "group"
+    ? (groups as any[])?.find((g: any) => g?.id === view.groupId)
+    : null;
+
   return (
     <div className="flex flex-col h-[calc(100vh-5rem)] md:h-screen">
       {/* Header */}
@@ -673,13 +678,16 @@ const Chat = () => {
         <Button variant="ghost" size="icon" onClick={() => setView({ type: "list" })}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-          {view.type === "group" ? (
-            <Users className="h-4 w-4 text-primary" />
-          ) : (
+
+        {/* ✅ CORRIGIDO: header também usa GroupIcon para grupos */}
+        {view.type === "group" ? (
+          <GroupIcon icon={currentGroup?.icon} name={chatName} size="sm" />
+        ) : (
+          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
             <span className="text-primary font-bold text-sm">{chatName.charAt(0)}</span>
-          )}
-        </div>
+          </div>
+        )}
+
         <span className="font-semibold flex-1">{chatName}</span>
         <div className="flex items-center gap-1">
           <Button

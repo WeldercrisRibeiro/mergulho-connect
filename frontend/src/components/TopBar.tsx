@@ -53,15 +53,17 @@ const TopBar = ({ onToggleSidebar }: TopBarProps) => {
   return (
     <header className="sticky top-0 z-40 h-14 border-b bg-sidebar/95 backdrop-blur-sm flex items-center px-3 gap-2 shadow-sm">
       {/* Left: hamburger + optional whatsapp shortcut */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-8 w-8 shrink-0 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 transition-colors"
-        onClick={onToggleSidebar}
-        aria-label="Alternar menu"
-      >
-        <Menu className="h-5 w-5" />
-      </Button>
+      <div className="hidden md:flex">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 shrink-0 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 transition-colors"
+          onClick={onToggleSidebar}
+          aria-label="Alternar menu"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+      </div>
 
       {/* Spacer */}
       <div className="flex-1" />

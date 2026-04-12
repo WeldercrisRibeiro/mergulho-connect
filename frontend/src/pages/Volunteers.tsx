@@ -13,12 +13,11 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { HandHeart, Plus, Trash2, User, CalendarDays, Megaphone, ClipboardList, Clock, CheckCircle2, Loader2, Edit2, ShieldCheck, CheckCircle } from "lucide-react";
+import { HandHeart, Plus, Trash2, User, CalendarDays, ClipboardList, Clock, CheckCircle2, Loader2, Edit2, ShieldCheck } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-
 
 const FALLBACK_INTEREST_AREAS = [
   "Louvor", "Infantil", "Recepção", "Mídia",
@@ -32,7 +31,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }>
 };
 
 const Volunteers = () => {
-  const { user, isAdmin, isGerente, managedGroupIds, userGroupIds, profile, unreadAnnouncements } = useAuth();
+  const { user, isAdmin, isGerente, userGroupIds, profile } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -60,32 +59,62 @@ const Volunteers = () => {
     },
   });
 
+  // ✅ CORRIGIDO: sem nenhum join automático — tudo buscado manualmente
   const { data: schedules } = useQuery({
     queryKey: ["volunteer-schedules", userGroupIds, isAdmin],
     queryFn: async () => {
+      // 1. Busca escalas sem nenhum join (select simples)
       let query = (supabase as any)
         .from("volunteer_schedules")
-        .select("*, volunteers!volunteer_schedules_volunteer_id_fkey(full_name), profiles!volunteer_schedules_item_user_id_fkey(full_name), groups(name)")
+        .select("*")
         .order("schedule_date", { ascending: true });
 
       if (!isAdmin) {
+        if (userGroupIds.length === 0) return [];
         query = query.in("group_id", userGroupIds);
       }
 
       const { data, error } = await query;
-      console.log("RAW SCHEDULES RESPONSE:", data, "ERROR:", error, "isAdmin:", isAdmin, "userGroupIds:", userGroupIds);
       if (error) {
-         console.error("Volunteer Schedules Query Error:", error);
-         throw error;
+        console.error("Volunteer Schedules Query Error:", error);
+        throw error;
       }
-      return data || [];
+      if (!data || data.length === 0) return [];
+
+      // 2. Busca perfis pelo item_user_id manualmente
+      const userIds = [...new Set(data.map((s: any) => s.item_user_id).filter(Boolean))] as string[];
+      const profileMap = new Map<string, string>();
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, full_name")
+          .in("user_id", userIds);
+        profiles?.forEach((p: any) => profileMap.set(p.user_id, p.full_name));
+      }
+
+      // 3. Busca nomes dos grupos manualmente
+      const groupIds = [...new Set(data.map((s: any) => s.group_id).filter(Boolean))] as string[];
+      const groupMap = new Map<string, string>();
+      if (groupIds.length > 0) {
+        const { data: grps } = await supabase
+          .from("groups")
+          .select("id, name")
+          .in("id", groupIds);
+        grps?.forEach((g: any) => groupMap.set(g.id, g.name));
+      }
+
+      // 4. Injeta dados manualmente em cada escala
+      return data.map((s: any) => ({
+        ...s,
+        profiles: { full_name: profileMap.get(s.item_user_id) || "—" },
+        groups: { name: groupMap.get(s.group_id) || "Geral" },
+      }));
     },
   });
 
   const { data: announcements } = useQuery({
     queryKey: ["volunteer-announcements"],
     queryFn: async () => {
-      // Get announcements targeted to volunteer-related groups or general
       const { data } = await (supabase as any)
         .from("announcements")
         .select("*")
@@ -101,7 +130,6 @@ const Volunteers = () => {
       if (!isAdmin && userGroupIds.length > 0) {
         query = query.in("id", userGroupIds);
       } else if (!isAdmin) {
-        // Se não for admin e não tiver grupos, retorna vazio para segurança
         return [];
       }
       const { data } = await query;
@@ -115,14 +143,13 @@ const Volunteers = () => {
       if (!scheduleGroupId) return [];
 
       if (scheduleGroupId === "general") {
-         const { data: allProfiles } = await supabase.from("profiles").select("user_id, full_name").order("full_name");
-         return allProfiles?.map(p => ({
-           user_id: p.user_id,
-           profiles: { full_name: p.full_name }
-         })) || [];
+        const { data: allProfiles } = await supabase.from("profiles").select("user_id, full_name").order("full_name");
+        return allProfiles?.map(p => ({
+          user_id: p.user_id,
+          profiles: { full_name: p.full_name }
+        })) || [];
       }
 
-      // Passo 1: Busca apenas os IDs dos usuários no grupo
       const { data: groupLinks, error: linkErr } = await supabase
         .from("member_groups")
         .select("user_id")
@@ -132,7 +159,6 @@ const Volunteers = () => {
 
       const userIds = groupLinks.map(l => l.user_id);
 
-      // Passo 2: Busca os perfis desses usuários
       const { data: profiles, error: profErr } = await supabase
         .from("profiles")
         .select("user_id, full_name")
@@ -141,13 +167,12 @@ const Volunteers = () => {
 
       if (profErr) return [];
 
-      // Retorna no formato esperado pelo Select m.profiles.full_name
       return profiles.map(p => ({
         user_id: p.user_id,
         profiles: { full_name: p.full_name }
       }));
     },
-    enabled: !!scheduleGroupId
+    enabled: !!scheduleGroupId,
   });
 
   const myVolunteer = volunteers?.find((v: any) => v.user_id === user?.id);
@@ -181,10 +206,8 @@ const Volunteers = () => {
     mutationFn: async (id: string) => {
       const volunteerToDelete = volunteers?.find((v: any) => v.id === id);
       if (volunteerToDelete) {
-        // Automatically remove from all departments as requested
         await supabase.from("member_groups").delete().eq("user_id", volunteerToDelete.user_id);
       }
-
       const { error } = await (supabase as any).from("volunteers").delete().eq("id", id);
       if (error) throw error;
     },
@@ -196,15 +219,12 @@ const Volunteers = () => {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      // 1. Update status
       const { error: statusErr } = await (supabase as any).from("volunteers").update({ status }).eq("id", id);
       if (statusErr) throw statusErr;
 
-      // 2. If completed, auto-link to departments based on interest_areas
       if (status === "completed") {
         const volunteer = volunteers?.find((v: any) => v.id === id);
         if (volunteer && volunteer.interest_areas?.length > 0) {
-          // Get group IDs for the interest areas
           const { data: matchedGroups } = await supabase
             .from("groups")
             .select("id, name")
@@ -216,7 +236,6 @@ const Volunteers = () => {
               group_id: g.id,
               role: "member"
             }));
-            // Upsert or insert (ignoring duplicates)
             await (supabase as any).from("member_groups").upsert(inserts, { onConflict: "user_id,group_id" });
           }
         }
@@ -276,12 +295,13 @@ const Volunteers = () => {
     },
   });
 
+  // ✅ CORRIGIDO: usa item_user_id ao editar (não volunteer_id que pode ser null)
   const handleOpenSchedule = (s: any = null) => {
     if (s) {
       setEditingSchedule(s);
       setScheduleDate(s.schedule_date);
       setScheduleRole(s.role_function);
-      setScheduleVolunteerId(s.volunteer_id);
+      setScheduleVolunteerId(s.item_user_id); // ✅ corrigido
       setScheduleGroupId(s.group_id || "");
       setCreatingSchedule(true);
     } else {
@@ -302,7 +322,7 @@ const Volunteers = () => {
     setCreating(true);
   };
 
-  // Matrix Grouping Function
+  // Matrix Grouping
   const groupedSchedules = schedules?.reduce((acc: any, s: any) => {
     const key = `${s.schedule_date}_${s.group_id}`;
     if (!acc[key]) {
@@ -322,9 +342,7 @@ const Volunteers = () => {
     new Date(a.date).getTime() - new Date(b.date).getTime()
   );
 
-  const activeVolunteers = volunteers?.filter((v: any) => v.status === "completed") || [];
-
-  // Non-volunteer view: show signup form (unless Admin or Gerente)
+  // Non-volunteer view
   if (!isVolunteer && !isAdmin && !isGerente) {
     return (
       <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
@@ -345,23 +363,20 @@ const Volunteers = () => {
             </Button>
           </CardContent>
         </Card>
-
         <SignupDialog
-          open={creating}
-          onClose={() => setCreating(false)}
+          open={creating} onClose={() => setCreating(false)}
           fullName={fullName} setFullName={setFullName}
           phone={phone} setPhone={setPhone}
           availability={availability} setAvailability={setAvailability}
           interestAreas={interestAreas} setInterestAreas={setInterestAreas}
-          onSave={() => saveMutation.mutate()}
-          isPending={saveMutation.isPending}
+          onSave={() => saveMutation.mutate()} isPending={saveMutation.isPending}
           groups={groups}
         />
       </div>
     );
   }
 
-  // Volunteer with pending status (unless Admin or Gerente)
+  // Pending volunteer view
   if (isVolunteer && volunteerStatus === "pending" && !isAdmin && !isGerente) {
     const StatusIcon = STATUS_CONFIG.pending.icon;
     return (
@@ -378,23 +393,9 @@ const Volunteers = () => {
             <p className="text-muted-foreground text-sm max-w-md mx-auto">
               Sua inscrição como voluntário foi enviada ao pastor. Aguarde a aprovação para ter acesso completo.
             </p>
-            <Badge className={STATUS_CONFIG.pending.color}>
-              {STATUS_CONFIG.pending.label}
-            </Badge>
+            <Badge className={STATUS_CONFIG.pending.color}>{STATUS_CONFIG.pending.label}</Badge>
           </CardContent>
         </Card>
-
-        <SignupDialog
-          open={creating}
-          onClose={() => setCreating(false)}
-          fullName={fullName} setFullName={setFullName}
-          phone={phone} setPhone={setPhone}
-          availability={availability} setAvailability={setAvailability}
-          interestAreas={interestAreas} setInterestAreas={setInterestAreas}
-          onSave={() => saveMutation.mutate()}
-          isPending={saveMutation.isPending}
-          groups={groups}
-        />
       </div>
     );
   }
@@ -403,14 +404,8 @@ const Volunteers = () => {
   const showUser = isActive || isAdmin || isGerente;
   const showTrain = volunteerStatus === "in_progress" && !isAdmin;
 
-  const activeTabsCount = [
-    showUser, // Escala
-    showTrain, // Treinamento
-    showAdmin, // Gerenciar
-    showAdmin  // Escalas-adm
-  ].filter(Boolean).length;
+  const activeTabsCount = [showUser, showTrain, showAdmin, showAdmin].filter(Boolean).length;
 
-  // Active volunteer or admin: show full tabs
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
@@ -419,7 +414,6 @@ const Volunteers = () => {
         </h1>
       </div>
 
-      {/* Status badge for volunteer */}
       {isVolunteer && !isAdmin && (
         <Card className="neo-shadow-sm border-0">
           <CardContent className="p-4 flex items-center gap-3">
@@ -436,24 +430,13 @@ const Volunteers = () => {
         </Card>
       )}
 
-      <Tabs
-        defaultValue={(isAdmin || isGerente) ? "gerenciar" : "escala"}
-        onValueChange={(val) => {
-          if (val === "Disparos") {
-            localStorage.setItem("last_checked_announcements", new Date().toISOString());
-            // Trigger a potential re-render in sidebar if needed, 
-            // though AuthContext polls or we can use an event
-            window.dispatchEvent(new Event('storage'));
-          }
-        }}
-      >
+      <Tabs defaultValue={(isAdmin || isGerente) ? "gerenciar" : "escala"}>
         <TabsList className={cn(
           "grid w-full max-w-2xl bg-muted/50 p-1 rounded-2xl gap-1",
           activeTabsCount === 1 && "grid-cols-1",
           activeTabsCount === 2 && "grid-cols-2",
           activeTabsCount === 3 && "grid-cols-3",
           activeTabsCount === 4 && "grid-cols-4",
-          activeTabsCount === 5 && "grid-cols-5"
         )}>
           {(isActive || isAdmin || isGerente) && (
             <TabsTrigger value="escala" className="rounded-xl flex items-center gap-1 text-xs">
@@ -479,9 +462,7 @@ const Volunteers = () => {
 
         {/* Escala Tab */}
         <TabsContent value="escala" className="space-y-4 pt-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold">Escala Semanal</h2>
-          </div>
+          <h2 className="text-lg font-bold">Escala Semanal</h2>
           {matrixSchedules.length === 0 ? (
             <Card className="border-0 bg-muted/30">
               <CardContent className="p-6 text-center text-muted-foreground italic">
@@ -508,7 +489,7 @@ const Volunteers = () => {
                           <div className="flex-1">
                             <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{s.role_function}</p>
                             <p className="font-bold text-base text-primary mr-2">
-                              {s.profiles?.full_name || s.volunteers?.full_name || "—"}
+                              {s.profiles?.full_name || "—"}
                             </p>
                           </div>
                           {s.volunteer_id && (
@@ -524,19 +505,18 @@ const Volunteers = () => {
           )}
         </TabsContent>
 
-      {/* Treinamento Tab (in_progress only) */}
+        {/* Treinamento Tab */}
         <TabsContent value="treinamento" className="space-y-4 pt-4">
           <h2 className="text-lg font-bold">Treinamento</h2>
           <Card className="border-0 neo-shadow-sm">
             <CardContent className="p-6 text-center space-y-3">
               <Loader2 className="h-12 w-12 mx-auto text-blue-500 animate-spin" />
-              <h3 className="font-extrabold text-xl font-display text-blue-600">Você já está no caminho!</h3>
+              <h3 className="font-extrabold text-xl text-blue-600">Você já está no caminho!</h3>
               <p className="text-sm text-muted-foreground max-w-md mx-auto">
                 Fique atento às instruções do pastor. Quando o treinamento for concluído, você terá acesso completo à escala.
               </p>
             </CardContent>
           </Card>
-          {/* Show announcements here too for in_progress */}
           {announcements?.length > 0 && (
             <div className="space-y-3">
               <h3 className="text-sm font-bold text-muted-foreground uppercase">Avisos do Treinamento</h3>
@@ -628,7 +608,7 @@ const Volunteers = () => {
                     <div key={s.id} className="flex items-center justify-between p-3 px-4 hover:bg-muted/20 transition-colors">
                       <div className="space-y-1">
                         <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-wider leading-none mb-1">{s.role_function}</p>
-                        <p className="font-bold text-sm">{s.profiles?.full_name || s.volunteers?.full_name || "—"}</p>
+                        <p className="font-bold text-sm">{s.profiles?.full_name || "—"}</p>
                       </div>
                       <div className="flex gap-1">
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenSchedule(s)}>
@@ -649,14 +629,12 @@ const Volunteers = () => {
 
       {/* Signup Dialog */}
       <SignupDialog
-        open={creating}
-        onClose={() => setCreating(false)}
+        open={creating} onClose={() => setCreating(false)}
         fullName={fullName} setFullName={setFullName}
         phone={phone} setPhone={setPhone}
         availability={availability} setAvailability={setAvailability}
         interestAreas={interestAreas} setInterestAreas={setInterestAreas}
-        onSave={() => saveMutation.mutate()}
-        isPending={saveMutation.isPending}
+        onSave={() => saveMutation.mutate()} isPending={saveMutation.isPending}
         groups={groups}
       />
 
@@ -689,25 +667,22 @@ const Volunteers = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Create Schedule Dialog */}
-      <Dialog open={creatingSchedule} onOpenChange={v => {
-        if (!v) {
-          setCreatingSchedule(false);
-          setEditingSchedule(null);
-        }
-      }}>
+      {/* Create/Edit Schedule Dialog */}
+      <Dialog open={creatingSchedule} onOpenChange={v => { if (!v) { setCreatingSchedule(false); setEditingSchedule(null); } }}>
         <DialogContent className="sm:max-w-[600px] rounded-3xl border-0 shadow-2xl">
-          <DialogHeader><DialogTitle className="text-xl font-bold">{editingSchedule ? "Editar Escala" : "Nova Escala de Voluntários"}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">{editingSchedule ? "Editar Escala" : "Nova Escala de Voluntários"}</DialogTitle>
+          </DialogHeader>
           <div className="space-y-4 py-4">
             {isAdmin && (
               <div className="bg-amber-500/10 border border-amber-500/20 rounded-md p-3 text-sm text-amber-600 mb-2">
                 <p className="font-bold">Aviso para Admin:</p>
-                Deseja que esta escala seja Geral (visível para todos)? Deixe o grupo em branco.
+                Deseja que esta escala seja Geral (visível para todos)? Selecione "Geral" no departamento.
               </div>
             )}
             <div className="space-y-2">
               <Label>Departamento da Escala</Label>
-              <Select value={scheduleGroupId} onValueChange={setScheduleGroupId}>
+              <Select value={scheduleGroupId} onValueChange={v => { setScheduleGroupId(v); setScheduleVolunteerId(""); }}>
                 <SelectTrigger><SelectValue placeholder="Selecione o departamento" /></SelectTrigger>
                 <SelectContent>
                   {isAdmin && <SelectItem value="general">Geral / Sem Grupo Específico</SelectItem>}
@@ -720,13 +695,15 @@ const Volunteers = () => {
             <div className="space-y-2">
               <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Membro do Departamento</Label>
               <Select value={scheduleVolunteerId} onValueChange={setScheduleVolunteerId} disabled={!scheduleGroupId}>
-                <SelectTrigger className="rounded-xl h-11"><SelectValue placeholder={scheduleGroupId ? "Selecione o Membro" : "Selecione o departamento primeiro"} /></SelectTrigger>
+                <SelectTrigger className="rounded-xl h-11">
+                  <SelectValue placeholder={scheduleGroupId ? "Selecione o Membro" : "Selecione o departamento primeiro"} />
+                </SelectTrigger>
                 <SelectContent>
                   {departmentMembers?.map((m: any) => {
                     const isApprovedVolunteer = volunteers?.some((v: any) => v.user_id === m.user_id && v.status === "completed");
                     return (
                       <SelectItem key={m.user_id} value={m.user_id}>
-                        {m.profiles?.full_name} {isApprovedVolunteer && "✅"}
+                        {m.profiles?.full_name}
                       </SelectItem>
                     );
                   })}
@@ -746,7 +723,11 @@ const Volunteers = () => {
           </div>
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setCreatingSchedule(false)} className="rounded-xl border-2">Cancelar</Button>
-            <Button onClick={() => saveScheduleMutation.mutate()} disabled={(!isAdmin && !scheduleGroupId) || !scheduleVolunteerId || !scheduleDate || !scheduleRole || saveScheduleMutation.isPending} className="rounded-xl px-8 font-bold">
+            <Button
+              onClick={() => saveScheduleMutation.mutate()}
+              disabled={(!isAdmin && !scheduleGroupId) || !scheduleVolunteerId || !scheduleDate || !scheduleRole || saveScheduleMutation.isPending}
+              className="rounded-xl px-8 font-bold"
+            >
               {saveScheduleMutation.isPending ? "Salvando..." : "Salvar Escala"}
             </Button>
           </DialogFooter>
@@ -784,7 +765,6 @@ const SignupDialog = ({ open, onClose, fullName, setFullName, phone, setPhone, a
               <Input value={phone} onChange={(e: any) => setPhone(e.target.value)} placeholder="(00) 00000-0000" className="rounded-xl h-11" />
             </div>
           </div>
-
           <div className="space-y-3">
             <Label className="text-sm font-bold flex items-center gap-2">
               <ShieldCheck className="h-4 w-4 text-primary" /> Áreas de Interesse (Departamentos)
@@ -806,7 +786,6 @@ const SignupDialog = ({ open, onClose, fullName, setFullName, phone, setPhone, a
               ))}
             </div>
           </div>
-
           <div className="space-y-2">
             <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Sua Disponibilidade</Label>
             <Textarea value={availability} onChange={(e: any) => setAvailability(e.target.value)} placeholder="Ex: Sábados à tarde, domingos de manhã..." rows={2} className="rounded-2xl resize-none" />
@@ -822,6 +801,5 @@ const SignupDialog = ({ open, onClose, fullName, setFullName, phone, setPhone, a
     </Dialog>
   );
 };
-
 
 export default Volunteers;

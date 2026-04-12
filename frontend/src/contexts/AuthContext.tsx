@@ -2,6 +2,19 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
+// ─── ATENÇÃO ─────────────────────────────────────────────────────────────────
+// A VAPID_PUBLIC_KEY abaixo é um PLACEHOLDER. Para Web Push funcionar em
+// produção você precisa:
+//   1. Gerar um par de chaves VAPID real:
+//      npx web-push generate-vapid-keys
+//   2. Substituir VAPID_PUBLIC_KEY pela chave pública gerada.
+//   3. Criar uma Edge Function no Supabase (send-push) que use a chave
+//      privada para assinar e enviar para FCM/APNs.
+//      Exemplo de Edge Function incluído em: supabase/functions/send-push/index.ts.
+// o arquivo se chamará SendPush.ts e vai no caminho seguinte caminho:
+// ─────────────────────────────────────────────────────────────────────────────
+const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || "";
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -12,7 +25,7 @@ interface AuthContextType {
   isVisitor: boolean;
   managedGroupIds: string[];
   userGroupIds: string[];
-   profile: { full_name: string; avatar_url: string | null; whatsapp_phone: string | null; username: string | null } | null;
+  profile: { full_name: string; avatar_url: string | null; whatsapp_phone: string | null; username: string | null } | null;
   routinePermissions: Record<string, boolean>;
   unreadAnnouncements: number;
   signOut: () => Promise<void>;
@@ -38,6 +51,28 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
+// ─── Utilitário: App Badging API ─────────────────────────────────────────────
+// Mostra um número no ícone do app na tela inicial (Android instalado, desktop
+// Chrome/Edge). Falha silenciosamente em plataformas sem suporte (iOS < 16.4).
+const setAppBadge = (count: number) => {
+  if (!("setAppBadge" in navigator)) return;
+  if (count > 0) {
+    (navigator as any).setAppBadge(count).catch(() => {});
+  } else {
+    (navigator as any).clearAppBadge().catch(() => {});
+  }
+};
+
+// ─── Utilitário: urlBase64ToUint8Array ───────────────────────────────────────
+// Converte a chave VAPID pública (Base64 URL-safe) para o formato que o browser
+// espera no pushManager.subscribe.
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
+}
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -52,21 +87,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [routinePermissions, setRoutinePermissions] = useState<Record<string, boolean>>({});
   const [unreadAnnouncements, setUnreadAnnouncements] = useState(0);
 
+  // ─── Som de notificação ────────────────────────────────────────────────────
   const playNotificationSound = () => {
     const isNotifyEnabled = localStorage.getItem("notify_enabled") !== "false";
     if (!isNotifyEnabled) return;
-    
     try {
       const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
       audio.volume = 0.5;
-      audio.play().catch(e => console.log("Audio play blocked by browser:", e));
+      audio.play().catch((e) => console.log("Audio bloqueado pelo browser:", e));
     } catch (_) {}
   };
 
+  // ─── Init: auth state ────────────────────────────────────────────────────
   useEffect(() => {
-    // Modo Debug Admin para quando o banco está inacessível
     const IS_DEBUG_ADMIN = localStorage.getItem("debug_admin") === "true";
-    
+
     if (IS_DEBUG_ADMIN) {
       console.warn("⚠️ MODO DEBUG ADMIN ATIVO: Ignorando autenticação Supabase.");
       const mockUser: any = {
@@ -75,19 +110,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         user_metadata: { full_name: "Debug" },
         app_metadata: {},
         aud: "authenticated",
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       };
-      
       setUser(mockUser);
       setSession({ user: mockUser, access_token: "debug", refresh_token: "debug" } as any);
       setIsAdmin(true);
       setIsGerente(true);
       setIsAdminCCM(true);
-      setProfile({ 
-        full_name: "Gestor Master (Emergência)", 
-        avatar_url: null, 
+      setProfile({
+        full_name: "Gestor Master (Emergência)",
+        avatar_url: null,
         whatsapp_phone: "5500000000000",
-        username: "ccm"
+        username: "ccm",
       });
       setLoading(false);
       return;
@@ -98,10 +132,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
         setTimeout(async () => {
-          await Promise.all([
-            fetchProfile(session.user.id),
-            checkRoles(session.user.id)
-          ]);
+          await Promise.all([fetchProfile(session.user.id), checkRoles(session.user.id)]);
           setLoading(false);
         }, 0);
       } else {
@@ -113,6 +144,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUserGroupIds([]);
         setRoutinePermissions({});
         setUnreadAnnouncements(0);
+        setAppBadge(0); // Limpa o badge ao deslogar
         setLoading(false);
       }
     });
@@ -121,10 +153,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        await Promise.all([
-          fetchProfile(session.user.id),
-          checkRoles(session.user.id)
-        ]);
+        await Promise.all([fetchProfile(session.user.id), checkRoles(session.user.id)]);
       }
       setLoading(false);
     });
@@ -132,23 +161,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // ─── fetchProfile ─────────────────────────────────────────────────────────
   const fetchProfile = async (userId: string) => {
     try {
       const { data, error } = await (supabase as any)
         .from("profiles")
-        .select("full_name, avatar_url, whatsapp_phone")
+        .select("full_name, avatar_url, whatsapp_phone, username")
         .eq("user_id", userId)
         .maybeSingle();
 
       if (error && error.code !== "PGRST116") {
-        console.error("Error fetching profile:", error);
+        console.error("Erro ao buscar perfil:", error);
       }
       if (data) setProfile(data);
     } catch (err) {
-      console.error("Profile fetch exception:", err);
+      console.error("Exceção ao buscar perfil:", err);
     }
   };
 
+  // ─── checkRoles ───────────────────────────────────────────────────────────
   const checkRoles = async (userId: string) => {
     try {
       const { data: roles } = await supabase
@@ -166,46 +197,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsAdmin(hasAdmin);
       setIsVisitor(hasVisitante);
 
-      // Busca associações deste usuário aos grupos (membro ou líder)
       const { data: memberGroupsData, error: managedErr } = await supabase
         .from("member_groups")
         .select("group_id, role")
         .eq("user_id", userId);
 
-      if (managedErr) console.error("Managed groups fetch error:", managedErr);
+      if (managedErr) console.error("Erro ao buscar grupos:", managedErr);
       const managedGroups = memberGroupsData || [];
 
-      const allGroupIds = Array.from(new Set((managedGroups as any[])?.map(m => m.group_id) || []));
+      const allGroupIds = Array.from(new Set((managedGroups as any[]).map((m) => m.group_id)));
       setUserGroupIds(allGroupIds);
 
       const managedIds = (managedGroups as any[])
-        ?.filter(mg => {
+        .filter((mg) => {
           const role = (mg.role || "").toLowerCase();
           return role !== "" && role !== "member" && role !== "membro";
         })
-        .map((m: any) => m.group_id) || [];
-      
+        .map((m: any) => m.group_id);
+
       setManagedGroupIds(managedIds);
       setIsGerente(hasAdmin || hasGerente || managedIds.length > 0);
 
-      // NOVO: Busca permissões baseadas no PAPEL do usuário (admin, gerente, moderador, membro)
       const currentRoles = rolesList.length > 0 ? rolesList : ["membro"];
-      
+
       try {
         const { data: routines, error: routineErr } = await (supabase as any)
           .from("group_routines")
           .select("routine_key, is_enabled")
           .in("group_id", currentRoles);
-        
+
         if (routineErr) {
           console.error("Erro ao buscar permissões de rotina:", routineErr);
           setRoutinePermissions({});
         } else {
           const perms: Record<string, boolean> = {};
-          (routines as any[])?.forEach(r => {
-            if (perms[r.routine_key] !== true) {
-              perms[r.routine_key] = r.is_enabled;
-            }
+          (routines as any[])?.forEach((r) => {
+            if (perms[r.routine_key] !== true) perms[r.routine_key] = r.is_enabled;
           });
           setRoutinePermissions(perms);
         }
@@ -214,23 +241,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setRoutinePermissions({});
       }
     } catch (err) {
-      console.error("Error checking roles:", err);
+      console.error("Erro ao verificar roles:", err);
     }
   };
 
-  // Dedicated effect for Announcements and Notifications
+  // ─── Effect: Announcements + Realtime + Badge ────────────────────────────
   useEffect(() => {
     if (!user) return;
 
     const checkAnnouncements = async () => {
       try {
-        const lastChecked = localStorage.getItem("last_checked_announcements") || new Date(0).toISOString();
+        const lastChecked =
+          localStorage.getItem("last_checked_announcements") || new Date(0).toISOString();
         const { count } = await (supabase as any)
           .from("announcements")
-          .select("id", { count: 'exact' })
+          .select("id", { count: "exact" })
           .gt("created_at", lastChecked)
           .neq("created_by", user.id);
-        setUnreadAnnouncements(count || 0);
+
+        const unread = count || 0;
+        setUnreadAnnouncements(unread);
+
+        // ── App Badging API: atualiza o ícone na tela inicial ──────────────
+        setAppBadge(unread);
       } catch (_) {}
     };
 
@@ -239,18 +272,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const channelName = `announcements-${user.id}-${Math.random().toString(36).substr(2, 9)}`;
     const channel = supabase
       .channel(channelName)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, (payload) => {
-        const newNotice = payload.new as any;
-        
-        // Sound notification ONLY on new entries (INSERT)
-        if (payload.eventType === 'INSERT' && newNotice.created_by !== user.id) {
-          playNotificationSound();
-          window.dispatchEvent(new CustomEvent('new-announcement', { detail: newNotice }));
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "announcements" },
+        (payload) => {
+          const newNotice = payload.new as any;
+
+          if (payload.eventType === "INSERT" && newNotice.created_by !== user.id) {
+            playNotificationSound();
+            window.dispatchEvent(new CustomEvent("new-announcement", { detail: newNotice }));
+          }
+
+          // Recalcula contagem e badge em qualquer mudança
+          checkAnnouncements();
         }
-        
-        // Always recalculate count for any change (INSERT, DELETE, UPDATE)
-        checkAnnouncements();
-      })
+      )
       .subscribe();
 
     return () => {
@@ -258,59 +294,136 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [user]);
 
-  const subscribeToPush = async (userId: string) => {
-    try {
-      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
-
-      const registration = await navigator.serviceWorker.ready;
-      
-      // Public VAPID Key (Replace with your own generated key for production)
-      const vapidPublicKey = 'BDRS6oE6-pP3oT1-L9E-f_Q-z9jQ-v7_X_M8vX_8v_Y'; 
-      
-      let subscription = await registration.pushManager.getSubscription();
-      
-      if (!subscription) {
-        subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: vapidPublicKey
-        });
-      }
-
-      if (subscription) {
-        await (supabase as any).from('user_push_subscriptions').upsert({
-          user_id: userId,
-          subscription: subscription.toJSON(),
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'user_id' });
-        console.log('Push subscription saved!');
-      }
-    } catch (err) {
-      console.warn('Push subscription failed:', err);
-    }
-  };
-
+  // ─── Effect: Web Push Subscription ──────────────────────────────────────
   useEffect(() => {
     if (user && !loading) {
       subscribeToPush(user.id);
     }
   }, [user, loading]);
 
+  // ─── Effect: Auto Logout por inatividade ───────────────────────────────────
+  useEffect(() => {
+    if (!user) return;
+    
+    // Tempo máximo de inatividade: 60 minutos
+    const INACTIVITY_TIMEOUT_MS = 60 * 60 * 1000; 
+
+    const checkInactivity = () => {
+      const lastActivity = localStorage.getItem("last_active_time");
+      if (lastActivity) {
+        const inactiveTime = Date.now() - parseInt(lastActivity, 10);
+        if (inactiveTime > INACTIVITY_TIMEOUT_MS) {
+          console.warn("Sessão expirada por inatividade.");
+          signOut();
+        }
+      }
+    };
+
+    const updateActivity = () => {
+      localStorage.setItem("last_active_time", Date.now().toString());
+    };
+
+    // Verifica logo na inicialização
+    checkInactivity();
+
+    // Inicializa a marca de tempo se não tiver
+    if (!localStorage.getItem("last_active_time")) {
+      updateActivity();
+    }
+
+    const intervalId = setInterval(checkInactivity, 60000); // 1 minuto de intervalo
+    
+    window.addEventListener("mousedown", updateActivity, { passive: true });
+    window.addEventListener("keydown", updateActivity, { passive: true });
+    window.addEventListener("touchstart", updateActivity, { passive: true });
+    window.addEventListener("scroll", updateActivity, { passive: true });
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener("mousedown", updateActivity);
+      window.removeEventListener("keydown", updateActivity);
+      window.removeEventListener("touchstart", updateActivity);
+      window.removeEventListener("scroll", updateActivity);
+    };
+  }, [user]);
+
+  const subscribeToPush = async (userId: string) => {
+    // Sem a chave VAPID real, não adianta tentar se inscrever.
+    if (!VAPID_PUBLIC_KEY) {
+      console.warn(
+        "VITE_VAPID_PUBLIC_KEY não definida. Web Push desabilitado. " +
+        "Gere um par de chaves com: npx web-push generate-vapid-keys"
+      );
+      return;
+    }
+
+    try {
+      if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+
+      const registration = await navigator.serviceWorker.ready;
+
+      let subscription = await registration.pushManager.getSubscription();
+
+      if (!subscription) {
+        // Pede permissão e cria a inscrição com a chave VAPID real
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        });
+      }
+
+      if (subscription) {
+        // Salva no Supabase para a Edge Function usar ao enviar pushes
+        await (supabase as any)
+          .from("user_push_subscriptions")
+          .upsert(
+            {
+              user_id: userId,
+              subscription: subscription.toJSON(),
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "user_id" }
+          );
+        console.log("Push subscription salva com sucesso.");
+      }
+    } catch (err) {
+      // Falha silenciosa — não quebra o app se o usuário negou permissão
+      console.warn("Push subscription falhou:", err);
+    }
+  };
+
+  // ─── signOut ──────────────────────────────────────────────────────────────
   const signOut = async () => {
+    console.log("[AuthContext] Saindo...");
     localStorage.removeItem("debug_admin");
+    setAppBadge(0); // Limpa badge ao sair
     await supabase.auth.signOut();
   };
 
+  // ─── refreshProfile ───────────────────────────────────────────────────────
   const refreshProfile = async () => {
     if (user) await fetchProfile(user.id);
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, session, loading, isAdmin, isAdminCCM, isGerente, isVisitor, 
-      managedGroupIds: managedGroupIds || [], 
-      userGroupIds: userGroupIds || [],
-      profile, routinePermissions, unreadAnnouncements, signOut, refreshProfile
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        loading,
+        isAdmin,
+        isAdminCCM,
+        isGerente,
+        isVisitor,
+        managedGroupIds: managedGroupIds || [],
+        userGroupIds: userGroupIds || [],
+        profile,
+        routinePermissions,
+        unreadAnnouncements,
+        signOut,
+        refreshProfile,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

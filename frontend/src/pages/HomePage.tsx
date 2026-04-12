@@ -131,11 +131,11 @@ const HomePage = () => {
       {/* Billboard Section (Outdoor Style) */}
       {siteSettings?.homepage_banner && (
         <div className="px-4 mt-6">
-          <div className="max-w-6xl mx-auto rounded-[2.5rem] overflow-hidden shadow-2xl ring-4 ring-white/10 dark:ring-white/5 border-4 border-muted/20 bg-muted/10">
+          <div className="max-w-6xl mx-auto rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-2xl ring-4 ring-white/10 dark:ring-white/5 border-4 border-muted/20 bg-muted/10">
             <img 
               src={siteSettings.homepage_banner} 
               alt="Mural Mergulho" 
-              className="w-full h-auto max-h-[600px] object-cover hover:scale-105 transition-transform duration-700 aspect-[16/9] md:aspect-[16/6]"
+              className="w-full h-auto max-h-[600px] object-cover md:object-cover hover:scale-105 transition-transform duration-700 md:aspect-[16/6]"
             />
           </div>
         </div>

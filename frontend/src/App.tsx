@@ -28,40 +28,57 @@ import AdminNotices from "./pages/AdminNotices";
 import GroupPermissions from "./pages/GroupPermissions";
 import AuditLogs from "./pages/AuditLogs";
 import NotFound from "./pages/NotFound";
-import InstallBanner from "./components/InstallBanner";
 import AdminWhatsApp from "./pages/AdminWhatsApp";
+import Tesouraria from "./pages/Tesouraria";
+
+// ─── InstallPrompt consolida InstallBanner + PwaPrompt em um único componente.
+// Remova os imports de InstallBanner e PwaPrompt.
+import InstallPrompt from "@/components/InstallPrompt";
 
 const queryClient = new QueryClient();
 
+// ─── ProtectedRoute ───────────────────────────────────────────────────────────
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
-  if (loading) return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-    </div>
-  );
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
   if (!user) return <Navigate to="/auth" replace />;
   return <AppLayout>{children}</AppLayout>;
 };
 
+// ─── NotificationManager ─────────────────────────────────────────────────────
+// Ouve o evento customizado "new-announcement" disparado pelo AuthContext
+// quando chega uma nova mensagem via Supabase Realtime, e mostra um Toast.
 const NotificationManager = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const handler = (e: any) => {
+    const handler = (e: CustomEvent) => {
       const notice = e.detail;
       toast({
-        title: "Novo Comunicado!",
+        title: "📢 Novo Comunicado!",
         description: notice.title || "Você recebeu um novo aviso da igreja.",
+        // Duração maior para o usuário ter tempo de ler
+        duration: 6000,
       });
     };
-    window.addEventListener('new-announcement', handler);
-    return () => window.removeEventListener('new-announcement', handler);
+
+    // CustomEvent requer cast para o addEventListener reconhecer o tipo
+    window.addEventListener("new-announcement", handler as EventListener);
+    return () => window.removeEventListener("new-announcement", handler as EventListener);
   }, [toast]);
 
   return null;
 };
 
+// ─── App ──────────────────────────────────────────────────────────────────────
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
@@ -70,8 +87,19 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <InstallBanner />
+            {/*
+              InstallPrompt substitui InstallBanner e PwaPrompt.
+              Ele detecta a plataforma internamente e persiste o dismiss no
+              localStorage para não incomodar o usuário mais de 3 vezes.
+            */}
+            <InstallPrompt />
+
+            {/*
+              NotificationManager não renderiza nada visualmente — apenas
+              escuta eventos e dispara toasts.
+            */}
             <NotificationManager />
+
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
@@ -92,6 +120,7 @@ const App = () => (
               <Route path="/Disparos" element={<ProtectedRoute><AdminNotices /></ProtectedRoute>} />
               <Route path="/whatsapp" element={<ProtectedRoute><AdminWhatsApp /></ProtectedRoute>} />
               <Route path="/gestao-rotinas" element={<ProtectedRoute><GroupPermissions /></ProtectedRoute>} />
+              <Route path="/tesouraria" element={<ProtectedRoute><Tesouraria /></ProtectedRoute>} />
               <Route path="/auditoria" element={<ProtectedRoute><AuditLogs /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>

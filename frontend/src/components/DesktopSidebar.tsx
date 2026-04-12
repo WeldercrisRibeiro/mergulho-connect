@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Home, Calendar, BookOpen, MessageCircle, User, Users, LogOut, Shield, ShieldCheck, Settings, HandHeart, BarChart3, Megaphone, Smartphone, FileSearch } from "lucide-react";
+import { Home, Calendar, BookOpen, MessageCircle, User, Users, LogOut, Shield, ShieldCheck, Settings, HandHeart, BarChart3, Megaphone, Smartphone, FileSearch, Wallet } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -30,6 +30,7 @@ const navGroups: {
       items: [
         { path: "/agenda", icon: Calendar, label: "Agenda", routine: "agenda" },
         { path: "/devocionais", icon: BookOpen, label: "Devocionais", routine: "devocionais" },
+        { path: "/tesouraria", icon: Wallet, label: "Tesouraria", routine: "tesouraria" },
         { path: "/voluntarios", icon: HandHeart, label: "Voluntários", routine: "voluntarios" },
         { path: "/checkin-kids", icon: ShieldCheck, label: "Validação", routine: "kids" },
       ]

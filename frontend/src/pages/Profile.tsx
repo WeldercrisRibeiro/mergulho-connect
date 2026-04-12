@@ -282,10 +282,26 @@ const Profile = () => {
                 variant={isNotifGranted ? "secondary" : "outline"}
                 size="sm"
                 onClick={async () => {
+                  const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+                  const isStandalone = window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone === true;
+
                   if (typeof window === "undefined" || !("Notification" in window)) {
-                    toast({ title: "Não suportado", description: "Seu dispositivo não suporta notificações nativas.", variant: "destructive" });
+                    if (isIos && !isStandalone) {
+                      toast({ 
+                        title: "Habilite as Notificações", 
+                        description: "Para receber alertas no iPhone, clique em 'Compartilhar' e 'Adicionar à Tela de Início' primeiro.", 
+                        variant: "destructive" 
+                      });
+                    } else {
+                      toast({ 
+                        title: "Não suportado", 
+                        description: "Este navegador não suporta notificações nativas no momento.", 
+                        variant: "destructive" 
+                      });
+                    }
                     return;
                   }
+
                   if (isNotifGranted) {
                     toast({ title: "Notificações já estão ativas!" });
                   } else {

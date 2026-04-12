@@ -132,7 +132,11 @@ const KidsCheckin = () => {
       // Invalida a query específica para forçar o refresh
       queryClient.invalidateQueries({ queryKey: ["active-checkins"] });
       toast({ title: "Check-in realizado!", description: `Registrado em ${category === "kids" ? "Kids" : "Volumes"}.` });
-      logAudit("create", "validacao", { childName, category, eventId: selectedEventId });
+      
+      // Deferimos o logAudit para garantir que não interfira no estado da sessão durante o refresh da UI
+      setTimeout(() => {
+        logAudit("create", "validacao", { childName, category, eventId: selectedEventId });
+      }, 100);
     },
     onError: (err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" })
   });
@@ -146,8 +150,10 @@ const KidsCheckin = () => {
         .eq("id", item.id);
       if (error) throw error;
 
-      // 2. Cria o disparo agendado para 2 minutos
-      const scheduledAt = new Date(Date.now() + 2 * 60000).toISOString();
+      // 2. Cria o disparo agendado para imediado
+      const scheduledAt = new Date().toISOString();
+      // agendado = new Date(Date.now() + 2 * 60000).toISOString();
+      // caso sejar que seja imediado, fazer: const scheduledAt = new Date().toISOString();
       const formData = new FormData();
       formData.append("title", "Chamada Urgente: Validação");
       formData.append("content", callMessage);
@@ -392,11 +398,6 @@ const KidsCheckin = () => {
                 <CheckCircle2 className={cn("h-7 w-7", category === "kids" ? "text-emerald-500" : "text-orange-500")} />
                 Pendentes de Retirada ({activeCheckins?.length || 0})
               </h3>
-              <div className="flex gap-2">
-                <Button variant="outline" className="rounded-xl h-10 font-bold border-2" onClick={() => setShowScanner(true)}>
-                  <ScanLine className="h-4 w-4 mr-2" /> SCANNER QR
-                </Button>
-              </div>
             </div>
 
             {loadingCheckins ? (
@@ -492,7 +493,7 @@ const KidsCheckin = () => {
           </DialogHeader>
           <div className="space-y-4 py-3">
             <p className="text-sm text-muted-foreground">
-              Esta ação ativará o modo de chamada na tela e enviará uma mensagem no WhatsApp do responsável (<strong>{callingItem?.profiles?.full_name}</strong>) agendada para daqui a <strong>2 minutos</strong>.
+              Esta ação ativará o modo de chamada na tela e enviará uma mensagem no WhatsApp do responsável (<strong>{callingItem?.profiles?.full_name}</strong>) enviada imediatamente.
             </p>
             <div className="space-y-2">
               <Label>Mensagem Padrão (pode ser ajustada)</Label>
@@ -538,20 +539,12 @@ const KidsCheckin = () => {
               <Label className="text-xs font-bold uppercase text-muted-foreground">Token de Segurança (6 dígitos)</Label>
               <div className="flex gap-2">
                 <Input 
-                  placeholder="000000"
+                  placeholder="123456"
                   maxLength={6}
                   value={retrievalToken}
                   onChange={(e) => setRetrievalToken(e.target.value.replace(/\D/g, ""))}
                   className="text-center text-2xl font-black h-14 tracking-widest rounded-xl"
                 />
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  className="h-14 w-14 rounded-xl shrink-0"
-                  onClick={() => setShowScanner(true)}
-                >
-                  <Monitor className="h-6 w-6" />
-                </Button>
               </div>
               <p className="text-[10px] text-muted-foreground text-center italic">
                 Peça ao responsável para mostrar o QR Code ou informar os 6 números no app dele.

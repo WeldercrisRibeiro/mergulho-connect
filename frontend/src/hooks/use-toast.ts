@@ -132,9 +132,38 @@ function dispatch(action: Action) {
   });
 }
 
+const translateMessage = (msg: React.ReactNode): React.ReactNode => {
+  if (typeof msg !== 'string') return msg;
+  
+  const lowerMsg = msg.toLowerCase();
+  
+  if (lowerMsg.includes("invalid login credentials")) return "Usuário ou senha incorretos.";
+  if (lowerMsg.includes("user not found")) return "Usuário não encontrado.";
+  if (lowerMsg.includes("password should be at least")) return "A senha deve ter pelo menos 6 caracteres.";
+  if (lowerMsg.includes("duplicate key value violates unique constraint")) return "Este registro já existe.";
+  if (lowerMsg.includes("jwt expired")) return "Sua sessão expirou, faça login novamente.";
+  if (lowerMsg.includes("fetch payload")) return "Erro de conexão. Verifique sua internet.";
+  if (lowerMsg.includes("network error")) return "Erro de rede. Verifique sua conexão.";
+  if (lowerMsg.includes("failed to fetch")) return "Erro de conexão. Verifique sua internet.";
+  if (lowerMsg.includes("new password should be different from the old password")) return "A nova senha deve ser diferente da antiga.";
+  if (lowerMsg.includes("weak_password") || lowerMsg.includes("password is too weak")) return "A senha é muito fraca.";
+  if (lowerMsg.includes("profile_username_key")) return "Este nome de usuário já está em uso.";
+  if (lowerMsg.includes("not null constraint")) return "Preencha todos os campos obrigatórios.";
+  if (lowerMsg.includes("email not confirmed")) return "Email não confirmado.";
+  if (lowerMsg.includes("user already registered")) return "Usuário já cadastrado.";
+  if (lowerMsg.includes("auth retryable error")) return "Erro de rede temporário. Tente novamente.";
+  if (lowerMsg.includes("invalid update body")) return "Dados de atualização inválidos.";
+  
+  return msg;
+};
+
 type Toast = Omit<ToasterToast, "id">;
 
 function toast({ ...props }: Toast) {
+  if (props.description) {
+    props.description = translateMessage(props.description);
+  }
+
   const id = genId();
 
   const update = (props: ToasterToast) =>

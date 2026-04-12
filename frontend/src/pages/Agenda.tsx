@@ -12,11 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { safeFormat } from "@/lib/dateUtils";
-import { Calendar, MapPin, Check, X, Share2, Plus, Edit2, Trash2, Users, Ticket, Copy, QrCode, Mic2, Info, ImagePlus, Loader2, Upload, Settings, ScanLine, Clock } from "lucide-react";
+import { Calendar, MapPin, Check, X, Share2, Plus, Edit2, Trash2, Users, Ticket, Copy, QrCode, Mic2, Info, ImagePlus, Loader2, Upload, Settings, ScanLine, Clock, Globe } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { QRCodeSVG } from "qrcode.react";
 import { logAudit } from "@/lib/auditLogger";
 import QRScanner from "@/components/QRScanner";
+import { ShareEventDialog } from "@/components/ShareEventDialog";
 
 const EVENT_TYPE_LABELS: Record<string, string> = {
   simple: "Compromisso",
@@ -30,14 +31,13 @@ const EVENT_TYPE_COLORS: Record<string, string> = {
   conference: "bg-accent text-accent-foreground border-accent",
 };
 
-// Helper para permitir gerar IDs aleatórios mesmo no celular sem HTTPS (que bloqueia o crypto nativo)
 const generateSafeId = () => {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
     return crypto.randomUUID();
   }
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-      return v.toString(16);
+    const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
   });
 };
 
@@ -45,6 +45,9 @@ const Agenda = () => {
   const { user, isAdmin, isGerente, managedGroupIds, userGroupIds } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // ── FIX 1: todos os useState DENTRO do componente ──────────────────────────
+  const [sharingEvent, setSharingEvent] = useState<any>(null);
   const [cancelingRegistration, setCancelingRegistration] = useState<any>(null);
   const [filter, setFilter] = useState<string>("all");
   const [editingEvent, setEditingEvent] = useState<any>(null);
@@ -73,6 +76,7 @@ const Agenda = () => {
   const [pixQrcodeUrl, setPixQrcodeUrl] = useState("");
   const [mapUrl, setMapUrl] = useState("");
   const [requireCheckin, setRequireCheckin] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
 
   const { data: userGroups } = useQuery({
     queryKey: ["user-groups", user?.id],
@@ -104,24 +108,17 @@ const Agenda = () => {
         .from("events")
         .select("*, event_rsvps(*), event_checkins(*), event_registrations(*), groups(name)")
         .order("event_date", { ascending: true });
-      
+
       if (filter !== "all") {
         query = query.eq("group_id", filter);
       } else if (!isAdmin) {
-        // Se não for admin, vê eventos gerais OU do seu grupo
         const groupFilter = userGroupIds.length > 0 ? `group_id.in.(${userGroupIds.join(",")})` : "";
         query = query.or(`is_general.eq.true${groupFilter ? `,${groupFilter}` : ""}`);
       }
-      
+
       const { data, error } = await query;
-      if (error) {
-        console.error("Error fetching events:", error);
-        throw error;
-      }
+      if (error) throw error;
       return data || [];
-    },
-    meta: {
-      errorMessage: "Falha ao carregar os eventos. Verifique as permissões de acesso ao banco.",
     },
     refetchInterval: 15000,
   });
@@ -144,7 +141,6 @@ const Agenda = () => {
 
   const registerMutation = useMutation({
     mutationFn: async (eventId: string) => {
-      // Upsert para unificar e evitar linhas fantasmas do cache se ele cancelou e retornou
       const { error } = await (supabase as any).from("event_registrations").upsert(
         { event_id: eventId, user_id: user?.id, payment_status: "pending" },
         { onConflict: "event_id,user_id" }
@@ -160,9 +156,7 @@ const Agenda = () => {
 
   const cancelRegistrationMutation = useMutation({
     mutationFn: async (eventId: string) => {
-      // Limpa possível scan de check-in caso a pessoa esteja testando/cancelando
       await (supabase as any).from("event_checkins").delete().eq("event_id", eventId).eq("user_id", user?.id);
-      // Cancela a inscrição de fato
       const { error } = await (supabase as any).from("event_registrations").delete().eq("event_id", eventId).eq("user_id", user?.id);
       if (error) throw error;
     },
@@ -175,11 +169,13 @@ const Agenda = () => {
   });
 
   const resetForm = () => {
-    setTitle(""); setDesc(""); setDate(""); setLocation(""); 
-    setIsGeneral(isAdmin ? "true" : "false"); 
+    setTitle(""); setDesc(""); setDate(""); setLocation("");
+    setIsGeneral(isAdmin ? "true" : "false");
     setGroupId("");
-    setEventType("simple"); setBannerUrl(""); setSpeakers(""); setPrice(0); setPixKey(""); setPixQrcodeUrl(""); setMapUrl("");
+    setEventType("simple"); setBannerUrl(""); setSpeakers(""); setPrice(0);
+    setPixKey(""); setPixQrcodeUrl(""); setMapUrl("");
     setRequireCheckin(false);
+    setIsPublic(false);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -192,9 +188,7 @@ const Agenda = () => {
       const { error: uploadError } = await supabase.storage
         .from("event-banners")
         .upload(fileName, file, { upsert: true });
-      
       if (uploadError) throw uploadError;
-
       const { data: urlData } = supabase.storage.from("event-banners").getPublicUrl(fileName);
       setBannerUrl(urlData.publicUrl);
       toast({ title: "Banner carregado com sucesso!" });
@@ -220,6 +214,7 @@ const Agenda = () => {
     setPixQrcodeUrl(ev.pix_qrcode_url || "");
     setMapUrl(ev.map_url || "");
     setRequireCheckin(ev.require_checkin || false);
+    setIsPublic(ev.is_public || false);
     if (ev.event_date) {
       const d = new Date(ev.event_date);
       d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
@@ -245,7 +240,10 @@ const Agenda = () => {
         pix_qrcode_url: pixQrcodeUrl.trim() || null,
         map_url: mapUrl.trim() || null,
         require_checkin: requireCheckin,
-        checkin_qr_secret: requireCheckin ? (editingEvent?.checkin_qr_secret || generateSafeId()) : null,
+        is_public: isPublic,
+        checkin_qr_secret: requireCheckin
+          ? (editingEvent?.checkin_qr_secret || generateSafeId())
+          : null,
       };
       if (editingEvent) {
         const { error } = await (supabase as any).from("events").update(payload).eq("id", editingEvent.id);
@@ -274,14 +272,8 @@ const Agenda = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["events"] });
       toast({ title: "Evento removido!" });
-      logAudit("delete", "agenda", { eventId: id });
     },
   });
-
-  const shareWhatsApp = (event: any) => {
-    const text = `🌊 *CC Mergulho - ${EVENT_TYPE_LABELS[event.event_type] || "Evento"}*\n\n📌 ${event.title}\n📅 ${safeFormat(event.event_date, "dd/MM/yyyy 'às' HH:mm")}\n📍 ${event.location || "A definir"}${event.price > 0 ? `\n💰 R$ ${event.price.toFixed(2)}` : ""}\n\n${event.description || ""}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
-  };
 
   const copyPix = (key: string) => {
     navigator.clipboard.writeText(key);
@@ -313,7 +305,6 @@ const Agenda = () => {
         </div>
       )}
 
-      {/* Events */}
       <div className="space-y-4">
         {events?.length === 0 && (
           <Card className="border-0 bg-muted/30">
@@ -330,10 +321,13 @@ const Agenda = () => {
           const isComplex = event.event_type === "course" || event.event_type === "conference";
           const isPaid = event.price > 0;
           const isRegistered = event.event_registrations?.some((r: any) => r.user_id === user?.id);
+          const hasCheckedIn = event.event_checkins?.some((c: any) => c.user_id === user?.id);
+
+          // ── FIX 2: usar managedGroupIds do hook já chamado no topo, não useAuth() no JSX ──
+          const canManageEvent = isAdmin || (isGerente && event.group_id && managedGroupIds.includes(event.group_id));
 
           return (
             <Card key={event.id} className={`neo-shadow-sm border-0 overflow-hidden ${isComplex ? "ring-1 ring-primary/20" : ""}`}>
-              {/* Banner */}
               {event.banner_url && (
                 <div className="w-full h-40 overflow-hidden">
                   <img src={event.banner_url} alt={event.title} className="w-full h-full object-cover" />
@@ -378,7 +372,7 @@ const Agenda = () => {
                       </div>
                     )}
                   </div>
-                  {(isAdmin || (isGerente && event.group_id && useAuth().managedGroupIds.includes(event.group_id))) && (
+                  {canManageEvent && (
                     <div className="flex items-center gap-1">
                       <Button variant="ghost" size="icon" onClick={() => handleEdit(event)}>
                         <Edit2 className="h-4 w-4 text-primary" />
@@ -405,42 +399,38 @@ const Agenda = () => {
                       </>
                     )}
                     {event.require_checkin && (
-                      <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-full font-semibold border border-blue-100 dark:border-blue-900/50" title="Check-ins realizados">
+                      <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-full font-semibold border border-blue-100 dark:border-blue-900/50">
                         <ScanLine className="h-3 w-3" /> {checkedInCount}
                       </div>
                     )}
-                    {(isAdmin || (isGerente && event.group_id && useAuth().managedGroupIds.includes(event.group_id))) && (
+                    {canManageEvent && (
                       <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setRsvpViewEvent(event)}>
                         <Users className="h-3 w-3 mr-1" /> Lista
                       </Button>
                     )}
                   </div>
-                    <div className="flex gap-2 flex-wrap">
-                      {/* RSVP buttons: Only for non-conferences and non-checkin events */}
-                      {event.event_type !== "conference" && !event.require_checkin && (
-                        <>
-                          <Button
-                            size="sm"
-                            variant={userRsvp?.status === "confirmed" ? "default" : "outline"}
-                            disabled={userRsvp?.status === "confirmed"}
-                            onClick={() => rsvpMutation.mutate({ eventId: event.id, status: "confirmed" })}
-                          >
-                            <Check className="h-4 w-4 mr-1" />
-                            {userRsvp?.status === "confirmed" ? "Confirmado" : "Vou"}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant={userRsvp?.status === "declined" ? "destructive" : "outline"}
-                            disabled={userRsvp?.status === "declined"}
-                            onClick={() => rsvpMutation.mutate({ eventId: event.id, status: "declined" })}
-                          >
-                            <X className="h-4 w-4 mr-1" />
-                            Não vou
-                          </Button>
-                        </>
-                      )}
-
-                    {/* Paid event: PIX/registration */}
+                  <div className="flex gap-2 flex-wrap">
+                    {event.event_type !== "conference" && !event.require_checkin && (
+                      <>
+                        <Button
+                          size="sm"
+                          variant={userRsvp?.status === "confirmed" ? "default" : "outline"}
+                          disabled={userRsvp?.status === "confirmed"}
+                          onClick={() => rsvpMutation.mutate({ eventId: event.id, status: "confirmed" })}
+                        >
+                          <Check className="h-4 w-4 mr-1" />
+                          {userRsvp?.status === "confirmed" ? "Confirmado" : "Vou"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={userRsvp?.status === "declined" ? "destructive" : "outline"}
+                          disabled={userRsvp?.status === "declined"}
+                          onClick={() => rsvpMutation.mutate({ eventId: event.id, status: "declined" })}
+                        >
+                          <X className="h-4 w-4 mr-1" /> Não vou
+                        </Button>
+                      </>
+                    )}
                     {isPaid && event.pix_key && (
                       <Button size="sm" variant="outline" onClick={() => setPixDialogEvent(event)}>
                         <QrCode className="h-4 w-4 mr-1" /> PIX
@@ -457,33 +447,29 @@ const Agenda = () => {
                         </Button>
                       )
                     )}
-
-                    <Button size="sm" variant="outline" onClick={() => shareWhatsApp(event)}>
-                      <Share2 className="h-4 w-4" />
+                    <Button size="sm" variant="outline" onClick={() => setSharingEvent(event)} className="gap-1">
+                      <Share2 className="h-4 w-4" /> Compartilhar
                     </Button>
-
-                    {/* QR Check-in button for members */}
-                    {event.require_checkin && (
+                    {event.require_checkin && isRegistered && (
                       <Button
                         size="sm"
-                        variant="secondary"
+                        variant={hasCheckedIn ? "default" : "secondary"}
                         className="gap-1"
-                        onClick={() => setScanningEvent(event)}
+                        disabled={hasCheckedIn}
+                        onClick={() => !hasCheckedIn && setScanningEvent(event)}
                       >
-                        <ScanLine className="h-4 w-4" /> Check-in
+                        <ScanLine className="h-4 w-4" />
+                        {hasCheckedIn ? "✓ Check-in feito" : "Check-in"}
                       </Button>
                     )}
                   </div>
                 </div>
 
-                {/* Admin: view registrations */}
                 {isAdmin && isComplex && (
                   <Button variant="ghost" size="sm" className="mt-2 text-xs" onClick={() => setRegistrationViewEvent(event)}>
                     <Ticket className="h-3 w-3 mr-1" /> Ver Inscritos
                   </Button>
                 )}
-
-                {/* Admin: project QR Code */}
                 {isAdmin && event.require_checkin && event.checkin_qr_secret && (
                   <Button variant="ghost" size="sm" className="mt-2 text-xs gap-1" onClick={() => setQrProjectEvent(event)}>
                     <QrCode className="h-3 w-3" /> Projetar QR Code
@@ -495,6 +481,14 @@ const Agenda = () => {
         })}
       </div>
 
+      {/* Share Dialog */}
+      <ShareEventDialog
+        event={sharingEvent}
+        open={!!sharingEvent}
+        onClose={() => setSharingEvent(null)}
+        landingPageUrl={undefined}
+      />
+
       {/* Create/Edit Dialog */}
       <Dialog open={creatingEvent || !!editingEvent} onOpenChange={val => { if (!val) { setCreatingEvent(false); setEditingEvent(null); } }}>
         <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto rounded-3xl border-0 shadow-2xl custom-scrollbar">
@@ -505,7 +499,6 @@ const Agenda = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-8 py-6">
-            {/* Section 1: Basic Info */}
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground border-b pb-2">
                 <Info className="h-3.5 w-3.5" /> Informações Básicas
@@ -543,7 +536,6 @@ const Agenda = () => {
               </div>
             </div>
 
-            {/* Section 2: Banner */}
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground border-b pb-2">
                 <ImagePlus className="h-3.5 w-3.5" /> Banner do Evento
@@ -559,12 +551,13 @@ const Agenda = () => {
               {bannerUrl && (
                 <div className="relative aspect-video rounded-2xl overflow-hidden border-2 border-muted shadow-inner bg-muted/20">
                   <img src={bannerUrl} className="w-full h-full object-cover" />
-                  <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-8 w-8 rounded-full opacity-0 hover:opacity-100 group-hover:opacity-100 transition-opacity" onClick={() => setBannerUrl("")}><X className="h-4 w-4" /></Button>
+                  <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-8 w-8 rounded-full" onClick={() => setBannerUrl("")}>
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
               )}
             </div>
 
-            {/* Section 3: Details (Conditional) */}
             {(eventType === "course" || eventType === "conference") && (
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground border-b pb-2">
@@ -595,7 +588,6 @@ const Agenda = () => {
               </div>
             )}
 
-            {/* Section 4: Settings & Date */}
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground border-b pb-2">
                 <Settings className="h-3.5 w-3.5" /> Configurações de Data e Visibilidade
@@ -603,16 +595,13 @@ const Agenda = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label className="text-xs font-bold uppercase text-primary">Data e Hora do Evento</Label>
-                  <Input type="datetime-local" value={date} onChange={e => setDate(e.target.value)} className="rounded-xl h-11 border-primary/30 bg-primary/5 focus:bg-background transition-colors" />
+                  <Input type="datetime-local" value={date} onChange={e => setDate(e.target.value)} className="rounded-xl h-11 border-primary/30 bg-primary/5" />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs font-bold uppercase">Escopo de Visibilidade</Label>
-                  <Select 
-                    value={isGeneral} 
-                    onValueChange={(v) => {
-                      setIsGeneral(v);
-                      if (v === "true") setGroupId("");
-                    }} 
+                  <Select
+                    value={isGeneral}
+                    onValueChange={(v) => { setIsGeneral(v); if (v === "true") setGroupId(""); }}
                     disabled={!isAdmin}
                   >
                     <SelectTrigger className="rounded-xl h-11"><SelectValue /></SelectTrigger>
@@ -623,29 +612,23 @@ const Agenda = () => {
                   </Select>
                 </div>
               </div>
-              
+
               {isGeneral === "false" && (
                 <div className="space-y-2">
                   <Label className="text-xs font-bold uppercase">Selecione o Departamento / Grupo</Label>
-                  <Select 
-                    value={groupId || ""} 
-                    onValueChange={setGroupId}
-                  >
+                  <Select value={groupId || ""} onValueChange={setGroupId}>
                     <SelectTrigger className="rounded-xl h-11">
                       <SelectValue placeholder="Escolha o departamento" />
                     </SelectTrigger>
                     <SelectContent>
                       {groups?.filter(g => isAdmin || userGroups?.includes(g.id)).map((group) => (
-                        <SelectItem key={group.id} value={group.id}>
-                          {group.name}
-                        </SelectItem>
+                        <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
               )}
 
-              {/* QR Check-in Toggle */}
               {isAdmin && (
                 <div className="flex items-center justify-between p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl">
                   <div className="flex items-center gap-3">
@@ -668,11 +651,38 @@ const Agenda = () => {
                   </label>
                 </div>
               )}
+
+              {/* Tornar público — visível para eventos de grupo também */}
+              <div className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all duration-200 ${isPublic ? "bg-blue-500/10 border-blue-500/40" : "bg-muted/20 border-border"}`}>
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-xl transition-colors ${isPublic ? "bg-blue-500/20 text-blue-600" : "bg-muted text-muted-foreground"}`}>
+                    <Globe className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold">Tornar público na Landing Page</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {isGeneral === "true"
+                        ? "Eventos gerais já aparecem publicamente."
+                        : "Permite que este evento de departamento apareça para qualquer visitante do site."}
+                    </p>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isPublic || isGeneral === "true"}
+                    disabled={isGeneral === "true"}
+                    onChange={(e) => setIsPublic(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className={`w-11 h-6 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full transition-colors ${isGeneral === "true" ? "bg-blue-400 cursor-not-allowed opacity-60" : "bg-muted peer-checked:bg-blue-500"}`} />
+                </label>
+              </div>
             </div>
           </div>
           <DialogFooter className="gap-2 pb-2">
             <Button variant="outline" onClick={() => { setCreatingEvent(false); setEditingEvent(null); }} className="rounded-xl border-2">Cancelar</Button>
-            <Button onClick={() => saveMutation.mutate()} disabled={!title || !date || saveMutation.isPending} className="rounded-xl px-12 font-bold shadow-lg shadow-primary/20">
+            <Button onClick={() => saveMutation.mutate()} disabled={!title || !date || saveMutation.isPending} className="rounded-xl px-12 font-bold">
               {saveMutation.isPending ? "Salvando..." : editingEvent ? "Salvar Alterações" : "Criar Evento Agora"}
             </Button>
           </DialogFooter>
@@ -704,7 +714,6 @@ const Agenda = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Confirm Delete */}
       <ConfirmDialog
         open={!!deletingEvent}
         title="Excluir Evento"
@@ -715,7 +724,6 @@ const Agenda = () => {
         onCancel={() => setDeletingEvent(null)}
       />
 
-      {/* Confirm Registration Cancel */}
       <ConfirmDialog
         open={!!cancelingRegistration}
         title="Cancelar Inscrição"
@@ -726,7 +734,6 @@ const Agenda = () => {
         onCancel={() => setCancelingRegistration(null)}
       />
 
-      {/* RSVP List Dialog */}
       <Dialog open={!!rsvpViewEvent} onOpenChange={val => !val && setRsvpViewEvent(null)}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader><DialogTitle>Controle de Presença: {rsvpViewEvent?.title}</DialogTitle></DialogHeader>
@@ -734,12 +741,11 @@ const Agenda = () => {
             <RsvpList event={rsvpViewEvent} />
           </div>
           <DialogFooter>
-            <Button variant="outline" className="w-full sm:w-auto" onClick={() => setRsvpViewEvent(null)}>Fechar</Button>
+            <Button variant="outline" onClick={() => setRsvpViewEvent(null)}>Fechar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Registration List Dialog (admin) */}
       <Dialog open={!!registrationViewEvent} onOpenChange={v => !v && setRegistrationViewEvent(null)}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader><DialogTitle>Inscritos: {registrationViewEvent?.title}</DialogTitle></DialogHeader>
@@ -752,7 +758,6 @@ const Agenda = () => {
         </DialogContent>
       </Dialog>
 
-      {/* QR Code Projection Dialog (Admin) */}
       <Dialog open={!!qrProjectEvent} onOpenChange={v => !v && setQrProjectEvent(null)}>
         <DialogContent className="sm:max-w-md text-center">
           <DialogHeader>
@@ -762,32 +767,26 @@ const Agenda = () => {
           </DialogHeader>
           <div className="flex flex-col items-center gap-6 py-6">
             <div className="bg-white p-6 rounded-3xl shadow-2xl">
-              <QRCodeSVG
-                value={qrProjectEvent?.checkin_qr_secret || ""}
-                size={280}
-                level="H"
-              />
+              <QRCodeSVG value={qrProjectEvent?.checkin_qr_secret || ""} size={280} level="H" />
             </div>
             <p className="text-sm text-muted-foreground">Projete este QR Code no telão para os membros escanearem</p>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* QR Scanner for Check-in */}
       {scanningEvent && (
         <QRScanner
           onScan={async (decoded) => {
             setScanningEvent(null);
-            // Check if decoded matches the event's secret
             if (decoded === scanningEvent.checkin_qr_secret) {
               try {
                 const { error } = await (supabase as any).from("event_checkins").insert(
                   { event_id: scanningEvent.id, user_id: user!.id }
                 );
-                // PGRST error code "23505" significa Violação de Unicidade (Já estava feito o check-in)
                 if (error && error.code !== "23505") throw error;
                 toast({ title: "✅ Presença confirmada!", description: `Check-in registrado para "${scanningEvent.title}".` });
                 logAudit("create", "event_checkin", { eventId: scanningEvent.id, eventTitle: scanningEvent.title });
+                queryClient.invalidateQueries({ queryKey: ["events"] });
               } catch (err: any) {
                 toast({ title: "Erro no check-in", description: err.message, variant: "destructive" });
               }
@@ -802,47 +801,63 @@ const Agenda = () => {
   );
 };
 
-/* --- Sub-components --- */
+/* ─── Sub-components ─────────────────────────────────────────────────────── */
 
 const RsvpList = ({ event }: { event: any }) => {
   const { data: usersData, isLoading } = useQuery({
     queryKey: ["rsvp-full-list", event?.id],
     queryFn: async () => {
       if (!event) return [];
-      
+
+      if (event.require_checkin) {
+        const { data: regs } = await (supabase as any)
+          .from("event_registrations").select("user_id").eq("event_id", event.id);
+        const { data: checkins } = await supabase
+          .from("event_checkins").select("user_id").eq("event_id", event.id);
+        const checkinSet = new Set(checkins?.map((c: any) => c.user_id) || []);
+        const userIds = regs?.map((r: any) => r.user_id) || [];
+        if (userIds.length === 0) return [];
+        const { data: profiles } = await supabase
+          .from("profiles").select("user_id, full_name").in("user_id", userIds);
+        const nameMap = new Map(profiles?.map(p => [p.user_id, p.full_name]));
+        return userIds.map((uid: string) => ({
+          user_id: uid,
+          name: nameMap.get(uid) || "Membro",
+          status: checkinSet.has(uid) ? "checked_in" : "pending",
+        }));
+      }
+
       let relevantProfiles: any[] = [];
       if (event.is_general) {
         const { data } = await supabase.from("profiles").select("user_id, full_name").order("full_name");
         relevantProfiles = data || [];
       } else if (event.group_id) {
-        const { data: gm } = await supabase.from("member_groups").select("user_id, profiles(full_name)").eq("group_id", event.group_id);
-        relevantProfiles = gm?.map(m => ({ user_id: m.user_id, full_name: (m.profiles as any)?.full_name || "Membro" })) || [];
+        const { data: gm } = await supabase
+          .from("member_groups").select("user_id, profiles(full_name)").eq("group_id", event.group_id);
+        relevantProfiles = gm?.map(m => ({
+          user_id: m.user_id,
+          full_name: (m.profiles as any)?.full_name || "Membro",
+        })) || [];
       }
 
-      // Se for Check-in OBRIGATÓRIO, o foco da lista visual são as Presenças (Checkins)
-      if (event.require_checkin) {
-        const { data: checkins } = await supabase.from("event_checkins").select("user_id").eq("event_id", event.id);
-        const checkinMap = new Map(checkins?.map(c => [c.user_id, true]));
-        return relevantProfiles.map(p => ({
-          user_id: p.user_id,
-          name: p.full_name,
-          status: checkinMap.has(p.user_id) ? "checked_in" : "pending"
-        }));
-      }
-
-      // Fluxo comum (RSVP / Intenção de ir)
-      const { data: rsvps } = await supabase.from("event_rsvps").select("user_id, status").eq("event_id", event.id);
+      const { data: rsvps } = await supabase
+        .from("event_rsvps").select("user_id, status").eq("event_id", event.id);
       const rsvpMap = new Map(rsvps?.map(r => [r.user_id, r.status]));
+
       return relevantProfiles.map(p => ({
         user_id: p.user_id,
         name: p.full_name,
-        status: rsvpMap.get(p.user_id) || "pending"
+        status: rsvpMap.get(p.user_id) || "pending",
       }));
     },
     enabled: !!event,
   });
 
-  if (isLoading) return <div className="flex justify-center p-8"><span className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" /></div>;
+  if (isLoading) return (
+    <div className="flex justify-center p-8">
+      <span className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
+    </div>
+  );
 
   if (!event) return null;
 
@@ -850,9 +865,22 @@ const RsvpList = ({ event }: { event: any }) => {
     const checked = usersData?.filter(u => u.status === "checked_in") || [];
     const pending = usersData?.filter(u => u.status === "pending") || [];
     return (
-      <div className="space-y-6">
-        <RsvpSection label="Fizeram Check-in Oficial" items={checked} color="blue" icon={<ScanLine className="h-4 w-4" />} />
-        <RsvpSection label="Pendentes" items={pending} color="amber" icon={<Clock className="h-4 w-4" />} />
+      <div className="space-y-4">
+        <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-xl">
+          <div className="flex items-center gap-1.5 text-sm font-semibold text-blue-600 dark:text-blue-400">
+            <ScanLine className="h-4 w-4" /> {checked.length} check-in{checked.length !== 1 ? "s" : ""}
+          </div>
+          <span className="text-muted-foreground">·</span>
+          <div className="flex items-center gap-1.5 text-sm font-semibold text-amber-600 dark:text-amber-400">
+            <Clock className="h-4 w-4" /> {pending.length} pendente{pending.length !== 1 ? "s" : ""}
+          </div>
+          <span className="text-muted-foreground">·</span>
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <Users className="h-4 w-4" /> {usersData?.length || 0} inscrito{(usersData?.length || 0) !== 1 ? "s" : ""}
+          </div>
+        </div>
+        <RsvpSection label="Fizeram Check-in" items={checked} color="blue" icon={<ScanLine className="h-4 w-4" />} />
+        <RsvpSection label="Inscritos — Pendentes" items={pending} color="amber" icon={<Clock className="h-4 w-4" />} />
       </div>
     );
   }
@@ -862,7 +890,20 @@ const RsvpList = ({ event }: { event: any }) => {
   const pending = usersData?.filter(u => u.status === "pending") || [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-xl">
+        <div className="flex items-center gap-1.5 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+          <Check className="h-4 w-4" /> {confirmed.length} confirmado{confirmed.length !== 1 ? "s" : ""}
+        </div>
+        <span className="text-muted-foreground">·</span>
+        <div className="flex items-center gap-1.5 text-sm font-semibold text-rose-600 dark:text-rose-400">
+          <X className="h-4 w-4" /> {declined.length} não vai{declined.length !== 1 ? "o" : ""}
+        </div>
+        <span className="text-muted-foreground">·</span>
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <Clock className="h-4 w-4" /> {pending.length} pendente{pending.length !== 1 ? "s" : ""}
+        </div>
+      </div>
       <RsvpSection label="Confirmados" items={confirmed} color="emerald" icon={<Check className="h-4 w-4" />} />
       <RsvpSection label="Não Vão" items={declined} color="rose" icon={<X className="h-4 w-4" />} />
       <RsvpSection label="Pendentes" items={pending} color="slate" icon={<Users className="h-4 w-4" />} />
@@ -877,9 +918,12 @@ const RsvpSection = ({ label, items, color, icon }: { label: string; items: any[
       <Badge variant="outline" className="text-xs">{items.length}</Badge>
     </div>
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
-      {items.length === 0 ? <p className="text-xs text-muted-foreground italic px-2">Nenhum</p> : items.map(u => (
-        <div key={u.user_id} className="text-[13px] px-3 py-2 bg-muted/50 rounded-lg font-medium">{u.name}</div>
-      ))}
+      {items.length === 0
+        ? <p className="text-xs text-muted-foreground italic px-2">Nenhum</p>
+        : items.map(u => (
+            <div key={u.user_id} className="text-[13px] px-3 py-2 bg-muted/50 rounded-lg font-medium">{u.name}</div>
+          ))
+      }
     </div>
   </section>
 );
@@ -892,22 +936,27 @@ const RegistrationList = ({ event }: { event: any }) => {
     queryKey: ["event-registrations", event?.id],
     queryFn: async () => {
       if (!event) return [];
-      const { data } = await (supabase as any).from("event_registrations").select("*").eq("event_id", event.id);
+      const { data } = await (supabase as any)
+        .from("event_registrations").select("*").eq("event_id", event.id);
       if (!data) return [];
-      
-      let checkinSet = new Set();
+
+      // ── FIX 3: checkinSet calculado aqui dentro do sub-componente ──
+      let checkinSet = new Set<string>();
       if (event.require_checkin) {
-        const { data: checkins } = await supabase.from("event_checkins").select("user_id").eq("event_id", event.id);
+        const { data: checkins } = await supabase
+          .from("event_checkins").select("user_id").eq("event_id", event.id);
         checkinSet = new Set(checkins?.map((c: any) => c.user_id) || []);
       }
 
       const userIds = data.map((r: any) => r.user_id);
-      const { data: profiles } = await supabase.from("profiles").select("user_id, full_name").in("user_id", userIds);
+      const { data: profiles } = await supabase
+        .from("profiles").select("user_id, full_name").in("user_id", userIds);
       const nameMap = new Map(profiles?.map(p => [p.user_id, p.full_name]));
-      return data.map((r: any) => ({ 
-        ...r, 
+
+      return data.map((r: any) => ({
+        ...r,
         name: nameMap.get(r.user_id) || "Membro",
-        checked_in: checkinSet.has(r.user_id)
+        checked_in: checkinSet.has(r.user_id),
       }));
     },
     enabled: !!event,
@@ -919,38 +968,54 @@ const RegistrationList = ({ event }: { event: any }) => {
     toast({ title: `Status atualizado para ${status}` });
   };
 
-  if (isLoading) return <div className="flex justify-center p-8"><span className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" /></div>;
+  if (isLoading) return (
+    <div className="flex justify-center p-8">
+      <span className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
+    </div>
+  );
+
+  // Resumo de check-ins calculado a partir dos dados já carregados
+  const checkedInCount = registrations?.filter(r => r.checked_in).length || 0;
 
   return (
     <div className="space-y-2">
-      <p className="text-sm text-muted-foreground">{registrations?.length || 0} inscrito(s)</p>
+      <div className="flex items-center gap-3 mb-3">
+        <p className="text-sm text-muted-foreground">{registrations?.length || 0} inscrito(s)</p>
+        {event.require_checkin && (
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-full font-semibold border border-blue-100 dark:border-blue-900/50 text-xs">
+              <ScanLine className="h-3 w-3" /> {checkedInCount} check-in{checkedInCount !== 1 ? "s" : ""}
+            </div>
+          </div>
+        )}
+      </div>
       {registrations?.map((r: any) => (
         <div key={r.id} className="flex flex-wrap items-center justify-between gap-2 bg-muted/50 rounded-lg px-3 py-2">
           <div className="flex flex-col">
             <span className="text-sm font-medium">{r.name}</span>
             {event.require_checkin && (
-              <div className="mt-1">
-                {r.checked_in ? (
-                  <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/30">✓ Fez Check-in</Badge>
-                ) : (
-                  <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950/30">⏳ Pendente</Badge>
-                )}
-              </div>
+              <span className={`text-[10px] font-semibold ${r.checked_in ? "text-blue-600" : "text-amber-600"}`}>
+                {r.checked_in ? "✓ Check-in feito" : "Pendente"}
+              </span>
             )}
           </div>
-          <Select value={r.payment_status} onValueChange={v => updatePayment(r.id, v)}>
-            <SelectTrigger className="w-32 h-7 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="pending">Pendente</SelectItem>
-              <SelectItem value="confirmed">Pago</SelectItem>
-              <SelectItem value="cancelled">Cancelado</SelectItem>
-            </SelectContent>
-          </Select>
+          {event.price > 0 ? (
+            <Select value={r.payment_status} onValueChange={v => updatePayment(r.id, v)}>
+              <SelectTrigger className="w-32 h-7 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pendente</SelectItem>
+                <SelectItem value="confirmed">Pago</SelectItem>
+                <SelectItem value="cancelled">Cancelado</SelectItem>
+              </SelectContent>
+            </Select>
+          ) : (
+            <Badge variant="outline" className="text-[10px]">Gratuito</Badge>
+          )}
         </div>
       ))}
-      {registrations?.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Nenhum inscrito ainda.</p>}
+      {(!registrations || registrations.length === 0) && (
+        <p className="text-xs text-muted-foreground text-center py-4">Nenhum inscrito ainda.</p>
+      )}
     </div>
   );
 };
