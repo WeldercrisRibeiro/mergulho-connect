@@ -19,6 +19,13 @@ import { logAudit } from "@/lib/auditLogger";
 import QRScanner from "@/components/QRScanner";
 import { ShareEventDialog } from "@/components/ShareEventDialog";
 
+// ─── WhatsApp Icon SVG ────────────────────────────────────────────────────────
+const WhatsAppIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+  </svg>
+);
+
 const EVENT_TYPE_LABELS: Record<string, string> = {
   simple: "Compromisso",
   course: "Curso",
@@ -41,12 +48,13 @@ const generateSafeId = () => {
   });
 };
 
+const WA_API = import.meta.env.VITE_WA_API_URL || "http://localhost:3002";
+
+// ─── Agenda principal ─────────────────────────────────────────────────────────
 const Agenda = () => {
   const { user, isAdmin, isGerente, managedGroupIds, userGroupIds } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  // ── FIX 1: todos os useState DENTRO do componente ──────────────────────────
   const [sharingEvent, setSharingEvent] = useState<any>(null);
   const [cancelingRegistration, setCancelingRegistration] = useState<any>(null);
   const [filter, setFilter] = useState<string>("all");
@@ -60,6 +68,9 @@ const Agenda = () => {
   const [uploading, setUploading] = useState(false);
   const [qrProjectEvent, setQrProjectEvent] = useState<any>(null);
   const [scanningEvent, setScanningEvent] = useState<any>(null);
+
+  // WhatsApp notify state
+  const [notifyingEventId, setNotifyingEventId] = useState<string | null>(null);
 
   // Form state
   const [title, setTitle] = useState("");
@@ -125,6 +136,35 @@ const Agenda = () => {
 
   const showFilters = isAdmin || (groups && groups.length > 1);
 
+  // ─── WhatsApp notify ──────────────────────────────────────────────────────
+  const handleNotifyWhatsApp = async (event: any) => {
+    setNotifyingEventId(event.id);
+    try {
+      const res = await fetch(`${WA_API}/api/events/${event.id}/notify`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        if (data.needsConnection) {
+          toast({
+            title: "WhatsApp desconectado",
+            description: "Conecte o WhatsApp no painel de Disparos antes de enviar avisos.",
+            variant: "destructive",
+          });
+          return;
+        }
+        throw new Error(data.error || "Erro ao enviar aviso");
+      }
+      toast({
+        title: "✅ Aviso enviado!",
+        description: `${data.sent} de ${data.total} destinatário(s) notificados via WhatsApp.`,
+      });
+    } catch (err: any) {
+      toast({ title: "Erro ao enviar aviso", description: err.message, variant: "destructive" });
+    } finally {
+      setNotifyingEventId(null);
+    }
+  };
+
+  // ─── Mutations ────────────────────────────────────────────────────────────
   const rsvpMutation = useMutation({
     mutationFn: async ({ eventId, status }: { eventId: string; status: string }) => {
       const { error } = await supabase.from("event_rsvps").upsert(
@@ -322,9 +362,8 @@ const Agenda = () => {
           const isPaid = event.price > 0;
           const isRegistered = event.event_registrations?.some((r: any) => r.user_id === user?.id);
           const hasCheckedIn = event.event_checkins?.some((c: any) => c.user_id === user?.id);
-
-          // ── FIX 2: usar managedGroupIds do hook já chamado no topo, não useAuth() no JSX ──
           const canManageEvent = isAdmin || (isGerente && event.group_id && managedGroupIds.includes(event.group_id));
+          const isSendingNotify = notifyingEventId === event.id;
 
           return (
             <Card key={event.id} className={`neo-shadow-sm border-0 overflow-hidden ${isComplex ? "ring-1 ring-primary/20" : ""}`}>
@@ -447,6 +486,26 @@ const Agenda = () => {
                         </Button>
                       )
                     )}
+
+                    {/* ── Botão WhatsApp Aviso — visível apenas para admin/gerente ── */}
+                    {canManageEvent && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={isSendingNotify}
+                        onClick={() => handleNotifyWhatsApp(event)}
+                        className="gap-1.5 border-green-400 text-green-600 hover:bg-green-50 dark:hover:bg-green-950/30 hover:border-green-500"
+                        title={`Avisar via WhatsApp (${event.is_general ? "Geral" : event.groups?.name || "Grupo"})`}
+                      >
+                        {isSendingNotify ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <WhatsAppIcon className="h-4 w-4" />
+                        )}
+                        {isSendingNotify ? "Enviando..." : "Avisar"}
+                      </Button>
+                    )}
+
                     <Button size="sm" variant="outline" onClick={() => setSharingEvent(event)} className="gap-1">
                       <Share2 className="h-4 w-4" /> Compartilhar
                     </Button>
@@ -652,7 +711,6 @@ const Agenda = () => {
                 </div>
               )}
 
-              {/* Tornar público — visível para eventos de grupo também */}
               <div className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all duration-200 ${isPublic ? "bg-blue-500/10 border-blue-500/40" : "bg-muted/20 border-border"}`}>
                 <div className="flex items-center gap-3">
                   <div className={`p-2 rounded-xl transition-colors ${isPublic ? "bg-blue-500/20 text-blue-600" : "bg-muted text-muted-foreground"}`}>
@@ -801,7 +859,7 @@ const Agenda = () => {
   );
 };
 
-/* ─── Sub-components ─────────────────────────────────────────────────────── */
+/* ─── Sub-components (sem alterações) ───────────────────────────────────────── */
 
 const RsvpList = ({ event }: { event: any }) => {
   const { data: usersData, isLoading } = useQuery({
@@ -940,7 +998,6 @@ const RegistrationList = ({ event }: { event: any }) => {
         .from("event_registrations").select("*").eq("event_id", event.id);
       if (!data) return [];
 
-      // ── FIX 3: checkinSet calculado aqui dentro do sub-componente ──
       let checkinSet = new Set<string>();
       if (event.require_checkin) {
         const { data: checkins } = await supabase
@@ -974,7 +1031,6 @@ const RegistrationList = ({ event }: { event: any }) => {
     </div>
   );
 
-  // Resumo de check-ins calculado a partir dos dados já carregados
   const checkedInCount = registrations?.filter(r => r.checked_in).length || 0;
 
   return (

@@ -26,7 +26,7 @@ const ROUTINES = [
 
 const ROLE_TYPES = [
   { id: "gerente", label: "Gerente", description: "Líderes de departamento com acesso ampliado", color: "bg-emerald-500" },
-  { id: "moderador", label: "Moderador", description: "Apoio na gestão de atividades e conteúdo", color: "bg-blue-500" },
+  { id: "pastor", label: "Pastor", description: "Apoio pastoral e gestão de membros", color: "bg-blue-500" },
   { id: "membro", label: "Membro", description: "Acesso básico às rotinas habilitadas", color: "bg-slate-500" },
 ];
 

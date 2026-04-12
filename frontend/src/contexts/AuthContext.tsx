@@ -1,18 +1,7 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-// ─── ATENÇÃO ─────────────────────────────────────────────────────────────────
-// A VAPID_PUBLIC_KEY abaixo é um PLACEHOLDER. Para Web Push funcionar em
-// produção você precisa:
-//   1. Gerar um par de chaves VAPID real:
-//      npx web-push generate-vapid-keys
-//   2. Substituir VAPID_PUBLIC_KEY pela chave pública gerada.
-//   3. Criar uma Edge Function no Supabase (send-push) que use a chave
-//      privada para assinar e enviar para FCM/APNs.
-//      Exemplo de Edge Function incluído em: supabase/functions/send-push/index.ts.
-// o arquivo se chamará SendPush.ts e vai no caminho seguinte caminho:
-// ─────────────────────────────────────────────────────────────────────────────
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || "";
 
 interface AuthContextType {
@@ -51,9 +40,6 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
-// ─── Utilitário: App Badging API ─────────────────────────────────────────────
-// Mostra um número no ícone do app na tela inicial (Android instalado, desktop
-// Chrome/Edge). Falha silenciosamente em plataformas sem suporte (iOS < 16.4).
 const setAppBadge = (count: number) => {
   if (!("setAppBadge" in navigator)) return;
   if (count > 0) {
@@ -63,9 +49,6 @@ const setAppBadge = (count: number) => {
   }
 };
 
-// ─── Utilitário: urlBase64ToUint8Array ───────────────────────────────────────
-// Converte a chave VAPID pública (Base64 URL-safe) para o formato que o browser
-// espera no pushManager.subscribe.
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
@@ -86,6 +69,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<AuthContextType["profile"]>(null);
   const [routinePermissions, setRoutinePermissions] = useState<Record<string, boolean>>({});
   const [unreadAnnouncements, setUnreadAnnouncements] = useState(0);
+
+  // ─── Ref para o timer de inatividade (evita stale closure) ────────────────
+  const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Ref para signOut para evitar stale closure no timer
+  const signOutRef = useRef<() => Promise<void>>(async () => {});
 
   // ─── Som de notificação ────────────────────────────────────────────────────
   const playNotificationSound = () => {
@@ -144,7 +132,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUserGroupIds([]);
         setRoutinePermissions({});
         setUnreadAnnouncements(0);
-        setAppBadge(0); // Limpa o badge ao deslogar
+        setAppBadge(0);
         setLoading(false);
       }
     });
@@ -189,7 +177,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       const rolesList = roles?.map((r: any) => r.role) || [];
       const hasAdminCCM = rolesList.includes("admin_ccm");
-      const hasAdmin = rolesList.includes("admin") || hasAdminCCM;
+      const hasAdmin = rolesList.includes("admin") || rolesList.includes("pastor") || hasAdminCCM;
       const hasGerente = rolesList.includes("gerente");
       const hasVisitante = rolesList.includes("visitante");
 
@@ -261,8 +249,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         const unread = count || 0;
         setUnreadAnnouncements(unread);
-
-        // ── App Badging API: atualiza o ícone na tela inicial ──────────────
         setAppBadge(unread);
       } catch (_) {}
     };
@@ -277,13 +263,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         { event: "*", schema: "public", table: "announcements" },
         (payload) => {
           const newNotice = payload.new as any;
-
           if (payload.eventType === "INSERT" && newNotice.created_by !== user.id) {
             playNotificationSound();
             window.dispatchEvent(new CustomEvent("new-announcement", { detail: newNotice }));
           }
-
-          // Recalcula contagem e badge em qualquer mudança
           checkAnnouncements();
         }
       )
@@ -301,54 +284,51 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user, loading]);
 
-  // ─── Effect: Auto Logout por inatividade ───────────────────────────────────
+  // ─── Effect: Auto Logout por inatividade ─────────────────────────────────
+  // FIX: usa setTimeout em vez de setInterval + checkInactivity imediata.
+  // Isso evita que uma sessão anterior no localStorage cause logout imediato
+  // ao montar o componente. O timestamp é sempre renovado no login.
   useEffect(() => {
     if (!user) return;
-    
-    // Tempo máximo de inatividade: 60 minutos
-    const INACTIVITY_TIMEOUT_MS = 60 * 60 * 1000; 
 
-    const checkInactivity = () => {
-      const lastActivity = localStorage.getItem("last_active_time");
-      if (lastActivity) {
-        const inactiveTime = Date.now() - parseInt(lastActivity, 10);
-        if (inactiveTime > INACTIVITY_TIMEOUT_MS) {
-          console.warn("Sessão expirada por inatividade.");
-          signOut();
-        }
-      }
+    // Tempo máximo de inatividade: 60 minutos
+    const INACTIVITY_TIMEOUT_MS = 60 * 60 * 1000;
+
+    // Ao logar (user muda de null → valor), renova o timestamp imediatamente.
+    // Isso garante que uma sessão anterior no storage não dispare o logout.
+    localStorage.setItem("last_active_time", Date.now().toString());
+
+    const resetTimer = () => {
+      if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+      inactivityTimerRef.current = setTimeout(() => {
+        console.warn("Sessão expirada por inatividade.");
+        signOutRef.current();
+      }, INACTIVITY_TIMEOUT_MS);
     };
+
+    // Inicia o timer
+    resetTimer();
 
     const updateActivity = () => {
       localStorage.setItem("last_active_time", Date.now().toString());
+      resetTimer(); // Reinicia o countdown a cada interação
     };
 
-    // Verifica logo na inicialização
-    checkInactivity();
-
-    // Inicializa a marca de tempo se não tiver
-    if (!localStorage.getItem("last_active_time")) {
-      updateActivity();
-    }
-
-    const intervalId = setInterval(checkInactivity, 60000); // 1 minuto de intervalo
-    
     window.addEventListener("mousedown", updateActivity, { passive: true });
     window.addEventListener("keydown", updateActivity, { passive: true });
     window.addEventListener("touchstart", updateActivity, { passive: true });
     window.addEventListener("scroll", updateActivity, { passive: true });
 
     return () => {
-      clearInterval(intervalId);
+      if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
       window.removeEventListener("mousedown", updateActivity);
       window.removeEventListener("keydown", updateActivity);
       window.removeEventListener("touchstart", updateActivity);
       window.removeEventListener("scroll", updateActivity);
     };
-  }, [user]);
+  }, [user]); // Só roda quando user muda (login/logout)
 
   const subscribeToPush = async (userId: string) => {
-    // Sem a chave VAPID real, não adianta tentar se inscrever.
     if (!VAPID_PUBLIC_KEY) {
       console.warn(
         "VITE_VAPID_PUBLIC_KEY não definida. Web Push desabilitado. " +
@@ -361,11 +341,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
 
       const registration = await navigator.serviceWorker.ready;
-
       let subscription = await registration.pushManager.getSubscription();
 
       if (!subscription) {
-        // Pede permissão e cria a inscrição com a chave VAPID real
         subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
@@ -373,7 +351,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (subscription) {
-        // Salva no Supabase para a Edge Function usar ao enviar pushes
         await (supabase as any)
           .from("user_push_subscriptions")
           .upsert(
@@ -387,7 +364,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.log("Push subscription salva com sucesso.");
       }
     } catch (err) {
-      // Falha silenciosa — não quebra o app se o usuário negou permissão
       console.warn("Push subscription falhou:", err);
     }
   };
@@ -395,10 +371,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // ─── signOut ──────────────────────────────────────────────────────────────
   const signOut = async () => {
     console.log("[AuthContext] Saindo...");
+    if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+    localStorage.removeItem("last_active_time");
     localStorage.removeItem("debug_admin");
-    setAppBadge(0); // Limpa badge ao sair
+    setAppBadge(0);
     await supabase.auth.signOut();
   };
+
+  // Mantém o ref sempre atualizado para o timer poder chamar sem stale closure
+  useEffect(() => {
+    signOutRef.current = signOut;
+  });
 
   // ─── refreshProfile ───────────────────────────────────────────────────────
   const refreshProfile = async () => {

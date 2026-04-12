@@ -160,7 +160,7 @@ const Members = () => {
       } as any).eq("user_id", newUserId);
       if (profileError) throw profileError;
 
-      // 3. Salva a role selecionada (Membro, Gerente, Moderador ou Admin)
+      // 3. Salva a role selecionada (Membro, Gerente, Pastor ou Admin)
       await (supabase as any).from("user_roles").upsert({
         user_id: newUserId,
         role: editRole as any
@@ -361,6 +361,11 @@ const Members = () => {
                   ) : member.roles?.some((r: any) => r.role === "admin") ? (
                     <Badge variant="default" className="uppercase text-[9px] px-2 font-black">Admin</Badge>
                   ) : null}
+                  {member.roles?.some((r: any) => r.role === "pastor") && (
+                    <Badge variant="default" className="bg-indigo-600 text-white hover:bg-indigo-700 uppercase text-[9px] px-2 font-black">
+                      Pastor
+                    </Badge>
+                  )}
                   {member.roles?.some((r: any) => r.role === "gerente") && (
                     <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 uppercase text-[9px] font-black">
                       Gerente
@@ -464,6 +469,7 @@ const Members = () => {
                   <SelectContent>
                     <SelectItem value="membro">Membro</SelectItem>
                     <SelectItem value="gerente">Líder (Gerente)</SelectItem>
+                    <SelectItem value="pastor">Pastor</SelectItem>
                     <SelectItem value="admin">Administrador</SelectItem>
                     {isAdminCCM && (
                       <SelectItem value="admin_ccm">Administrador CCM (Gestor Master)</SelectItem>
@@ -522,7 +528,7 @@ const Members = () => {
                   <SelectContent>
                     <SelectItem value="membro">Membro</SelectItem>
                     <SelectItem value="gerente">Líder (Gerente)</SelectItem>
-                    <SelectItem value="moderador">Moderador</SelectItem>
+                    <SelectItem value="pastor">Pastor</SelectItem>
                     <SelectItem value="admin">Administrador</SelectItem>
                     {isAdminCCM && (
                       <SelectItem value="admin_ccm">Administrador CCM (Gestor Master)</SelectItem>

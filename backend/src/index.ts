@@ -16,6 +16,7 @@ import whatsappRouter from "./routes/whatsapp";
 import dispatchesRouter from "./routes/dispatches";
 import { startScheduler } from "./scheduler";
 import { tryAutoConnect } from "./whatsapp/client";
+import eventDispatchRouter from "./routes/eventDispatch";
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -32,6 +33,7 @@ app.use("/api/uploads", express.static(path.join(process.cwd(), "uploads")));
 // Rotas
 app.use("/api/whatsapp", whatsappRouter);
 app.use("/api/dispatches", dispatchesRouter);
+app.use("/api/events", eventDispatchRouter);
 
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true, ts: new Date().toISOString() });
