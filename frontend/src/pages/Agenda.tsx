@@ -18,6 +18,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { logAudit } from "@/lib/auditLogger";
 import QRScanner from "@/components/QRScanner";
 import { ShareEventDialog } from "@/components/ShareEventDialog";
+import { EventNotifyDialog } from "@/components/EventNotifyDialog";
 
 // ─── WhatsApp Icon SVG ────────────────────────────────────────────────────────
 const WhatsAppIcon = ({ className }: { className?: string }) => (
@@ -70,7 +71,7 @@ const Agenda = () => {
   const [scanningEvent, setScanningEvent] = useState<any>(null);
 
   // WhatsApp notify state
-  const [notifyingEventId, setNotifyingEventId] = useState<string | null>(null);
+  const [notifyingEvent, setNotifyingEvent] = useState<any>(null);
 
   // Form state
   const [title, setTitle] = useState("");
@@ -137,31 +138,8 @@ const Agenda = () => {
   const showFilters = isAdmin || (groups && groups.length > 1);
 
   // ─── WhatsApp notify ──────────────────────────────────────────────────────
-  const handleNotifyWhatsApp = async (event: any) => {
-    setNotifyingEventId(event.id);
-    try {
-      const res = await fetch(`${WA_API}/api/events/${event.id}/notify`, { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) {
-        if (data.needsConnection) {
-          toast({
-            title: "WhatsApp desconectado",
-            description: "Conecte o WhatsApp no painel de Disparos antes de enviar avisos.",
-            variant: "destructive",
-          });
-          return;
-        }
-        throw new Error(data.error || "Erro ao enviar aviso");
-      }
-      toast({
-        title: "✅ Aviso enviado!",
-        description: `${data.sent} de ${data.total} destinatário(s) notificados via WhatsApp.`,
-      });
-    } catch (err: any) {
-      toast({ title: "Erro ao enviar aviso", description: err.message, variant: "destructive" });
-    } finally {
-      setNotifyingEventId(null);
-    }
+  const handleNotifyWhatsApp = (event: any) => {
+    setNotifyingEvent(event);
   };
 
   // ─── Mutations ────────────────────────────────────────────────────────────
@@ -363,7 +341,7 @@ const Agenda = () => {
           const isRegistered = event.event_registrations?.some((r: any) => r.user_id === user?.id);
           const hasCheckedIn = event.event_checkins?.some((c: any) => c.user_id === user?.id);
           const canManageEvent = isAdmin || (isGerente && event.group_id && managedGroupIds.includes(event.group_id));
-          const isSendingNotify = notifyingEventId === event.id;
+          const isSendingNotify = notifyingEvent?.id === event.id;
 
           return (
             <Card key={event.id} className={`neo-shadow-sm border-0 overflow-hidden ${isComplex ? "ring-1 ring-primary/20" : ""}`}>
@@ -546,6 +524,13 @@ const Agenda = () => {
         open={!!sharingEvent}
         onClose={() => setSharingEvent(null)}
         landingPageUrl={undefined}
+      />
+
+      {/* WhatsApp Notify Dialog */}
+      <EventNotifyDialog 
+        event={notifyingEvent}
+        open={!!notifyingEvent}
+        onClose={() => setNotifyingEvent(null)}
       />
 
       {/* Create/Edit Dialog */}

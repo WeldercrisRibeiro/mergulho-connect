@@ -463,6 +463,9 @@ const AdminTesouraria = ({ pixKey, user }: { pixKey: string; user: any }) => {
     },
   });
 
+  //para deixar somente tesouraria, sem relatório de culto que já existe em outro luugar 
+  // você vai comentar essas linhas seguintes: 
+
   // Computed stats
   const totalTithes = allEntries?.filter(e => e.payment_type === "dizimo").reduce((s, e) => s + e.amount, 0) || 0;
   const totalOfferings = allEntries?.filter(e => e.payment_type === "oferta").reduce((s, e) => s + e.amount, 0) || 0;
@@ -510,9 +513,9 @@ const AdminTesouraria = ({ pixKey, user }: { pixKey: string; user: any }) => {
           <TabsTrigger value="entradas" className="flex-1 rounded-xl gap-2 py-2 text-xs">
             <DollarSign className="h-3.5 w-3.5" /> Entradas
           </TabsTrigger>
-          <TabsTrigger value="relatorio" className="flex-1 rounded-xl gap-2 py-2 text-xs">
+          {/*<TabsTrigger value="relatorio" className="flex-1 rounded-xl gap-2 py-2 text-xs">
             <ClipboardList className="h-3.5 w-3.5" /> Relatórios de Culto
-          </TabsTrigger>
+          </TabsTrigger>*/}
         </TabsList>
 
         {/* ── Entradas Tab ─────────────────────────────────────────────── */}
