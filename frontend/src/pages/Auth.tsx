@@ -392,7 +392,7 @@ const Auth = () => {
                   {loading ? "Aguarde..." : "Entrar na Comunidade"}
                 </Button>
 
-                <Button
+                {/*<Button
                   type="button"
                   variant="outline"
                   onClick={() => {
@@ -402,7 +402,7 @@ const Auth = () => {
                   className="w-full h-12 border-dashed border-rose-500/50 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-xl"
                 >
                   Acesso de Emergência (CCM)
-                </Button>
+                </Button> */}
                 <div className="mt-8 text-center text-sm">
                   <button type="button" onClick={() => setIsRequesting(true)} className="text-muted-foreground hover:text-primary transition-colors font-medium border-b border-transparent hover:border-primary pb-0.5">
                     Não tem acesso? Solicite aos Administradores
