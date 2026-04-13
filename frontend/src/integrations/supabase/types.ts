@@ -22,6 +22,7 @@ export type Database = {
           group_id: string | null
           id: string
           priority: string | null
+          send_whatsapp: boolean | null
           target_group_id: string | null
           target_user_id: string | null
           title: string
@@ -34,6 +35,7 @@ export type Database = {
           group_id?: string | null
           id?: string
           priority?: string | null
+          send_whatsapp?: boolean | null
           target_group_id?: string | null
           target_user_id?: string | null
           title: string
@@ -46,6 +48,7 @@ export type Database = {
           group_id?: string | null
           id?: string
           priority?: string | null
+          send_whatsapp?: boolean | null
           target_group_id?: string | null
           target_user_id?: string | null
           title?: string
@@ -327,6 +330,7 @@ export type Database = {
           pix_key: string | null
           pix_qrcode_url: string | null
           price: number | null
+          send_whatsapp: boolean | null
           speakers: string | null
           title: string
           updated_at: string
@@ -346,6 +350,7 @@ export type Database = {
           pix_key?: string | null
           pix_qrcode_url?: string | null
           price?: number | null
+          send_whatsapp?: boolean | null
           speakers?: string | null
           title: string
           updated_at?: string
@@ -365,6 +370,7 @@ export type Database = {
           pix_key?: string | null
           pix_qrcode_url?: string | null
           price?: number | null
+          send_whatsapp?: boolean | null
           speakers?: string | null
           title?: string
           updated_at?: string
@@ -401,15 +407,7 @@ export type Database = {
           routine_key?: string
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "group_routines_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "groups"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       groups: {
         Row: {
@@ -683,6 +681,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_push_subscriptions: {
+        Row: {
+          created_at: string | null
+          device_info: Json | null
+          id: string
+          subscription: Json
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          device_info?: Json | null
+          id?: string
+          subscription: Json
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          device_info?: Json | null
+          id?: string
+          subscription?: Json
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -707,6 +732,7 @@ export type Database = {
           created_by: string | null
           group_id: string | null
           id: string
+          item_user_id: string | null
           role_function: string
           schedule_date: string
           updated_at: string
@@ -717,6 +743,7 @@ export type Database = {
           created_by?: string | null
           group_id?: string | null
           id?: string
+          item_user_id?: string | null
           role_function: string
           schedule_date: string
           updated_at?: string
@@ -727,6 +754,7 @@ export type Database = {
           created_by?: string | null
           group_id?: string | null
           id?: string
+          item_user_id?: string | null
           role_function?: string
           schedule_date?: string
           updated_at?: string
@@ -739,6 +767,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "groups"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "volunteer_schedules_item_user_id_fkey"
+            columns: ["item_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "volunteer_schedules_volunteer_id_fkey"
@@ -782,6 +817,124 @@ export type Database = {
           phone?: string | null
           status?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      wz_dispatch_attachments: {
+        Row: {
+          dispatch_id: string
+          filename: string
+          filepath: string
+          id: string
+          mimetype: string
+          type: string
+        }
+        Insert: {
+          dispatch_id: string
+          filename: string
+          filepath: string
+          id: string
+          mimetype: string
+          type: string
+        }
+        Update: {
+          dispatch_id?: string
+          filename?: string
+          filepath?: string
+          id?: string
+          mimetype?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wz_dispatch_attachments_dispatch_id_fkey"
+            columns: ["dispatch_id"]
+            isOneToOne: false
+            referencedRelation: "wz_dispatches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wz_dispatch_logs: {
+        Row: {
+          created_at: string
+          dispatch_id: string
+          error: string | null
+          id: string
+          recipient: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          dispatch_id: string
+          error?: string | null
+          id: string
+          recipient: string
+          status: string
+        }
+        Update: {
+          created_at?: string
+          dispatch_id?: string
+          error?: string | null
+          id?: string
+          recipient?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wz_dispatch_logs_dispatch_id_fkey"
+            columns: ["dispatch_id"]
+            isOneToOne: false
+            referencedRelation: "wz_dispatches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wz_dispatches: {
+        Row: {
+          content: string | null
+          created_at: string
+          created_by: string | null
+          error_message: string | null
+          id: string
+          priority: string
+          scheduled_at: string
+          sent_at: string | null
+          status: string
+          target_group_id: string | null
+          target_user_id: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          id: string
+          priority?: string
+          scheduled_at: string
+          sent_at?: string | null
+          status?: string
+          target_group_id?: string | null
+          target_user_id?: string | null
+          title: string
+          type: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          priority?: string
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: string
+          target_group_id?: string | null
+          target_user_id?: string | null
+          title?: string
+          type?: string
         }
         Relationships: []
       }
