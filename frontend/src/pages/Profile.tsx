@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { User, LogOut, Save, Camera, Loader2, Sun, Moon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { normalizePhoneForDB, formatPhoneForDisplay } from "@/lib/phoneUtils";
+import { getErrorMessage } from "@/lib/errorMessages";
 
 const Profile = () => {
   const { user, profile, signOut, isAdmin, isGerente, isVisitor, refreshProfile } = useAuth();
@@ -31,7 +33,7 @@ const Profile = () => {
   useEffect(() => {
     if (profile) {
       setFullName(profile.full_name || "");
-      setWhatsapp(profile.whatsapp_phone || "");
+      setWhatsapp(formatPhoneForDisplay(profile.whatsapp_phone || ""));
       
       const isPhoneLike = /^\d{8,}$/.test(profile.username || "");
       const emailPrefix = user?.email?.split('@')[0] || "";
@@ -99,7 +101,7 @@ const Profile = () => {
       await refreshProfile();
       toast({ title: "Foto atualizada com sucesso!" });
     } catch (err: any) {
-      toast({ title: "Erro ao enviar foto", description: err.message, variant: "destructive" });
+      toast({ title: "Erro ao enviar foto", description: getErrorMessage(err), variant: "destructive" });
     } finally {
       setUploadingPhoto(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -115,7 +117,7 @@ const Profile = () => {
         .from("profiles")
         .update({ 
           full_name: fullName, 
-          whatsapp_phone: whatsapp,
+          whatsapp_phone: normalizePhoneForDB(whatsapp),
           username: cleanUsername
         })
         .eq("user_id", user!.id);
@@ -127,7 +129,7 @@ const Profile = () => {
       toast({ title: "Perfil atualizado!" });
     },
     onError: (err: any) => {
-      toast({ title: "Erro ao salvar", description: err.message, variant: "destructive" });
+      toast({ title: "Erro ao salvar", description: getErrorMessage(err), variant: "destructive" });
     }
   });
 
@@ -141,7 +143,7 @@ const Profile = () => {
       toast({ title: "Senha atualizada com sucesso!" });
     },
     onError: (err: any) => {
-      toast({ title: "Erro ao atualizar senha", description: err.message, variant: "destructive" });
+      toast({ title: "Erro ao atualizar senha", description: getErrorMessage(err), variant: "destructive" });
     }
   });
 

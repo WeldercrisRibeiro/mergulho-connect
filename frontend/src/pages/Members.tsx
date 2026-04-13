@@ -15,6 +15,8 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 import { Users, Search, Phone, Edit2, Trash2, Plus, CheckCircle, Key, Monitor, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { normalizePhoneForDB, formatPhoneForDisplay } from "@/lib/phoneUtils";
+import { getErrorMessage } from "@/lib/errorMessages";
 
 const Members = () => {
   const [search, setSearch] = useState("");
@@ -79,7 +81,7 @@ const Members = () => {
     setEditingMember(m);
     setEditName(m.full_name || "");
     setEditUsername(m.username || "");
-    setEditPhone(m.whatsapp_phone || "");
+    setEditPhone(formatPhoneForDisplay(m.whatsapp_phone || ""));
     setEditRole(m.roles?.[0]?.role || "membro");
     setSelectedGroups(m.group_ids || []);
     setRemovePhoto(false);
@@ -93,31 +95,46 @@ const Members = () => {
       const cleanUsername = (editUsername || "").trim().toLowerCase().replace("@ccmergulho.com", "").replace(/\s+/g, ".") || phoneDigits;
       const email = cleanUsername + "@ccmergulho.com";
 
-      // 1. Sincroniza com Auth via RPC sem trocar a senha atual
+      // 1. Sincroniza email e metadados com Auth via RPC.
+      // IMPORTANTE: NÃO passar o campo 'password' para evitar reset acidental da senha.
+      // A função SQL admin_manage_user mantém a senha atual quando password é omitido.
       const { error: rpcErr } = await supabase.rpc("admin_manage_user" as any, {
         email,
-        password: null,
-        raw_user_meta_data: { full_name: editName, whatsapp_phone: editPhone, username: cleanUsername },
+        raw_user_meta_data: { full_name: editName, whatsapp_phone: normalizePhoneForDB(editPhone), username: cleanUsername },
         target_user_id: editingMember.user_id
       });
-      if (rpcErr) throw rpcErr;
+      if (rpcErr) {
+        // Loga o erro completo para diagnóstico
+        console.error("[Members] RPC admin_manage_user falhou:", rpcErr);
+        throw new Error(rpcErr.message || "Erro ao sincronizar dados de autenticação");
+      }
 
-      // 2. Atualiza perfil local (incluindo username para busca/exibição)
-      const { error: profErr } = await supabase.from("profiles").update({
-        full_name: editName,
-        whatsapp_phone: editPhone,
-        username: cleanUsername
-      } as any).eq("user_id", editingMember.user_id);
+      // 2. Atualiza perfil local (tabela profiles)
+      const { error: profErr, count } = await (supabase as any)
+        .from("profiles")
+        .update({
+          full_name: editName,
+          whatsapp_phone: normalizePhoneForDB(editPhone),
+          username: cleanUsername
+        })
+        .eq("user_id", editingMember.user_id)
+        .select();
 
-      if (profErr) throw profErr;
+      if (profErr) {
+        console.error("[Members] UPDATE profiles falhou:", profErr);
+        throw new Error(profErr.message || "Erro ao atualizar perfil");
+      }
 
-      // 3. Atualiza Role de forma robusta (Upsert para evitar duplicatas ou conflitos)
+      // 3. Atualiza Role (Upsert para evitar duplicatas)
       const { error: roleErr } = await (supabase as any).from("user_roles").upsert({
         user_id: editingMember.user_id,
         role: editRole as any
       }, { onConflict: "user_id" });
 
-      if (roleErr) throw roleErr;
+      if (roleErr) {
+        console.error("[Members] Upsert user_roles falhou:", roleErr);
+        throw new Error(roleErr.message || "Erro ao atualizar permissão");
+      }
 
       // 4. Atualiza departamentos com cargos
       await supabase.from("member_groups").delete().eq("user_id", editingMember.user_id);
@@ -127,16 +144,18 @@ const Members = () => {
           group_id: g.id,
           role: g.role || "member"
         }));
-        await supabase.from("member_groups").insert(inserts as any);
+        const { error: groupErr } = await supabase.from("member_groups").insert(inserts as any);
+        if (groupErr) console.warn("[Members] Insert member_groups parcialmente falhou:", groupErr);
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["members"] });
       setEditingMember(null);
-      toast({ title: "Membro atualizado!", description: "Dados e acesso sincronizados." });
+      toast({ title: "Membro atualizado!", description: "Dados e acesso sincronizados com sucesso." });
     },
     onError: (err: any) => {
-      toast({ title: "Erro ao atualizar", description: err.message, variant: "destructive" });
+      console.error("[Members] updateMutation erro final:", err);
+      toast({ title: "Erro ao atualizar membro", description: getErrorMessage(err), variant: "destructive" });
     }
   });
 
@@ -148,7 +167,7 @@ const Members = () => {
       const { data, error } = await supabase.rpc("admin_manage_user" as any, {
         email,
         password: "123456",
-        raw_user_meta_data: { full_name: editName, whatsapp_phone: editPhone, username: cleanUsername }
+        raw_user_meta_data: { full_name: editName, whatsapp_phone: normalizePhoneForDB(editPhone), username: cleanUsername }
       });
       if (error) throw error;
       const newUserId = data as any as string;
@@ -156,7 +175,7 @@ const Members = () => {
       const { error: profileError } = await supabase.from("profiles").update({
         username: cleanUsername,
         full_name: editName,
-        whatsapp_phone: editPhone
+        whatsapp_phone: normalizePhoneForDB(editPhone)
       } as any).eq("user_id", newUserId);
       if (profileError) throw profileError;
 
@@ -181,7 +200,7 @@ const Members = () => {
       toast({ title: "Membro criado!", description: `Usuário (Login): ${editUsername} | Senha: 123456` });
     },
     onError: (err: any) => {
-      toast({ title: "Erro ao criar", description: err.message, variant: "destructive" });
+      toast({ title: "Erro ao criar", description: getErrorMessage(err), variant: "destructive" });
     }
   });
 
@@ -199,7 +218,7 @@ const Members = () => {
       toast({ title: "Membro removido definitivamente!" });
     },
     onError: (err: any) => {
-      toast({ title: "Erro ao excluir", description: err.message, variant: "destructive" });
+      toast({ title: "Erro ao excluir", description: getErrorMessage(err), variant: "destructive" });
     }
   });
 
@@ -220,7 +239,7 @@ const Members = () => {
       });
     },
     onError: (err: any) => {
-      toast({ title: "Erro ao resetar senha", description: err.message, variant: "destructive" });
+      toast({ title: "Erro ao resetar senha", description: getErrorMessage(err), variant: "destructive" });
     }
   });
 
@@ -340,7 +359,7 @@ const Members = () => {
                   {member.whatsapp_phone && (
                     <div className="flex items-center gap-1 bg-background/50 px-2 py-0.5 rounded-lg border border-border/10">
                       <Phone className="h-2.5 w-2.5" />
-                      <span>{member.whatsapp_phone}</span>
+                      <span>{formatPhoneForDisplay(member.whatsapp_phone || "")}</span>
                     </div>
                   )}
                   {(member.username || member.full_name) && (

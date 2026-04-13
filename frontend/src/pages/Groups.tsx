@@ -14,6 +14,7 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 import { Shield, Plus, Edit2, Trash2, Users, Camera, Upload } from "lucide-react";
 import { useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { getErrorMessage } from "@/lib/errorMessages";
 
 const Groups = () => {
   const { isAdmin } = useAuth();
@@ -82,7 +83,7 @@ const Groups = () => {
       setCreatingGroup(false);
       toast({ title: editingGroup ? "Grupo atualizado!" : "Grupo criado!" });
     },
-    onError: (err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" }),
+    onError: (err: any) => toast({ title: "Erro", description: getErrorMessage(err), variant: "destructive" }),
   });
 
   const saveMembersMutation = useMutation({
@@ -100,7 +101,7 @@ const Groups = () => {
       setManagingGroup(null);
       toast({ title: "Membros do grupo atualizados!" });
     },
-    onError: (err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" }),
+    onError: (err: any) => toast({ title: "Erro", description: getErrorMessage(err), variant: "destructive" }),
   });
 
   const handleIconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -122,7 +123,7 @@ const Groups = () => {
       setGroupIcon(urlData.publicUrl);
       toast({ title: "Foto selecionada!", description: "Clique em Salvar para confirmar." });
     } catch (err: any) {
-      toast({ title: "Erro no upload", description: err.message, variant: "destructive" });
+      toast({ title: "Erro no upload", description: getErrorMessage(err), variant: "destructive" });
     } finally {
       setUploading(false);
     }

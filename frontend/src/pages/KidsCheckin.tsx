@@ -18,6 +18,7 @@ import { safeFormatTime } from "@/lib/dateUtils";
 import { cn } from "@/lib/utils";
 import { logAudit } from "@/lib/auditLogger";
 import QRScanner from "@/components/QRScanner";
+import { getErrorMessage } from "@/lib/errorMessages";
 
 const KidsCheckin = () => {
   const { user, isAdmin, isGerente } = useAuth();
@@ -138,7 +139,7 @@ const KidsCheckin = () => {
         logAudit("create", "validacao", { childName, category, eventId: selectedEventId });
       }, 100);
     },
-    onError: (err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" })
+    onError: (err: any) => toast({ title: "Erro", description: getErrorMessage(err), variant: "destructive" })
   });
 
   const callGuardianMutation = useMutation({
@@ -176,7 +177,7 @@ const KidsCheckin = () => {
       toast({ title: "Chamada iniciada!", description: "Tela atualizada e mensagem de WhatsApp agendada na fila." });
     },
     onError: (err: any) => {
-      toast({ title: "Falha na chamada", description: err.message, variant: "destructive" });
+      toast({ title: "Falha na chamada", description: getErrorMessage(err), variant: "destructive" });
     }
   });
 
@@ -484,7 +485,10 @@ const KidsCheckin = () => {
 
       {/* modal de Chamar Responsável */}
       <Dialog open={!!callingItem} onOpenChange={(val) => { if (!val) setCallingItem(null); }}>
-        <DialogContent className="sm:max-w-[500px] rounded-3xl border-0 shadow-2xl">
+        <DialogContent 
+          className="sm:max-w-[500px] rounded-3xl border-0 shadow-2xl"
+          onInteractOutside={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle className="text-xl font-bold flex items-center gap-2">
               <Phone className="h-5 w-5 text-amber-500" />
@@ -521,7 +525,10 @@ const KidsCheckin = () => {
       
       {/* modal de Confirmação de Retirada */}
       <Dialog open={!!retrievalItem} onOpenChange={(val) => { if (!val) setRetrievalItem(null); }}>
-        <DialogContent className="sm:max-w-[450px] rounded-3xl border-0 shadow-2xl">
+        <DialogContent 
+          className="sm:max-w-[450px] rounded-3xl border-0 shadow-2xl"
+          onInteractOutside={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle className="text-xl font-bold flex items-center gap-2">
               <ShieldCheck className="h-5 w-5 text-emerald-500" />
@@ -539,11 +546,18 @@ const KidsCheckin = () => {
               <Label className="text-xs font-bold uppercase text-muted-foreground">Token de Segurança (6 dígitos)</Label>
               <div className="flex gap-2">
                 <Input 
+                  autoFocus
                   placeholder="123456"
                   maxLength={6}
                   value={retrievalToken}
-                  onChange={(e) => setRetrievalToken(e.target.value.replace(/\D/g, ""))}
-                  className="text-center text-2xl font-black h-14 tracking-widest rounded-xl"
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, "");
+                    setRetrievalToken(val);
+                    if (val.length === 6) {
+                      setTimeout(() => handleValidateToken(val), 100);
+                    }
+                  }}
+                  className="text-center text-3xl font-black h-16 tracking-[0.5em] rounded-xl bg-background border-2 focus-visible:ring-emerald-500 transition-all"
                 />
               </div>
               <p className="text-[10px] text-muted-foreground text-center italic">

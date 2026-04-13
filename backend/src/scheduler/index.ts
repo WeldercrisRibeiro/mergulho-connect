@@ -14,7 +14,8 @@ async function getRecipientPhones(dispatch: {
 }): Promise<string[]> {
   const phones: string[] = [];
 
-  if (dispatch.type === "general") {
+  // "general" e "devotional" enviam para todos os membros com WhatsApp cadastrado
+  if (dispatch.type === "general" || dispatch.type === "devotional") {
     const { data } = await supabase
       .from("profiles")
       .select("whatsapp_phone")
@@ -141,7 +142,7 @@ async function sendDispatch(dispatch: any): Promise<void> {
     [];
 
   console.log(
-    `[Scheduler] Enviando "${dispatch.title}" para ${phones.length} destinatário(s). ` +
+    `[Scheduler] Enviando "${dispatch.title}" (tipo: ${dispatch.type}) para ${phones.length} destinatário(s). ` +
       `Texto: ${!!dispatch.content} | Anexos: ${attachments.length}`,
   );
 
@@ -265,17 +266,25 @@ function formatPhoneNumber(phone: string): string {
 
   let number = cleaned;
 
-  if (number.startsWith("55")) {
+  // Remove o prefixo 55 se presente
+  if (number.startsWith("55") && number.length >= 12) {
     number = number.slice(2);
   }
 
-  if (number.length !== 11) {
-    throw new Error("Número inválido. Esperado: DDD + 9 + número (11 dígitos)");
+  if (number.length === 10) {
+    // DDD + 8 dígitos — já no formato correto (novo padrão normalizado pelo frontend)
+    return `55${number}`;
   }
 
-  const ddd = number.slice(0, 2);
-  const rest = number.slice(3);
-  const withoutNine = ddd + rest;
+  if (number.length === 11) {
+    // DDD + 9 + 8 dígitos — formato legado, remove o nono dígito
+    const ddd = number.slice(0, 2);
+    const rest = number.slice(3); // pula o "9"
+    return `55${ddd}${rest}`;
+  }
 
-  return `55${withoutNine}`;
+  throw new Error(
+    `Número inválido (${number.length} dígitos após remover +55). ` +
+    "Esperado: DDD+8 ou DDD+9+8 dígitos."
+  );
 }

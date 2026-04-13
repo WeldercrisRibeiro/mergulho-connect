@@ -12,6 +12,7 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 import { FileSearch, Trash2, Filter, RefreshCw, Shield, Clock, User, Monitor, Activity } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { getErrorMessage } from "@/lib/errorMessages";
 
 const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   login: { label: "Login", color: "bg-blue-500" },
@@ -32,7 +33,7 @@ const AuditLogs = () => {
   const [deletingLog, setDeletingLog] = useState<any>(null);
   const [clearAllConfirm, setClearAllConfirm] = useState(false);
 
-  if (!isAdmin) return <Navigate to="/home" replace />;
+  if (!isAdminCCM) return <Navigate to="/home" replace />;
 
   const { data: logs, isLoading, refetch } = useQuery({
     queryKey: ["audit-logs", filterUser, filterRoutine, filterAction],
@@ -79,8 +80,10 @@ const AuditLogs = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
-      toast({ title: "Log removido." });
+      setDeletingLog(null);
+      toast({ title: "Registro removido." });
     },
+    onError: (err: any) => toast({ title: "Erro ao remover log", description: getErrorMessage(err), variant: "destructive" }),
   });
 
   const clearAllMutation = useMutation({
@@ -90,8 +93,10 @@ const AuditLogs = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
-      toast({ title: "Todos os logs foram limpos." });
+      setClearAllConfirm(false);
+      toast({ title: "Todos os registros foram limpos." });
     },
+    onError: (err: any) => toast({ title: "Erro ao limpar logs", description: getErrorMessage(err), variant: "destructive" }),
   });
 
   const uniqueRoutines = [...new Set((logs || []).map((l: any) => l.routine))].sort();
@@ -120,7 +125,7 @@ const AuditLogs = () => {
           <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-2">
             <RefreshCw className="h-4 w-4" /> Atualizar
           </Button>
-          {isAdmin && (
+          {isAdminCCM && (
             <Button variant="destructive" size="sm" onClick={() => setClearAllConfirm(true)} className="gap-2">
               <Trash2 className="h-4 w-4" /> Limpar Tudo
             </Button>
@@ -226,8 +231,11 @@ const AuditLogs = () => {
                           <span className="text-xs font-bold truncate">{log.user_name || log.user_email}</span>
                         </div>
                         {log.details && Object.keys(log.details).length > 0 && (
-                          <p className="text-[11px] text-muted-foreground mt-1 truncate">
-                            {JSON.stringify(log.details).substring(0, 100)}
+                          <p className="text-[11px] text-muted-foreground mt-1 font-mono bg-muted/40 rounded px-2 py-1 truncate max-w-md">
+                            {Object.entries(log.details)
+                              .map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : v}`)
+                              .join(" • ")
+                              .substring(0, 150)}
                           </p>
                         )}
                       </div>
@@ -245,7 +253,7 @@ const AuditLogs = () => {
                           </div>
                         )}
                       </div>
-                      {isAdmin && (
+                      {isAdminCCM && (
                         <Button
                           variant="ghost"
                           size="icon"

@@ -17,8 +17,10 @@ import { Shield, Plus, Users, Calendar, BookOpen, Trash2, Edit2, Key, Archive, U
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { normalizePhoneForDB, formatPhoneForDisplay } from "@/lib/phoneUtils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { getErrorMessage } from "@/lib/errorMessages";
 
 const Admin = () => {
   const { isAdmin, user } = useAuth();
@@ -121,7 +123,7 @@ const AdminGroups = () => {
       queryClient.invalidateQueries({ queryKey: ["admin-groups"] });
       toast({ title: "Ícone atualizado!" });
     } catch (err: any) {
-      toast({ title: "Erro no upload", description: err.message, variant: "destructive" });
+      toast({ title: "Erro no upload", description: getErrorMessage(err), variant: "destructive" });
     } finally {
       setUploadingId(null);
       setActiveGroupForUpload(null);
@@ -252,7 +254,7 @@ const AdminEvents = () => {
       toast({ title: editingEvent ? "Evento atualizado!" : "Evento criado!" });
     },
     onError: (err: any) => {
-      toast({ title: "Erro", description: err.message, variant: "destructive" });
+      toast({ title: "Erro", description: getErrorMessage(err), variant: "destructive" });
     }
   });
 
@@ -440,7 +442,7 @@ const AdminDevotionals = () => {
       toast({ title: editingDev ? "Devocional atualizado!" : "Devocional criado!" });
     },
     onError: (err: any) => {
-      toast({ title: "Erro", description: err.message, variant: "destructive" });
+      toast({ title: "Erro", description: getErrorMessage(err), variant: "destructive" });
     }
   });
 
@@ -619,7 +621,7 @@ const AdminMembers = () => {
   const handleEdit = (m: any) => {
     setEditingMember(m);
     setEditName(m.full_name || "");
-    setEditPhone(m.whatsapp_phone || "");
+    setEditPhone(formatPhoneForDisplay(m.whatsapp_phone || ""));
     
     // Suggest name slug if current username is empty or just a phone number
     const isPhoneLike = /^\d{8,}$/.test(m.username || "");
@@ -639,7 +641,7 @@ const AdminMembers = () => {
 
       const { error: pErr } = await supabase.from("profiles").update({ 
         full_name: editName, 
-        whatsapp_phone: editPhone,
+        whatsapp_phone: normalizePhoneForDB(editPhone),
         username: cleanUsername,
         ... (removePhoto ? { avatar_url: null } : {})
       } as any).eq("id", editingMember.id);
@@ -666,7 +668,7 @@ const AdminMembers = () => {
       toast({ title: "Membro atualizado!" });
     },
     onError: (err: any) => {
-      toast({ title: "Erro ao atualizar", description: err.message, variant: "destructive" });
+      toast({ title: "Erro ao atualizar", description: getErrorMessage(err), variant: "destructive" });
     }
   });
 
@@ -718,7 +720,7 @@ const AdminMembers = () => {
       });
     },
     onError: (err: any) => {
-      toast({ title: "Erro ao resetar senha", description: err.message, variant: "destructive" });
+      toast({ title: "Erro ao resetar senha", description: getErrorMessage(err), variant: "destructive" });
     }
   });
 
@@ -728,7 +730,7 @@ const AdminMembers = () => {
       const payload = {
         email,
         password: "123456",
-        raw_user_meta_data: { full_name: editName, whatsapp_phone: editPhone }
+        raw_user_meta_data: { full_name: editName, whatsapp_phone: normalizePhoneForDB(editPhone) }
       };
 
       const { data, error } = await supabase.rpc("admin_create_user" as any, payload);
@@ -740,7 +742,7 @@ const AdminMembers = () => {
       // Force update profiles to ensure username and phone are stored
       await supabase.from("profiles").update({ 
         full_name: editName, 
-        whatsapp_phone: editPhone, 
+        whatsapp_phone: normalizePhoneForDB(editPhone), 
         username 
       } as any).eq("user_id", newUserId);
 
@@ -761,7 +763,7 @@ const AdminMembers = () => {
       toast({ title: "Membro criado!", description: "A senha padrão dele é: 123456" });
     },
     onError: (err: any) => {
-      toast({ title: "Erro ao criar membro", description: err.message, variant: "destructive" });
+      toast({ title: "Erro ao criar membro", description: getErrorMessage(err), variant: "destructive" });
     }
   });
 
@@ -794,7 +796,7 @@ const AdminMembers = () => {
                 <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
                   <div className="flex items-center gap-1 bg-background/50 px-2 py-0.5 rounded-lg border border-border/10">
                     <Phone className="h-3 w-3" />
-                    <span>{m.whatsapp_phone}</span>
+                    <span>{formatPhoneForDisplay(m.whatsapp_phone || "")}</span>
                   </div>
                   
                   {/* Smart Display Username */}
@@ -1053,7 +1055,7 @@ const AdminMessages = () => {
       const payload = {
         email,
         password: "123456",
-        raw_user_meta_data: { full_name: m.name, whatsapp_phone: m.phone }
+        raw_user_meta_data: { full_name: m.name, whatsapp_phone: normalizePhoneForDB(m.phone) }
       };
 
       const { data, error } = await supabase.rpc("admin_create_user" as any, payload);
@@ -1074,7 +1076,7 @@ const AdminMessages = () => {
       toast({ title: "Membro Aprovado!", description: "Conta criada e mensagem arquivada." });
     },
     onError: (err: any) => {
-      toast({ title: "Erro", description: err.message, variant: "destructive" });
+      toast({ title: "Erro", description: getErrorMessage(err), variant: "destructive" });
     }
   });
 

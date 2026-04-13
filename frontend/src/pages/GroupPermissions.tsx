@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { getErrorMessage } from "@/lib/errorMessages";
 
 const ROUTINES = [
   { id: "agenda", label: "Agenda", icon: Calendar, description: "Gestão de eventos e compromissos" },
@@ -59,7 +60,7 @@ const GroupPermissions = () => {
       queryClient.invalidateQueries({ queryKey: ["all-role-routines"] });
       toast({ title: "Permissão atualizada com sucesso!" });
     },
-    onError: (err: any) => toast({ title: "Erro ao salvar", description: err.message, variant: "destructive" }),
+    onError: (err: any) => toast({ title: "Erro ao salvar", description: getErrorMessage(err), variant: "destructive" }),
   });
 
   const selectedRoleConfig = ROLE_TYPES.find(r => r.id === selectedRole);

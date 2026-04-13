@@ -415,22 +415,29 @@ CREATE OR REPLACE FUNCTION public.admin_manage_user(
 RETURNS UUID AS $$
 DECLARE
   new_uid UUID;
-  effective_password TEXT;
   password_hash TEXT;
 BEGIN
-  effective_password := COALESCE(NULLIF(btrim(password), ''), '123456');
-  password_hash := extensions.crypt(effective_password, extensions.gen_salt('bf', 10));
-
   IF target_user_id IS NOT NULL THEN
+    -- MODO UPDATE: só altera senha se password foi explicitamente fornecido e não é vazio
     UPDATE auth.users SET
       email = admin_manage_user.email,
-      encrypted_password = CASE WHEN admin_manage_user.password IS NOT NULL AND btrim(admin_manage_user.password) <> '' THEN password_hash ELSE encrypted_password END,
+      encrypted_password = CASE
+        WHEN admin_manage_user.password IS NOT NULL
+         AND btrim(admin_manage_user.password) <> ''
+        THEN extensions.crypt(btrim(admin_manage_user.password), extensions.gen_salt('bf', 10))
+        ELSE encrypted_password  -- MANTÉM a senha atual intacta
+      END,
       raw_user_meta_data = admin_manage_user.raw_user_meta_data,
       email_confirmed_at = COALESCE(email_confirmed_at, now()),
       updated_at = now()
     WHERE id = target_user_id;
     RETURN target_user_id;
   ELSE
+    -- MODO CREATE: usa senha fornecida ou padrão 123456
+    password_hash := extensions.crypt(
+      COALESCE(NULLIF(btrim(password), ''), '123456'),
+      extensions.gen_salt('bf', 10)
+    );
     INSERT INTO auth.users (
       id, instance_id, aud, role, email, encrypted_password,
       email_confirmed_at, confirmation_sent_at,
@@ -517,16 +524,26 @@ DROP POLICY IF EXISTS "Perfis visiveis para autenticados" ON public.profiles;
 CREATE POLICY "Perfis visiveis para autenticados" ON public.profiles FOR SELECT TO authenticated USING (true);
 DROP POLICY IF EXISTS "Profiles are viewable by authenticated users" ON public.profiles;
 CREATE POLICY "Profiles are viewable by authenticated users" ON public.profiles FOR SELECT TO authenticated USING (true);
+-- Removida política com role 'manager' (incorreta — nunca funcionava)
 DROP POLICY IF EXISTS "Profiles_Admin_Full_Access" ON public.profiles;
-CREATE POLICY "Profiles_Admin_Full_Access" ON public.profiles FOR ALL TO authenticated USING (EXISTS (SELECT 1 FROM user_roles WHERE user_roles.user_id = auth.uid() AND user_roles.role::text = ANY(ARRAY['admin','manager'])));
+-- Política de leitura pública
 DROP POLICY IF EXISTS "Profiles_Public_View" ON public.profiles;
 CREATE POLICY "Profiles_Public_View" ON public.profiles FOR SELECT TO authenticated USING (true);
 DROP POLICY IF EXISTS "Public view profiles" ON public.profiles;
 CREATE POLICY "Public view profiles" ON public.profiles FOR SELECT TO public USING (true);
 DROP POLICY IF EXISTS "Users can insert own profile" ON public.profiles;
 CREATE POLICY "Users can insert own profile" ON public.profiles FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+-- CORRIGIDO: admins podem atualizar qualquer perfil; usuário comum só o próprio
 DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
-CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE TO authenticated
+  USING (
+    auth.uid() = user_id
+    OR EXISTS (
+      SELECT 1 FROM public.user_roles
+      WHERE user_id = auth.uid()
+        AND role::text IN ('admin', 'admin_ccm', 'pastor')
+    )
+  );
 DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
 CREATE POLICY "Users can view own profile" ON public.profiles FOR SELECT TO public USING (true);
 

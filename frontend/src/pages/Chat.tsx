@@ -112,7 +112,7 @@ const Chat = () => {
   const [message, setMessage] = useState("");
   const [newChatOpen, setNewChatOpen] = useState(false);
   const [memberSearch, setMemberSearch] = useState("");
-  const [clearingChat, setClearingChat] = useState(false);
+  const [chatToDelete, setChatToDelete] = useState<{ type: "group" | "direct"; id: string; name?: string } | null>(null);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef(view);
@@ -154,17 +154,8 @@ const Chat = () => {
     enabled: !!user,
   });
 
-  const { data: hiddenConvs } = useQuery({
-    queryKey: ["hidden-conversations"],
-    queryFn: async () => {
-      const { data } = await (supabase as any).from("hidden_conversations").select("*").eq("user_id", user?.id);
-      return (data as any[]) || [];
-    },
-    enabled: !!user,
-  });
-
-  const { data: conversations } = useQuery({
-    queryKey: ["conversations", hiddenConvs],
+const { data: conversations } = useQuery({
+    queryKey: ["conversations"],
     queryFn: async () => {
       const { data } = await supabase
         .from("messages")
@@ -190,22 +181,18 @@ const Chat = () => {
       data?.forEach((msg) => {
         const otherId = msg.sender_id === user!.id ? msg.recipient_id : msg.sender_id;
         if (otherId && !convMap.has(otherId)) {
-          const hidden = hiddenConvs?.find((h: any) => h.target_user_id === otherId);
-          if (!isAdmin && hidden && new Date(msg.created_at) <= new Date(hidden.hidden_at)) return;
-
           convMap.set(otherId, {
             userId: otherId,
             name: profileMap.get(otherId) || "Membro",
             lastMessage: msg.content,
             time: msg.created_at,
             lastSenderId: msg.sender_id,
-            isHiddenForMe: !!hidden,
           });
         }
       });
       return Array.from(convMap.values());
     },
-    enabled: !!user && !!hiddenConvs,
+    enabled: !!user,
     refetchInterval: 5000,
   });
 
@@ -256,7 +243,7 @@ const Chat = () => {
         : null;
 
   const { data: messages } = useQuery({
-    queryKey: ["messages", chatId, hiddenConvs],
+    queryKey: ["messages", chatId],
     queryFn: async () => {
       let query = supabase
         .from("messages")
@@ -276,16 +263,7 @@ const Chat = () => {
       const { data } = await query;
       if (!data) return [];
 
-      const currentHidden = hiddenConvs?.find((h: any) =>
-        (view.type === "group" && h.group_id === view.groupId) ||
-        (view.type === "direct" && h.target_user_id === view.userId)
-      );
-
       let filteredData = data;
-      if (!isAdmin && currentHidden) {
-        filteredData = data.filter((m: any) => new Date(m.created_at) > new Date(currentHidden.hidden_at));
-      }
-
       const uids = new Set(filteredData.map((m: any) => m.sender_id));
 
       let map = new Map();
@@ -299,11 +277,10 @@ const Chat = () => {
 
       return filteredData.map((m: any) => ({
         ...m,
-        senderName: map.get(m.sender_id),
-        isVisuallyHidden: currentHidden && new Date(m.created_at) <= new Date(currentHidden.hidden_at)
+        senderName: map.get(m.sender_id)
       }));
     },
-    enabled: view.type !== "list" && !!user && !!hiddenConvs,
+    enabled: view.type !== "list" && !!user,
     refetchInterval: 3000,
   });
 
@@ -436,51 +413,35 @@ const Chat = () => {
     sendMutation.mutate(message.trim());
   };
 
-  const hideConversationMutation = useMutation({
-    mutationFn: async ({ targetUserId, groupId }: { targetUserId?: string; groupId?: string }) => {
-      const payload: any = { user_id: user!.id, hidden_at: new Date().toISOString() };
-      if (targetUserId) payload.target_user_id = targetUserId;
-      if (groupId) payload.group_id = groupId;
-
-      const { error } = await (supabase as any)
-        .from("hidden_conversations")
-        .upsert(payload, { onConflict: targetUserId ? "user_id,target_user_id" : "user_id,group_id" });
-
-      if (error) throw error;
+  const deleteChatMutation = useMutation({
+    mutationFn: async ({ type, id }: { type: "group" | "direct"; id: string }) => {
+      if (type === "group") {
+        const { error } = await supabase.from("messages").delete().eq("group_id", id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("messages")
+          .delete()
+          .is("group_id", null)
+          .or(`and(sender_id.eq.${user!.id},recipient_id.eq.${id}),and(sender_id.eq.${id},recipient_id.eq.${user!.id})`);
+        if (error) throw error;
+      }
     },
     onSuccess: (data, variables) => {
-      const convId = variables.targetUserId || variables.groupId;
-      if (convId) {
-        setUnreadCounts((prev) => ({ ...prev, [convId]: 0 }));
-        unreadMap[convId] = 0;
-      }
-      queryClient.invalidateQueries({ queryKey: ["hidden-conversations"] });
-      queryClient.invalidateQueries({ queryKey: ["conversations"] });
       queryClient.invalidateQueries({ queryKey: ["messages"] });
-      toast({ title: "Conversa apagada!" });
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      setUnreadCounts((prev) => ({ ...prev, [variables.id]: 0 }));
+      setChatToDelete(null);
+      if (viewRef.current.type !== "list") {
+          const currentId = viewRef.current.type === "group" ? viewRef.current.groupId : (viewRef.current as any).userId;
+          if (currentId === variables.id) setView({ type: "list" });
+      }
+      toast({ title: "Aviso", description: "O chat foi excluído definitivamente para todos." });
     },
-    onError: (err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" }),
+    onError: (err: any) => toast({ title: "Erro ao excluir", description: getErrorMessage(err), variant: "destructive" }),
   });
 
-  const clearChatMutation = useMutation({
-    mutationFn: async () => {
-      if (view.type !== "group") return;
-      const { error } = await supabase
-        .from("messages")
-        .delete()
-        .eq("group_id", view.groupId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["messages", chatId] });
-      setClearingChat(false);
-      toast({ title: "Histórico de mensagens removido para todos!" });
-    },
-    onError: (err: any) =>
-      toast({ title: "Erro ao limpar", description: err.message, variant: "destructive" }),
-  });
-
-  // ─── Helpers ──────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────
 
   const renderDateSeparator = (date: Date) => {
     let label = safeFormat(date, "d 'de' MMMM");
@@ -553,7 +514,7 @@ const Chat = () => {
                         </span>
                       )}
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground/40 hover:text-destructive"
-                        onClick={(e) => { e.stopPropagation(); hideConversationMutation.mutate({ groupId: g.id }); }}>
+                        onClick={(e) => { e.stopPropagation(); setChatToDelete({ type: "group", id: g.id, name: g.name }); }}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -607,7 +568,7 @@ const Chat = () => {
                         </span>
                       )}
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground/40 hover:text-destructive"
-                        onClick={(e) => { e.stopPropagation(); hideConversationMutation.mutate({ targetUserId: conv.userId }); }}>
+                        onClick={(e) => { e.stopPropagation(); setChatToDelete({ type: "direct", id: conv.userId, name: conv.name }); }}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -694,26 +655,14 @@ const Chat = () => {
             variant="ghost"
             size="icon"
             onClick={() => {
-              if (view.type === "group") hideConversationMutation.mutate({ groupId: view.groupId });
-              else if (view.type === "direct") hideConversationMutation.mutate({ targetUserId: view.userId });
-              setView({ type: "list" });
+              if (view.type === "group") setChatToDelete({ type: "group", id: view.groupId, name: view.groupName });
+              else if (view.type === "direct") setChatToDelete({ type: "direct", id: view.userId, name: view.userName });
             }}
             className="text-muted-foreground hover:text-destructive"
-            title="Apagar conversa (visual)"
+            title="Excluir Conversa"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
-          {isAdmin && view.type === "group" && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setClearingChat(true)}
-              className="text-muted-foreground hover:text-destructive"
-              title="Limpar Histórico (Todos)"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
         </div>
       </div>
 
@@ -745,9 +694,8 @@ const Chat = () => {
                       {msg.senderName || "Membro"}
                     </p>
                   )}
-                  <p className={cn("text-sm leading-relaxed", msg.isVisuallyHidden && "italic text-muted-foreground/60")}>
+                  <p className="text-sm leading-relaxed">
                     {msg.content}
-                    {msg.isVisuallyHidden && <span className="ml-1 text-[9px] font-normal">(apagada)</span>}
                   </p>
                   <p
                     className={cn(
@@ -766,13 +714,13 @@ const Chat = () => {
       </div>
 
       <ConfirmDialog
-        open={clearingChat}
-        title="Limpar Histórico"
-        description="Isso apagará TODAS as mensagens deste grupo para TODOS os membros. Esta ação não pode ser desfeita."
-        confirmLabel="Limpar Tudo"
+        open={!!chatToDelete}
+        title={`Excluir ${chatToDelete?.type === "group" ? "Grupo" : "Conversa"}`}
+        description={`Isso excluirá DEFINITIVAMENTE todas as mensagens ${chatToDelete?.type === "group" ? "deste grupo" : "desta conversa"} para TODOS os participantes. Ação irreversível!`}
+        confirmLabel="Excluir Tudo"
         variant="danger"
-        onConfirm={() => clearChatMutation.mutate()}
-        onCancel={() => setClearingChat(false)}
+        onConfirm={() => { if (chatToDelete) deleteChatMutation.mutate(chatToDelete); }}
+        onCancel={() => setChatToDelete(null)}
       />
 
       {/* Input */}

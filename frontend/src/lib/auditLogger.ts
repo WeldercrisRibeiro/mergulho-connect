@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 /**
  * Registra uma ação de auditoria no banco de dados.
  * Chamado automaticamente em operações CRUD das rotinas.
+ * O acesso à tela de auditoria é exclusivo para ADM CCM.
  */
 export async function logAudit(
   action: "login" | "access" | "create" | "update" | "delete",
@@ -19,16 +20,28 @@ export async function logAudit(
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const deviceInfo = `${navigator.userAgent.substring(0, 120)}`;
+    // Captura a role do usuário para contexto no log
+    const { data: roleData } = await (supabase as any)
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .maybeSingle();
 
-    const { error } = await (supabase as any).from("audit_logs").insert({
+    const userRole = roleData?.role || "membro";
+    const deviceInfo = navigator.userAgent.substring(0, 200);
+
+    await (supabase as any).from("audit_logs").insert({
       user_id: user.id,
       user_email: user.email || "",
       user_name: user.user_metadata?.full_name || user.email || "Desconhecido",
       action,
       routine,
-      details: details || {},
-      ip_address: "", // IP is only available server-side
+      details: {
+        ...(details || {}),
+        user_role: userRole,
+        local_time: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }),
+      },
+      ip_address: "", // IP disponível apenas no servidor
       device_info: deviceInfo,
     });
   } catch (err) {

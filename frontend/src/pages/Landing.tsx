@@ -80,8 +80,8 @@ const Landing = () => {
 
           <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-muted-foreground">
             <a href="#inicio" className="hover:text-primary transition-colors">Início</a>
-            <a href="#agenda" className="hover:text-primary transition-colors">Agenda</a>
             <a href="#sobre" className="hover:text-primary transition-colors">Sobre Nós</a>
+            <a href="#agenda" className="hover:text-primary transition-colors">Agenda</a>
             <a href="#servicos" className="hover:text-primary transition-colors">Estrutura</a>
             <a href="#projetos" className="hover:text-primary transition-colors">Projetos</a>
             <a href="#contato" className="hover:text-primary transition-colors">Contato</a>
@@ -99,7 +99,7 @@ const Landing = () => {
             <Button asChild variant="secondary" className="rounded-full px-6 font-bold shadow-md transition-all hover:-translate-y-0.5 hidden sm:flex border border-border/50">
               <Link to="/auth">Entrar</Link>
             </Button>
-            <Button asChild className="rounded-full px-6 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white border-0 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 transition-all hover:-translate-y-0.5">
+            <Button asChild className="rounded-full px-6 bg-primary hover:bg-primary/90 text-white border-0 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 transition-all hover:-translate-y-0.5">
               <Link to="/auth?request=true">Seja um Membro!</Link>
             </Button>
           </div>
@@ -120,15 +120,15 @@ const Landing = () => {
             />
           </div>
 
-          <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight mb-4">
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-primary to-cyan-400">AMAR | CUIDAR | SERVIR</span>
+          <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight mb-4 text-primary">
+            AMAR | CUIDAR | SERVIR
           </h1>
           <p className="mt-4 text-lg md:text-xl text-muted-foreground leading-relaxed max-w-3xl font-medium">
             Uma comunidade cristã interligada. Junte-se aos nossos departamentos, envolva-se em projetos, estude a Palavra e conecte-se com seus irmãos com um clique.
           </p>
 
           <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center w-full max-w-lg">
-            <Button size="lg" asChild className="rounded-full sm:flex-1 h-14 text-base bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 shadow-xl shadow-primary/30 hover:shadow-2xl hover:shadow-primary/40 transition-all hover:-translate-y-1">
+            <Button size="lg" asChild className="rounded-full sm:flex-1 h-14 text-base bg-primary hover:bg-primary/90 shadow-xl shadow-primary/30 hover:shadow-2xl hover:shadow-primary/40 transition-all hover:-translate-y-1">
               <Link to="/auth?request=true">Fazer Parte</Link>
             </Button>
             <Button variant="secondary" size="lg" asChild className="rounded-full sm:flex-1 h-14 text-base border shadow-lg transition-all hover:-translate-y-1 font-bold">
@@ -288,7 +288,7 @@ const Landing = () => {
                   </SelectContent>
                 </Select>
                 <Textarea placeholder="Descreva como podemos ajudar..." className="min-h-[140px] bg-background/50 border-white/20 shadow-inner rounded-xl text-base resize-none focus:ring-primary/50 p-4" value={formData.message} onChange={e => setFormData({ ...formData, message: e.target.value })} required />
-                <Button disabled={isSubmitting} type="submit" size="lg" className="w-full h-14 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white border-0 shadow-lg hover:shadow-xl transition-all text-base font-semibold">
+                <Button disabled={isSubmitting} type="submit" size="lg" className="w-full h-14 rounded-xl bg-primary hover:bg-primary/90 text-white border-0 shadow-lg hover:shadow-xl transition-all text-base font-semibold">
                   {isSubmitting ? "Processando envio..." : "Enviar Mensagem"}
                 </Button>
               </form>

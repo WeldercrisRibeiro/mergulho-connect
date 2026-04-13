@@ -2,14 +2,89 @@ import { Router, Request, Response } from "express";
 import { supabase } from "../lib/supabase";
 import { upload } from "../middleware/upload";
 import path from "path";
+import fs from "fs";
+import https from "https";
+import http from "http";
+import { v4 as uuidv4 } from "uuid";
 
 const router = Router();
+
+const UPLOADS_DIR = path.join(process.cwd(), "uploads");
 
 function getAttachmentType(mimetype: string): "image" | "video" | "audio" | "document" {
   if (mimetype.startsWith("image/")) return "image";
   if (mimetype.startsWith("video/")) return "video";
   if (mimetype.startsWith("audio/")) return "audio";
   return "document";
+}
+
+/**
+ * Inferir mimetype a partir da extensão da URL quando o Content-Type não for confiável.
+ */
+function mimetypeFromUrl(url: string): string {
+  const ext = path.extname(url.split("?")[0]).toLowerCase();
+  const map: Record<string, string> = {
+    ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",
+    ".webp": "image/webp", ".gif": "image/gif",
+    ".mp4": "video/mp4", ".webm": "video/webm", ".mov": "video/mp4",
+  };
+  return map[ext] || "application/octet-stream";
+}
+
+/**
+ * Baixa uma URL pública para a pasta uploads/ e retorna os metadados do arquivo.
+ * Funciona como substituto do multer para URLs externas (ex: Supabase Storage).
+ */
+async function downloadUrlToUpload(url: string): Promise<{
+  path: string;
+  originalname: string;
+  mimetype: string;
+}> {
+  return new Promise((resolve, reject) => {
+    const ext = path.extname(url.split("?")[0]).toLowerCase() || ".bin";
+    const filename = `${uuidv4()}${ext}`;
+    const filepath = path.join(UPLOADS_DIR, filename);
+    const originalname = decodeURIComponent(path.basename(url.split("?")[0]));
+
+    const file = fs.createWriteStream(filepath);
+    const transport = url.startsWith("https") ? https : http;
+
+    const request = transport.get(url, (response) => {
+      // Seguir redirecionamentos
+      if (response.statusCode && response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
+        file.close();
+        fs.unlink(filepath, () => {});
+        return downloadUrlToUpload(response.headers.location!).then(resolve).catch(reject);
+      }
+
+      if (response.statusCode !== 200) {
+        file.close();
+        fs.unlink(filepath, () => {});
+        return reject(new Error(`Falha ao baixar anexo: HTTP ${response.statusCode}`));
+      }
+
+      const contentType = response.headers["content-type"]?.split(";")[0].trim() || "";
+      const mimetype = (contentType && contentType !== "application/octet-stream")
+        ? contentType
+        : mimetypeFromUrl(url);
+
+      response.pipe(file);
+      file.on("finish", () => {
+        file.close();
+        resolve({ path: filepath, originalname, mimetype });
+      });
+    });
+
+    request.on("error", (err) => {
+      fs.unlink(filepath, () => {});
+      reject(err);
+    });
+
+    file.on("error", (err) => {
+      fs.unlink(filepath, () => {});
+      reject(err);
+    });
+  });
 }
 
 // GET /api/dispatches — lista todos os disparos
@@ -49,12 +124,13 @@ router.post("/", upload.array("files"), async (req: Request, res: Response) => {
       res.status(400).json({ error: "Data/hora de agendamento é obrigatória." });
       return;
     }
-    if (!content && (!req.files || (req.files as Express.Multer.File[]).length === 0)) {
+    const files = (req.files as Express.Multer.File[]) || [];
+    const { attachment_url } = req.body;
+
+    if (!content && files.length === 0 && !attachment_url) {
       res.status(400).json({ error: "É necessário pelo menos uma mensagem de texto ou um anexo." });
       return;
     }
-
-    const files = (req.files as Express.Multer.File[]) || [];
 
     const { data: dispatch, error: dError } = await supabase
       .from("wz_dispatches")
@@ -85,6 +161,24 @@ router.post("/", upload.array("files"), async (req: Request, res: Response) => {
         }))
       );
       if (aError) throw aError;
+    }
+
+    // Baixar e registrar anexo a partir de URL externa (ex: imagem do Supabase Storage)
+    if (attachment_url) {
+      try {
+        const downloaded = await downloadUrlToUpload(attachment_url);
+        const { error: aError } = await supabase.from("wz_dispatch_attachments").insert({
+          dispatch_id: dispatch.id,
+          type: getAttachmentType(downloaded.mimetype),
+          filename: downloaded.originalname,
+          filepath: downloaded.path,
+          mimetype: downloaded.mimetype,
+        });
+        if (aError) throw aError;
+      } catch (downloadErr: any) {
+        console.error("[Dispatches] Falha ao baixar attachment_url:", downloadErr.message);
+        // Não cancela o disparo — texto já foi salvo; loga o erro mas continua.
+      }
     }
 
     // Busca o objeto completo para retornar (com attachments e logs vazios)

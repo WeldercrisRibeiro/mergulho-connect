@@ -105,7 +105,7 @@ const HomePage = () => {
     <div className="min-h-screen bg-background pb-12">
       {/* Hero Welcome Section */}
       <div className="relative overflow-hidden bg-primary px-4 py-8 md:px-8 md:py-10 text-primary-foreground">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-cyan-400/20 mix-blend-overlay" />
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-900 via-cyan-800 to-blue-900" />
         <div className="relative z-10 max-w-4xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
@@ -129,14 +129,26 @@ const HomePage = () => {
       </div>
 
       {/* Billboard Section (Outdoor Style) */}
-      {siteSettings?.homepage_banner && (
+      {(siteSettings?.homepage_banner || siteSettings?.homepage_banner_mobile) && (
         <div className="px-4 mt-6">
           <div className="max-w-6xl mx-auto rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-2xl ring-4 ring-white/10 dark:ring-white/5 border-4 border-muted/20 bg-muted/10">
-            <img 
-              src={siteSettings.homepage_banner} 
-              alt="Mural Mergulho" 
-              className="w-full h-auto max-h-[600px] object-cover md:object-cover hover:scale-105 transition-transform duration-700 md:aspect-[16/6]"
-            />
+            {/* Banner Desktop (Oculta no mobile se houver banner mobile) */}
+            {siteSettings?.homepage_banner && (
+              <img 
+                src={siteSettings.homepage_banner} 
+                alt="Mural Mergulho Desktop" 
+                className={`w-full h-auto max-h-[500px] lg:max-h-[600px] object-cover hover:scale-105 transition-transform duration-700 aspect-video md:aspect-[16/5] ${siteSettings.homepage_banner_mobile ? 'hidden md:block' : 'block'}`}
+              />
+            )}
+            
+            {/* Banner Mobile (Oculta no desktop) */}
+            {siteSettings?.homepage_banner_mobile && (
+              <img 
+                src={siteSettings.homepage_banner_mobile} 
+                alt="Mural Mergulho Mobile" 
+                className={`w-full h-auto object-cover hover:scale-105 transition-transform duration-700 aspect-[4/5] sm:aspect-square md:hidden ${!siteSettings.homepage_banner ? 'block' : ''}`}
+              />
+            )}
           </div>
         </div>
       )}
@@ -190,12 +202,19 @@ const HomePage = () => {
             // But usually "liberada apenas" means "if deactivated, hide it".
             return true;
           }).map(({ icon: Icon, label, path, color }) => (
-            <Link key={path} to={path}>
-              <Card className="border-0 shadow-xl hover:translate-y-[-4px] transition-all group cursor-pointer overflow-hidden text-center p-6 bg-card/40 backdrop-blur-sm h-full">
-                <div className={cn("inline-flex p-3 rounded-2xl text-white shadow-lg mb-3 transition-transform group-hover:scale-110", color)}>
-                  <Icon className="h-6 w-6" />
+            <Link key={path} to={path} className="block h-full">
+              <Card className="border-0 shadow-lg overflow-hidden hover:translate-y-[-4px] transition-all duration-300 group relative bg-card/60 backdrop-blur-sm h-full cursor-pointer min-h-[140px]">
+                <div className={`absolute -top-10 -right-10 w-32 h-32 blur-3xl opacity-20 rounded-full ${color}`} />
+                <div className={`absolute top-0 left-0 w-full h-1 ${color}`} />
+                <CardContent className="p-4 sm:p-5 flex flex-col items-center justify-center relative z-10 h-full">
+                  <div className={`p-3.5 sm:p-4 rounded-2xl text-white ${color} shadow-lg mb-3 shrink-0 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300`}>
+                    <Icon className="h-6 w-6 sm:h-7 sm:w-7" />
+                  </div>
+                  <span className="text-sm sm:text-base font-bold text-foreground block text-center leading-tight mt-1">{label}</span>
+                </CardContent>
+                <div className="absolute -bottom-4 -right-4 opacity-[0.03] text-foreground transform scale-[5] pointer-events-none group-hover:opacity-[0.06] transition-opacity">
+                  <Icon className="h-full w-full" />
                 </div>
-                <span className="text-sm font-bold block">{label}</span>
               </Card>
             </Link>
           ))}

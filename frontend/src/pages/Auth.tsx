@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { getErrorMessage } from "@/lib/errorMessages";
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
@@ -47,7 +48,7 @@ const Auth = () => {
       setReqPhone("");
       setIsRequesting(false);
     } catch (err: any) {
-      toast({ title: "Erro", description: err.message, variant: "destructive" });
+      toast({ title: "Erro", description: getErrorMessage(err), variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -225,7 +226,7 @@ const Auth = () => {
 
             <CardTitle className="text-3xl font-bold tracking-tight text-foreground flex items-center justify-center gap-2">
               {isRequesting ? (
-                <>Solicitar Acesso</>
+                <>Cadastro</>
               ) : isChangingPass ? (
                 <> <KeyRound className="h-7 w-7 text-primary" /> Trocar Senha</>
               ) : (

@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { safeFormat } from "@/lib/dateUtils";
 import { useToast } from "@/hooks/use-toast";
+import { getErrorMessage } from "@/lib/errorMessages";
 
 // ─── helpers ───────────────────────────────────────────────────────────────
 
@@ -91,10 +92,16 @@ const REPORT_TYPES = [
   { value: "celula", label: "Célula" },
 ];
 
-const StatBox = ({ label, value, accent }: { label: string; value: number | string; accent?: boolean }) => (
-  <div className={`rounded-xl p-3 text-center ${accent ? "bg-primary/10" : "bg-muted/60"}`}>
-    <p className={`text-2xl font-bold ${accent ? "text-primary" : ""}`}>{value}</p>
-    <p className="text-[11px] text-muted-foreground mt-0.5 leading-tight">{label}</p>
+import { DashboardStatBox } from "@/components/DashboardStatBox";
+
+const StatBox = ({ label, value, accent, icon }: { label: string; value: number | string; accent?: boolean; icon?: React.ReactNode }) => (
+  <div className={`relative overflow-hidden rounded-2xl p-4 sm:p-5 text-left border ${accent ? "bg-primary/5 border-primary/20 shadow-[0_4px_20px_-4px_rgba(var(--primary),0.1)]" : "bg-card/50 border-border/50 shadow-sm"} hover:shadow-md transition-all duration-300 group`}>
+    {accent && <div className="absolute -top-10 -right-10 w-24 h-24 blur-2xl opacity-20 bg-primary rounded-full"></div>}
+    <div className={`text-3xl sm:text-4xl font-black tracking-tighter mb-1 ${accent ? "text-primary" : "text-foreground"}`}>{value}</div>
+    <div className="flex items-center gap-1.5">
+      {icon && <div className="text-muted-foreground/60 group-hover:text-primary transition-colors">{icon}</div>}
+      <p className="text-[10px] sm:text-[11px] font-bold text-muted-foreground uppercase tracking-widest leading-tight">{label}</p>
+    </div>
   </div>
 );
 
@@ -281,7 +288,7 @@ const Reports = () => {
       resetForm();
       toast({ title: editing ? "Relatório atualizado!" : "Relatório criado!" });
     },
-    onError: (err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" }),
+    onError: (err: any) => toast({ title: "Erro ao salvar relatório", description: getErrorMessage(err), variant: "destructive" }),
   });
 
   const deleteMutation = useMutation({
@@ -386,22 +393,65 @@ const Reports = () => {
       )}
 
       {/* Totalizador */}
-      <div className="bg-primary/5 border border-primary/15 rounded-2xl p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xs font-bold text-primary uppercase tracking-widest">
-            Totalizador {hasFilters ? "— período filtrado" : "— todos os registros"}
-          </h2>
-          <span className="text-xs text-muted-foreground bg-primary/10 text-primary rounded-full px-2.5 py-0.5 font-medium">
-            {totals.count} relatório{totals.count !== 1 ? "s" : ""}
-          </span>
+      <div className="mb-8 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between px-1 gap-3">
+          <div>
+            <h2 className="text-2xl font-black tracking-tight text-foreground flex items-center gap-2">
+              <BarChart3 className="h-6 w-6 text-primary" />
+              Dashboard de Frequência
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              {hasFilters ? "Exibindo métricas do período e filtros selecionados." : "Visão geral e métricas consolidadas de todos os cultos."}
+            </p>
+          </div>
+          <Badge variant="secondary" className="px-4 py-1.5 font-bold text-sm shadow-sm bg-primary/10 text-primary border-0 rounded-xl">
+            {totals.count} {totals.count === 1 ? 'Relatório Encontrado' : 'Relatórios Encontrados'}
+          </Badge>
         </div>
-        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-          <StatBox label="Presentes" value={totals.people} accent />
-          <StatBox label="Visitantes" value={totals.visitors} />
-          <StatBox label="Crianças" value={totals.children} />
-          <StatBox label="Jovens" value={totals.youth} />
-          <StatBox label="Monitores" value={totals.monitors} />
-          <StatBox label="Kids + Jovens" value={totals.children + totals.youth} />
+        
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+          <DashboardStatBox 
+            icon={<Users className="h-5 w-5" />} 
+            label="Público Total" 
+            value={totals.people} 
+            color="bg-blue-500" 
+            description="Soma de todos os presentes"
+          />
+          <DashboardStatBox 
+            icon={<Smile className="h-5 w-5" />} 
+            label="Visitantes" 
+            value={totals.visitors} 
+            color="bg-emerald-500" 
+            description="Membros pela primeira vez"
+          />
+          <DashboardStatBox 
+            icon={<Baby className="h-5 w-5" />} 
+            label="Crianças" 
+            value={totals.children} 
+            color="bg-rose-500" 
+            description="Mergulho Kids"
+          />
+          <DashboardStatBox 
+            icon={<UserCheck className="h-5 w-5" />} 
+            label="Jovens" 
+            value={totals.youth} 
+            color="bg-amber-500" 
+            description="Juventude Mergulho"
+          />
+          <DashboardStatBox 
+            icon={<HandHeart className="h-5 w-5" />} 
+            label="Monitores" 
+            value={totals.monitors} 
+            color="bg-purple-500" 
+            description="Equipe voluntária"
+          />
+          <DashboardStatBox 
+            icon={<BarChart3 className="h-5 w-5" />} 
+            label="Média/Culto" 
+            value={totals.count > 0 ? Math.round(totals.people / totals.count) : 0} 
+            color="bg-slate-700" 
+            description="Média geral de presentes"
+          />
         </div>
       </div>
 
@@ -555,10 +605,11 @@ const Reports = () => {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Departamento / Grupo <RequiredMark /></Label>
-                  <Select value={groupId || ""} onValueChange={v => setGroupId(v || null)}>
-                    <SelectTrigger><SelectValue placeholder="Selecione o depto" /></SelectTrigger>
+                  <Label>Departamento / Grupo <Optional /></Label>
+                  <Select value={groupId || "none"} onValueChange={v => setGroupId(v === "none" ? null : v)}>
+                    <SelectTrigger><SelectValue placeholder="Geral (sem grupo)" /></SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="none">Geral (sem grupo específico)</SelectItem>
                       {groups?.map((g: any) => (
                         <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
                       ))}
@@ -678,7 +729,7 @@ const Reports = () => {
             <Button variant="outline" onClick={() => { setCreating(false); setEditing(null); }}>
               Cancelar
             </Button>
-            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !groupId}>
+            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
               {saveMutation.isPending ? "Salvando..." : editing ? "Salvar Alterações" : "Criar Relatório"}
             </Button>
           </DialogFooter>

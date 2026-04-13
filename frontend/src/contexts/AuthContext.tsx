@@ -14,7 +14,7 @@ interface AuthContextType {
   isVisitor: boolean;
   managedGroupIds: string[];
   userGroupIds: string[];
-  profile: { full_name: string; avatar_url: string | null; whatsapp_phone: string | null; username: string | null } | null;
+  profile: { full_name: string; avatar_url: string | null; whatsapp_phone: string | null; username: string | null; created_at: string | null } | null;
   routinePermissions: Record<string, boolean>;
   unreadAnnouncements: number;
   signOut: () => Promise<void>;
@@ -154,7 +154,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const { data, error } = await (supabase as any)
         .from("profiles")
-        .select("full_name, avatar_url, whatsapp_phone, username")
+        .select("full_name, avatar_url, whatsapp_phone, username, created_at")
         .eq("user_id", userId)
         .maybeSingle();
 

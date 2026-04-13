@@ -20,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
+import { getErrorMessage } from "@/lib/errorMessages";
 
 type AttachmentType = "image" | "video" | "document" | "audio";
 
@@ -302,7 +303,7 @@ const AdminNotices = () => {
       queryClient.invalidateQueries({ queryKey: ["wz-dispatches"] });
       toast({ title: "Salvo com sucesso!", description: "O comunicado atualizado está na fila de disparos do bot." });
     },
-    onError: (err: any) => toast({ title: "Atenção", description: err.message, variant: "destructive" }),
+    onError: (err: any) => toast({ title: "Atenção", description: getErrorMessage(err), variant: "destructive" }),
   });
 
   const retryMutation = useMutation({
@@ -311,13 +312,13 @@ const AdminNotices = () => {
       queryClient.invalidateQueries({ queryKey: ["wz-dispatches"] });
       toast({ title: "Recolocado na fila", description: "O disparo será tentado novamente." });
     },
-    onError: (err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" }),
+    onError: (err: any) => toast({ title: "Erro", description: getErrorMessage(err), variant: "destructive" }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => apiDelete(`/api/dispatches/${id}`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["wz-dispatches"] }),
-    onError: (err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" }),
+    onError: (err: any) => toast({ title: "Erro", description: getErrorMessage(err), variant: "destructive" }),
   });
 
   const handleEdit = (dispatch: Dispatch) => {

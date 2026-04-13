@@ -19,6 +19,7 @@ import { logAudit } from "@/lib/auditLogger";
 import QRScanner from "@/components/QRScanner";
 import { ShareEventDialog } from "@/components/ShareEventDialog";
 import { EventNotifyDialog } from "@/components/EventNotifyDialog";
+import { getErrorMessage } from "@/lib/errorMessages";
 
 // ─── WhatsApp Icon SVG ────────────────────────────────────────────────────────
 const WhatsAppIcon = ({ className }: { className?: string }) => (
@@ -169,7 +170,7 @@ const Agenda = () => {
       queryClient.invalidateQueries({ queryKey: ["events"] });
       toast({ title: "Inscrição realizada!" });
     },
-    onError: (err: any) => toast({ title: "Erro na inscrição", description: err.message, variant: "destructive" }),
+    onError: (err: any) => toast({ title: "Erro na inscrição", description: getErrorMessage(err), variant: "destructive" }),
   });
 
   const cancelRegistrationMutation = useMutation({
@@ -183,7 +184,7 @@ const Agenda = () => {
       toast({ title: "Inscrição cancelada com sucesso!" });
       setCancelingRegistration(null);
     },
-    onError: (err: any) => toast({ title: "Erro ao cancelar", description: err.message, variant: "destructive" }),
+    onError: (err: any) => toast({ title: "Erro ao cancelar", description: getErrorMessage(err), variant: "destructive" }),
   });
 
   const resetForm = () => {
@@ -211,7 +212,7 @@ const Agenda = () => {
       setBannerUrl(urlData.publicUrl);
       toast({ title: "Banner carregado com sucesso!" });
     } catch (err: any) {
-      toast({ title: "Erro no upload", description: err.message, variant: "destructive" });
+      toast({ title: "Erro no upload", description: getErrorMessage(err), variant: "destructive" });
     } finally {
       setUploading(false);
     }
@@ -279,7 +280,7 @@ const Agenda = () => {
       toast({ title: editingEvent ? "Evento atualizado!" : "Evento criado!" });
       logAudit(editingEvent ? "update" : "create", "agenda", { title });
     },
-    onError: (err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" }),
+    onError: (err: any) => toast({ title: "Erro", description: getErrorMessage(err), variant: "destructive" }),
   });
 
   const deleteMutation = useMutation({
@@ -831,7 +832,7 @@ const Agenda = () => {
                 logAudit("create", "event_checkin", { eventId: scanningEvent.id, eventTitle: scanningEvent.title });
                 queryClient.invalidateQueries({ queryKey: ["events"] });
               } catch (err: any) {
-                toast({ title: "Erro no check-in", description: err.message, variant: "destructive" });
+                toast({ title: "Erro no check-in", description: getErrorMessage(err), variant: "destructive" });
               }
             } else {
               toast({ title: "QR Code inválido", description: "Este QR Code não corresponde ao evento.", variant: "destructive" });

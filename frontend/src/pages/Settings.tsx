@@ -12,14 +12,16 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { Settings, ImagePlus, MessageSquareQuote, Trash2, Plus, Edit2, ChevronLeft, ChevronRight, Upload, Mail, CheckCircle, Archive, Video, Youtube, Shield, Users, Calendar, BookOpen, HandHeart, BarChart3, MessageCircle, ShieldCheck, Megaphone, Lock, ChevronRight as ChevronRightIcon, Bell, ArrowRight, Wallet } from "lucide-react";
+import { Settings, ImagePlus, MessageSquareQuote, Trash2, Plus, Edit2, ChevronLeft, ChevronRight, Upload, Mail, CheckCircle, Archive, Video, Youtube, Shield, Users, Calendar, BookOpen, HandHeart, BarChart3, MessageCircle, ShieldCheck, Megaphone, Lock, ChevronRight as ChevronRightIcon, Bell, ArrowRight, Wallet, FileSearch } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import VideoPlayer from "@/components/VideoPlayer";
 import { cn } from "@/lib/utils";
+import { getErrorMessage } from "@/lib/errorMessages";
+import { normalizePhoneForDB } from "@/lib/phoneUtils";
 import { Switch } from "@/components/ui/switch";
  
 const SettingsPage = () => {
-  const { user, profile, isAdmin, isGerente, refreshProfile } = useAuth();
+  const { user, profile, isAdmin, isGerente, isAdminCCM, refreshProfile } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -67,6 +69,12 @@ const SettingsPage = () => {
     { id: "kids", label: "Check-in", icon: ShieldCheck, description: "Check-in e proteção infantil" },
     { id: "Disparos", label: "Disparos", icon: Megaphone, description: "Mural de avisos e notificações" },
     { id: "tesouraria", label: "Tesouraria", icon: Wallet, description: "Gestão financeira e dízimos" },
+  ];
+
+  // Rotinas exclusivas ADM CCM — não aparecem na grade geral de roles
+  const CCM_ONLY_ROUTINES = [
+    { id: "auditoria", label: "Auditoria & Logs", icon: FileSearch, description: "Registros de acesso e ações do sistema" },
+    { id: "ajustes", label: "Configurações", icon: Settings, description: "Ajustes gerais da plataforma" },
   ];
  
   const ROLE_TYPES = [
@@ -153,7 +161,7 @@ const SettingsPage = () => {
       queryClient.invalidateQueries({ queryKey: ["site-settings"] });
       toast({ title: "Configurações salvas!" });
     },
-    onError: (err: any) => toast({ title: "Erro ao salvar", description: err.message, variant: "destructive" }),
+    onError: (err: any) => toast({ title: "Erro ao salvar", description: getErrorMessage(err), variant: "destructive" }),
   });
  
   const saveVideoSettingsMutation = useMutation({
@@ -170,7 +178,7 @@ const SettingsPage = () => {
       queryClient.invalidateQueries({ queryKey: ["site-settings"] });
       toast({ title: "Vídeo institucional atualizado!" });
     },
-    onError: (err: any) => toast({ title: "Erro ao salvar vídeo", description: err.message, variant: "destructive" }),
+    onError: (err: any) => toast({ title: "Erro ao salvar vídeo", description: getErrorMessage(err), variant: "destructive" }),
   });
  
   const toggleRoutineMutation = useMutation({
@@ -187,7 +195,7 @@ const SettingsPage = () => {
       queryClient.invalidateQueries({ queryKey: ["all-role-routines"] });
       toast({ title: "Permissão atualizada!" });
     },
-    onError: (err: any) => toast({ title: "Erro ao salvar", description: err.message, variant: "destructive" }),
+    onError: (err: any) => toast({ title: "Erro ao salvar", description: getErrorMessage(err), variant: "destructive" }),
   });
  
   const getPermStatus = (roleId: string, routineKey: string) => {
@@ -230,7 +238,7 @@ const SettingsPage = () => {
       setPhotoCaption("");
       toast({ title: "Foto salva com sucesso!" });
     } catch (err: any) {
-      toast({ title: "Erro no upload", description: err.message, variant: "destructive" });
+      toast({ title: "Erro no upload", description: getErrorMessage(err), variant: "destructive" });
     } finally {
       setUploading(false);
     }
@@ -254,7 +262,7 @@ const SettingsPage = () => {
       setTempIsVideoUpload(true);
       toast({ title: "Vídeo carregado!", description: "Clique em salvar para aplicar." });
     } catch (err: any) {
-      toast({ title: "Erro no upload do vídeo", description: err.message, variant: "destructive" });
+      toast({ title: "Erro no upload do vídeo", description: getErrorMessage(err), variant: "destructive" });
     } finally {
       setUploading(false);
     }
@@ -275,7 +283,21 @@ const SettingsPage = () => {
       queryClient.invalidateQueries({ queryKey: ["site-settings"] });
       toast({ title: "Imagem da Home atualizada!" });
     } catch (err: any) {
-      toast({ title: "Erro no upload", description: err.message, variant: "destructive" });
+      toast({ title: "Erro no upload", description: getErrorMessage(err), variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemoveSiteSetting = async (settingKey: string) => {
+    if (!window.confirm("Tem certeza que deseja remover este banner?")) return;
+    setUploading(true);
+    try {
+      await (supabase as any).from("site_settings").delete().eq("id", settingKey);
+      queryClient.invalidateQueries({ queryKey: ["site-settings"] });
+      toast({ title: "Banner removido com sucesso!" });
+    } catch (err: any) {
+      toast({ title: "Erro ao remover banner", description: getErrorMessage(err), variant: "destructive" });
     } finally {
       setUploading(false);
     }
@@ -310,7 +332,7 @@ const SettingsPage = () => {
       setTestName(""); setTestRole(""); setTestText("");
       toast({ title: editingTest ? "Depoimento atualizado!" : "Depoimento adicionado!" });
     },
-    onError: (err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" }),
+    onError: (err: any) => toast({ title: "Erro", description: getErrorMessage(err), variant: "destructive" }),
   });
  
   const deleteTestMutation = useMutation({
@@ -344,7 +366,7 @@ const SettingsPage = () => {
       refreshProfile();
       toast({ title: "Sua foto foi removida!" });
     },
-    onError: (err: any) => toast({ title: "Erro ao remover foto", description: err.message, variant: "destructive" }),
+    onError: (err: any) => toast({ title: "Erro ao remover foto", description: getErrorMessage(err), variant: "destructive" }),
   });
  
   const approveContactMutation = useMutation({
@@ -355,7 +377,7 @@ const SettingsPage = () => {
  
       const email = loginPrefix + "@ccmergulho.com";
       const { data, error } = await supabase.rpc("admin_manage_user" as any, {
-        email, password: "123456", raw_user_meta_data: { full_name: m.name, whatsapp_phone: m.phone }
+        email, password: "123456", raw_user_meta_data: { full_name: m.name, whatsapp_phone: normalizePhoneForDB(m.phone) }
       });
       if (error) throw error;
       await (supabase as any).from("contact_messages").delete().eq("id", m.id);
@@ -365,7 +387,7 @@ const SettingsPage = () => {
       queryClient.invalidateQueries({ queryKey: ["members"] });
       toast({ title: "Membro aprovado!", description: "Conta criada com sucesso." });
     },
-    onError: (err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" }),
+    onError: (err: any) => toast({ title: "Erro", description: getErrorMessage(err), variant: "destructive" }),
   });
  
   const archiveContactMutation = useMutation({
@@ -378,7 +400,7 @@ const SettingsPage = () => {
       toast({ title: "Mensagem arquivada!" });
     },
     onError: (err: any) => {
-      toast({ title: "Erro ao arquivar", description: err.message, variant: "destructive" });
+      toast({ title: "Erro ao arquivar", description: getErrorMessage(err), variant: "destructive" });
     },
   });
  
@@ -533,28 +555,80 @@ const SettingsPage = () => {
             </CardContent>
           </Card>
  
-          {/* Banner da Home Page Substituição */}
+          {/* Banners da Home Page Substituição */}
           <Card className="border-0 shadow-xl overflow-hidden rounded-3xl">
             <CardHeader className="flex flex-row items-center justify-between pb-2 bg-muted/20">
               <div>
                 <CardTitle className="text-xl flex items-center gap-2">
-                  <ImagePlus className="h-5 w-5 text-indigo-500" /> Banner da Tela Inicial
+                  <ImagePlus className="h-5 w-5 text-indigo-500" /> Banners da Tela Inicial
                 </CardTitle>
-                <p className="text-xs text-muted-foreground">Foto de destaque na Home (tela principal de usuários logados).</p>
+                <p className="text-xs text-muted-foreground">Fotos de destaque na Home (tela principal de usuários logados).</p>
               </div>
             </CardHeader>
-            <CardContent className="p-6">
-              <div className="flex items-start gap-6">
-                <div className="w-48 h-32 bg-muted rounded-xl overflow-hidden border border-dashed flex-shrink-0 relative">
+            <CardContent className="p-6 space-y-8">
+              {/* Desktop Banner */}
+              <div className="flex flex-col md:flex-row items-start gap-4 md:gap-6">
+                <div className="w-full md:w-64 h-32 bg-muted rounded-xl overflow-hidden border border-dashed flex-shrink-0 relative">
                   {siteSettings && siteSettings["homepage_banner"] ? (
-                    <img src={siteSettings["homepage_banner"]} className="w-full h-full object-cover" alt="Banner Atual" />
+                    <img src={siteSettings["homepage_banner"]} className="w-full h-full object-cover" alt="Banner Desktop" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-muted-foreground"><ImagePlus className="h-8 w-8 opacity-20" /></div>
                   )}
                 </div>
-                <div className="flex-1 space-y-4">
-                  <p className="text-sm font-medium">Faça o upload do banner que ficará na recepção dos membros (Tamanho ideal: 1200x400 para efeito Outdoor centralizado).</p>
-                  <Input type="file" accept="image/*" disabled={uploading} className="h-11 rounded-xl w-full" onChange={(e) => handleSiteSettingUpload(e, "homepage_banner")} />
+                <div className="flex-1 space-y-4 w-full">
+                  <div>
+                    <h4 className="font-bold text-foreground flex items-center gap-2">Monitor Desktop / PC</h4>
+                    <p className="text-sm text-muted-foreground mt-1">Tamanho ideal recomendado: <strong className="text-primary font-bold">1200x400</strong> (orientação horizontal, como um outdoor).</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Input type="file" accept="image/*" disabled={uploading} className="h-11 rounded-xl flex-1" onChange={(e) => handleSiteSettingUpload(e, "homepage_banner")} />
+                    {siteSettings && siteSettings["homepage_banner"] && (
+                      <Button 
+                        variant="destructive" 
+                        size="icon"
+                        className="h-11 w-11 rounded-xl shrink-0 shadow-sm" 
+                        onClick={() => handleRemoveSiteSetting("homepage_banner")}
+                        disabled={uploading}
+                        title="Remover banner Desktop"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-border/50" />
+
+              {/* Mobile Banner */}
+              <div className="flex flex-col md:flex-row items-start gap-4 md:gap-6">
+                <div className="w-32 h-40 bg-muted rounded-xl bg-muted/50 overflow-hidden mx-auto md:mx-0 border border-dashed flex-shrink-0 relative">
+                  {siteSettings && siteSettings["homepage_banner_mobile"] ? (
+                    <img src={siteSettings["homepage_banner_mobile"]} className="w-full h-full object-cover" alt="Banner Mobile" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground"><ImagePlus className="h-8 w-8 opacity-20" /></div>
+                  )}
+                </div>
+                <div className="flex-1 space-y-4 w-full">
+                  <div>
+                    <h4 className="font-bold text-foreground flex items-center gap-2">Smartphone / Celular</h4>
+                    <p className="text-sm text-muted-foreground mt-1">Tamanho ideal recomendado: <strong className="text-primary font-bold">800x800</strong> (quadrado) ou <strong className="text-primary font-bold">600x800</strong> (vertical). Ele ficará na mesma área, mas não cortará a lateral.</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Input type="file" accept="image/*" disabled={uploading} className="h-11 rounded-xl flex-1" onChange={(e) => handleSiteSettingUpload(e, "homepage_banner_mobile")} />
+                    {siteSettings && siteSettings["homepage_banner_mobile"] && (
+                      <Button 
+                        variant="destructive" 
+                        size="icon"
+                        className="h-11 w-11 rounded-xl shrink-0 shadow-sm" 
+                        onClick={() => handleRemoveSiteSetting("homepage_banner_mobile")}
+                        disabled={uploading}
+                        title="Remover banner Mobile"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -815,6 +889,50 @@ const SettingsPage = () => {
             </div>
           )}
         </TabsContent>
+
+        {/* Bloco de acesso exclusivo ADM CCM */}
+        {isAdminCCM && (
+          <TabsContent value="rotinas" className="pt-0 -mt-3">
+            <Card className="border-2 border-rose-500/40 rounded-3xl overflow-hidden shadow-xl">
+              <div className="h-1.5 w-full bg-rose-500" />
+              <CardHeader className="bg-rose-50 dark:bg-rose-950/20 pb-3">
+                <CardTitle className="flex items-center gap-2 text-rose-700 dark:text-rose-400">
+                  <Shield className="h-5 w-5" />
+                  Acesso Exclusivo — ADM CCM
+                </CardTitle>
+                <p className="text-xs text-rose-600/70 dark:text-rose-400/70">
+                  Estas funções são restritas exclusivamente ao Administrador CCM e não podem ser delegadas.
+                </p>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="divide-y">
+                  {CCM_ONLY_ROUTINES.map((routine) => {
+                    const Icon = routine.icon;
+                    return (
+                      <div key={routine.id} className="p-4 flex items-center justify-between bg-card hover:bg-muted/5 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-rose-100 text-rose-600 dark:bg-rose-900/40 dark:text-rose-400">
+                            <Icon className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-xs">{routine.label}</p>
+                            <p className="text-[10px] text-muted-foreground">{routine.description}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] font-bold uppercase text-rose-600 dark:text-rose-400">Somente ADM CCM</span>
+                          <div className="h-5 w-8 rounded-full bg-rose-500 flex items-center justify-end px-1">
+                            <div className="h-3 w-3 rounded-full bg-white" />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
  
       </Tabs>
  

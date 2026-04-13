@@ -18,6 +18,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { getErrorMessage } from "@/lib/errorMessages";
 
 const FALLBACK_INTEREST_AREAS = [
   "Louvor", "Infantil", "Recepção", "Mídia",
@@ -199,7 +200,7 @@ const Volunteers = () => {
       setFullName(""); setPhone(""); setAvailability(""); setInterestAreas([]);
       toast({ title: "Inscrição realizada! 🙌", description: "Sua solicitação foi enviada ao pastor." });
     },
-    onError: (err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" }),
+    onError: (err: any) => toast({ title: "Erro", description: getErrorMessage(err), variant: "destructive" }),
   });
 
   const deleteMutation = useMutation({
@@ -281,7 +282,7 @@ const Volunteers = () => {
       setScheduleDate(""); setScheduleRole(""); setScheduleVolunteerId(""); setScheduleGroupId("");
       toast({ title: editingSchedule ? "Escala atualizada!" : "Escala criada!" });
     },
-    onError: (err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" }),
+    onError: (err: any) => toast({ title: "Erro", description: getErrorMessage(err), variant: "destructive" }),
   });
 
   const deleteScheduleMutation = useMutation({

@@ -16,9 +16,12 @@ interface TestimonialCarouselProps {
 
 export const TestimonialCarousel = ({ testimonials }: TestimonialCarouselProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [activeIndex, setActiveIndex] = useState(0);
+  
+  // Define o índice central
+  const middleIndex = Math.max(0, Math.floor((testimonials?.length || 0) / 2));
+  const [activeIndex, setActiveIndex] = useState(middleIndex);
 
-  const scrollToIndex = (index: number) => {
+  const scrollToIndex = (index: number, immediate = false) => {
     if (!scrollRef.current) return;
     const container = scrollRef.current;
     const cards = container.querySelectorAll(".testimonial-card");
@@ -26,11 +29,25 @@ export const TestimonialCarousel = ({ testimonials }: TestimonialCarouselProps) 
       const card = cards[index] as HTMLElement;
       container.scrollTo({
         left: card.offsetLeft - (container.offsetWidth / 2) + (card.offsetWidth / 2),
-        behavior: "smooth",
+        behavior: immediate ? "auto" : "smooth",
       });
       setActiveIndex(index);
     }
   };
+
+  // Rola para o centro logo após carregar os depoimentos
+  useEffect(() => {
+    if (testimonials?.length > 0) {
+      const mid = Math.floor(testimonials.length / 2);
+      setActiveIndex(mid);
+      
+      const timer = setTimeout(() => {
+        scrollToIndex(mid, true); // true = rolagem imediata, sem animação na primeira vez
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [testimonials]);
 
   const handleScroll = () => {
     if (!scrollRef.current) return;
