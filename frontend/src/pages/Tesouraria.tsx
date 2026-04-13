@@ -489,25 +489,25 @@ const AdminTesouraria = ({ pixKey, user }: { pixKey: string; user: any }) => {
             icon={<DollarSign className="h-6 w-6"/>} 
             label="Total Arrecadado" 
             value={`R$ ${totalAmount.toFixed(2)}`} 
-            color="bg-emerald-500" 
+            color="bg-brand-cyan text-white" 
           />
           <DashboardStatBox 
             icon={<Heart className="h-6 w-6"/>} 
             label="Dízimos" 
             value={`R$ ${totalTithes.toFixed(2)}`} 
-            color="bg-primary" 
+            color="bg-brand-navy text-white" 
           />
           <DashboardStatBox 
             icon={<Wallet className="h-6 w-6"/>} 
             label="Ofertas" 
             value={`R$ ${totalOfferings.toFixed(2)}`} 
-            color="bg-indigo-500" 
+            color="bg-brand-charcoal text-white" 
           />
           <DashboardStatBox 
             icon={<Users className="h-6 w-6"/>} 
             label="Dizimistas" 
             value={uniqueTithers} 
-            color="bg-amber-500" 
+            color="bg-brand-light text-brand-navy" 
           />
         </div>
       </div>

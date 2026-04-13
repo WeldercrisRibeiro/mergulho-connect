@@ -414,42 +414,42 @@ const Reports = () => {
             icon={<Users className="h-5 w-5" />} 
             label="Público Total" 
             value={totals.people} 
-            color="bg-blue-500" 
+            color="bg-brand-cyan text-white" 
             description="Soma de todos os presentes"
           />
           <DashboardStatBox 
             icon={<Smile className="h-5 w-5" />} 
             label="Visitantes" 
             value={totals.visitors} 
-            color="bg-emerald-500" 
+            color="bg-brand-navy text-white" 
             description="Membros pela primeira vez"
           />
           <DashboardStatBox 
             icon={<Baby className="h-5 w-5" />} 
             label="Crianças" 
             value={totals.children} 
-            color="bg-rose-500" 
+            color="bg-brand-charcoal text-white" 
             description="Mergulho Kids"
           />
           <DashboardStatBox 
             icon={<UserCheck className="h-5 w-5" />} 
             label="Jovens" 
             value={totals.youth} 
-            color="bg-amber-500" 
+            color="bg-brand-light text-brand-navy" 
             description="Juventude Mergulho"
           />
           <DashboardStatBox 
             icon={<HandHeart className="h-5 w-5" />} 
             label="Monitores" 
             value={totals.monitors} 
-            color="bg-purple-500" 
+            color="bg-brand-cyan text-white" 
             description="Equipe voluntária"
           />
           <DashboardStatBox 
             icon={<BarChart3 className="h-5 w-5" />} 
             label="Média/Culto" 
             value={totals.count > 0 ? Math.round(totals.people / totals.count) : 0} 
-            color="bg-slate-700" 
+            color="bg-brand-navy text-white" 
             description="Média geral de presentes"
           />
         </div>
