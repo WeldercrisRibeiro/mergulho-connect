@@ -1,6 +1,5 @@
 import makeWASocket, {
   DisconnectReason,
-  useMultiFileAuthState,
   fetchLatestBaileysVersion,
   Browsers,
   WASocket,
@@ -12,6 +11,7 @@ import QRCode from "qrcode";
 import path from "path";
 import fs from "fs";
 import { Response } from "express";
+import { useSupabaseAuthState } from "./supabaseAuthState";
 
 export type WzStatus = "disconnected" | "connecting" | "qrcode" | "connected";
 
@@ -24,12 +24,14 @@ let socket: WASocket | null = null;
 let currentStatus: WzStatus = "disconnected";
 let currentQrCode: string | null = null;
 let reconnectTimer: NodeJS.Timeout | null = null;
+let currentClearState: (() => Promise<void>) | null = null;
 
 const sseClients: SseClient[] = [];
-const AUTH_FOLDER = path.join(process.cwd(), "baileys_auth");
+const AUTH_FOLDER = path.join(process.cwd(), "baileys_auth"); // Mantido apenas para dev local
 const logger = pino({ level: "silent" });
 
-if (!fs.existsSync(AUTH_FOLDER)) {
+// Cria pasta local apenas em desenvolvimento
+if (process.env.NODE_ENV !== "production" && !fs.existsSync(AUTH_FOLDER)) {
   fs.mkdirSync(AUTH_FOLDER, { recursive: true });
 }
 
@@ -80,7 +82,18 @@ async function startSocket(): Promise<void> {
   setStatus("connecting");
 
   try {
-    const { state, saveCreds } = await useMultiFileAuthState(AUTH_FOLDER);
+    // Em produção: usa Supabase Storage (sessão sobrevive a restarts)
+    // Em dev: mantém comportamento original com disco local via useMultiFileAuthState
+    const { state, saveCreds, clearState: supabaseClearState } = process.env.NODE_ENV === "production"
+      ? await useSupabaseAuthState()
+      : await (async () => {
+          const { useMultiFileAuthState } = await import("@whiskeysockets/baileys");
+          const { state, saveCreds } = await useMultiFileAuthState(AUTH_FOLDER);
+          return { state, saveCreds, clearState: async () => clearAuthFiles() };
+        })();
+
+    // Armazena a função clearState para uso no disconnectWhatsApp
+    currentClearState = supabaseClearState;
 
     let version: [number, number, number];
     try {
@@ -185,7 +198,12 @@ export async function disconnectWhatsApp(): Promise<void> {
     socket = null;
   }
 
-  clearAuthFiles();
+  // Limpa a sessão: Supabase Storage em produção, disco local em dev
+  if (currentClearState) {
+    await currentClearState();
+  } else {
+    clearAuthFiles();
+  }
   setStatus("disconnected", null);
   console.log("[WA] Desconectado e sessão removida.");
 }
@@ -195,10 +213,23 @@ export function isConnected(): boolean {
 }
 
 export async function tryAutoConnect(): Promise<void> {
-  const files = fs.existsSync(AUTH_FOLDER) ? fs.readdirSync(AUTH_FOLDER) : [];
-  if (files.length > 0) {
-    console.log("[WA] Sessão prévia encontrada. Reconectando automaticamente...");
-    await startSocket();
+  if (process.env.NODE_ENV === "production") {
+    // Em produção: verifica se há credenciais salvas no Supabase Storage
+    const { supabase } = await import("../lib/supabase");
+    const { data: files } = await supabase.storage
+      .from("baileys-auth")
+      .list("session");
+    if (files && files.length > 0) {
+      console.log("[WA] Sessão prévia encontrada no Supabase. Reconectando...");
+      await startSocket();
+    }
+  } else {
+    // Em desenvolvimento: usa disco local
+    const files = fs.existsSync(AUTH_FOLDER) ? fs.readdirSync(AUTH_FOLDER) : [];
+    if (files.length > 0) {
+      console.log("[WA] Sessão prévia encontrada. Reconectando automaticamente...");
+      await startSocket();
+    }
   }
 }
 
