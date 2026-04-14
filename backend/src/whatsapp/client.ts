@@ -108,7 +108,7 @@ async function startSocket(): Promise<void> {
       version,
       auth: state,
       logger,
-      printQRInTerminal: true, // útil para debug no terminal
+      // printQRInTerminal removido (deprecated) — QR é transmitido via SSE
       browser: Browsers.ubuntu("Chrome"),
       syncFullHistory: false,
       markOnlineOnConnect: true,

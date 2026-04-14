@@ -24,13 +24,15 @@ const AdminWhatsApp = () => {
 
   if (!isAdmin) return <Navigate to="/home" replace />;
 
+  // URL base do backend: vazia em localhost (Vite proxy), host do Render em produção
+  const getBackendUrl = () =>
+    window.location.hostname === "localhost"
+      ? ""
+      : "https://mergulho-connect.onrender.com";
+
   // Conecta ao SSE para receber status em tempo real
   useEffect(() => {
-    // Em produção usamos a URL direta do Render para evitar buffering do proxy da Vercel
-    const backendUrl = window.location.hostname === "localhost" 
-      ? "" 
-      : "https://mergulho-connect.onrender.com";
-      
+    const backendUrl = getBackendUrl();
     console.log(`[WA] Conectando ao fluxo de eventos em: ${backendUrl || "local proxy"}/api/whatsapp/events`);
     
     const es = new EventSource(`${backendUrl}/api/whatsapp/events`);
@@ -71,7 +73,7 @@ const AdminWhatsApp = () => {
   const handleConnect = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/whatsapp/connect", { method: "POST" });
+      const res = await fetch(`${getBackendUrl()}/api/whatsapp/connect`, { method: "POST" });
       if (!res.ok) {
         const data = await res.json();
         toast({ title: "Erro", description: data.error || "Falha ao iniciar conexão.", variant: "destructive" });
@@ -86,7 +88,7 @@ const AdminWhatsApp = () => {
   const handleDisconnect = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/whatsapp/disconnect", { method: "POST" });
+      const res = await fetch(`${getBackendUrl()}/api/whatsapp/disconnect`, { method: "POST" });
       if (res.ok) {
         toast({ title: "Desconectado", description: "O WhatsApp foi desconectado com sucesso." });
       } else {
