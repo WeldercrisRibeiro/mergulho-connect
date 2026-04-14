@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
+import { useTheme } from "@/components/ThemeProvider";
 
 const navItems = [
   { path: "/home", icon: Home, label: "Início" },
@@ -16,6 +17,7 @@ const navItems = [
 const BottomNav = () => {
   const location = useLocation();
   const { isAdmin, isGerente, isVisitor, routinePermissions, unreadAnnouncements } = useAuth();
+  const { skin } = useTheme();
   const [open, setOpen] = useState(false);
 
   const filteredNavItems = navItems.filter(item => {
@@ -79,48 +81,54 @@ const BottomNav = () => {
               <div className="grid grid-cols-4 gap-y-8 gap-x-4">
                 {isAdmin && (
                   <Link to="/departamentos" onClick={() => setOpen(false)} className="group flex flex-col items-center gap-2.5 transition-transform active:scale-90">
-                    <div className="h-14 w-14 rounded-2xl bg-brand-cyan/10 border border-brand-cyan/20 flex items-center justify-center shadow-sm group-hover:bg-brand-cyan/20 transition-colors">
-                      <Target className="h-6 w-6 text-brand-cyan" />
+                    <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center shadow-sm transition-colors", 
+                      skin !== "default" ? "bg-primary/20 border border-primary/30" : "bg-brand-cyan/10 border border-brand-cyan/20 group-hover:bg-brand-cyan/20")}>
+                      <Target className={cn("h-6 w-6", skin !== "default" ? "text-primary" : "text-brand-cyan")} />
                     </div>
                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">Setores</span>
                   </Link>
                 )}
                 {isAdmin && (
                   <Link to="/membros" onClick={() => setOpen(false)} className="group flex flex-col items-center gap-2.5 transition-transform active:scale-90">
-                    <div className="h-14 w-14 rounded-2xl bg-brand-navy/10 border border-brand-navy/20 flex items-center justify-center shadow-sm group-hover:bg-brand-navy/20 transition-colors">
-                      <Users className="h-6 w-6 text-brand-navy" />
+                    <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center shadow-sm transition-colors", 
+                      skin !== "default" ? "bg-primary/20 border border-primary/30" : "bg-brand-navy/10 border border-brand-navy/20 group-hover:bg-brand-navy/20")}>
+                      <Users className={cn("h-6 w-6", skin !== "default" ? "text-primary" : "text-brand-navy")} />
                     </div>
                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">Membros</span>
                   </Link>
                 )}
                 {(isAdmin || routinePermissions.voluntarios === true) && (
                   <Link to="/voluntarios" onClick={() => setOpen(false)} className="group flex flex-col items-center gap-2.5 transition-transform active:scale-90">
-                    <div className="h-14 w-14 rounded-2xl bg-brand-charcoal/10 border border-brand-charcoal/20 flex items-center justify-center shadow-sm group-hover:bg-brand-charcoal/20 transition-colors">
-                      <HandHeart className="h-6 w-6 text-brand-charcoal" />
+                    <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center shadow-sm transition-colors", 
+                      skin !== "default" ? "bg-primary/20 border border-primary/30" : "bg-brand-charcoal/10 border border-brand-charcoal/20 group-hover:bg-brand-charcoal/20")}>
+                      <HandHeart className={cn("h-6 w-6", skin !== "default" ? "text-primary" : "text-brand-charcoal")} />
                     </div>
                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">Voluntários</span>
                   </Link>
                 )}
                 {(isAdmin || routinePermissions.tesouraria === true) && (
                   <Link to="/tesouraria" onClick={() => setOpen(false)} className="group flex flex-col items-center gap-2.5 transition-transform active:scale-90">
-                    <div className="h-14 w-14 rounded-2xl bg-brand-light/30 border border-brand-light/50 flex items-center justify-center shadow-lg shadow-brand-navy/5 group-hover:bg-brand-light/50 transition-colors">
-                      <Wallet className="h-6 w-6 text-brand-navy" />
+                    <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center shadow-sm transition-colors", 
+                      skin !== "default" ? "bg-brand-cyan/10 border border-brand-cyan/20 group-hover:bg-brand-cyan/20" : "bg-primary/20 border border-primary/30")}>
+                      <Wallet className={cn("h-6 w-6", skin !== "default" ? "text-primary" : "text-brand-cyan")} />
                     </div>
-                    <span className="text-[10px] font-extrabold text-brand-navy uppercase tracking-tight">Tesouraria</span>
+                    <span className={cn("text-[10px] font-extrabold uppercase tracking-tight", skin !== "default" ? "text-primary" : "text-brand-cyan")}>Tesouraria</span>
                   </Link>
                 )}
                 {isAdmin && (
                   <Link to="/relatorios" onClick={() => setOpen(false)} className="group flex flex-col items-center gap-2.5 transition-transform active:scale-90">
-                    <div className="h-14 w-14 rounded-2xl bg-brand-cyan/10 border border-brand-cyan/20 flex items-center justify-center shadow-sm group-hover:bg-brand-cyan/20 transition-colors">
-                      <BarChart3 className="h-6 w-6 text-brand-cyan" />
+                    <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center shadow-sm transition-colors", 
+                      skin !== "default" ? "bg-primary/20 border border-primary/30" : "bg-brand-navy/10 border border-brand-navy/20 group-hover:bg-brand-navy/20")}>
+                      <BarChart3 className={cn("h-6 w-6", skin !== "default" ? "text-primary" : "text-brand-navy")} />
                     </div>
                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">Relatórios</span>
                   </Link>
                 )}
                 {isAdmin && (
                   <Link to="/configuracoes" onClick={() => setOpen(false)} className="group flex flex-col items-center gap-2.5 transition-transform active:scale-90">
-                    <div className="h-14 w-14 rounded-2xl bg-brand-navy/10 border border-brand-navy/20 flex items-center justify-center shadow-sm group-hover:bg-brand-navy/20 transition-colors">
-                      <Settings className="h-6 w-6 text-brand-navy" />
+                    <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center shadow-sm transition-colors", 
+                      skin !== "default" ? "bg-primary/20 border border-primary/30" : "bg-brand-charcoal/10 border border-brand-charcoal/20 group-hover:bg-brand-charcoal/20")}>
+                      <Settings className={cn("h-6 w-6", skin !== "default" ? "text-primary" : "text-brand-charcoal")} />
                     </div>
                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">Ajustes</span>
                   </Link>
@@ -135,8 +143,9 @@ const BottomNav = () => {
                 )}
                 {isAdmin && (
                   <Link to="/checkin-kids" onClick={() => setOpen(false)} className="group flex flex-col items-center gap-2.5 transition-transform active:scale-90">
-                    <div className="h-14 w-14 rounded-2xl bg-brand-light/30 border border-brand-light/50 flex items-center justify-center shadow-sm group-hover:bg-brand-light/50 transition-colors">
-                      <ShieldCheck className="h-6 w-6 text-brand-navy" />
+                    <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center shadow-sm transition-colors", 
+                      skin !== "default" ? "bg-primary/20 border border-primary/30" : "bg-brand-navy/10 border border-brand-navy/20 group-hover:bg-brand-navy/20")}>
+                      <ShieldCheck className={cn("h-6 w-6", skin !== "default" ? "text-primary" : "text-brand-navy")} />
                     </div>
                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">Validação</span>
                   </Link>
@@ -156,8 +165,9 @@ const BottomNav = () => {
                 )}
                 {isAdmin && (
                   <Link to="/auditoria" onClick={() => setOpen(false)} className="group flex flex-col items-center gap-2.5 transition-transform active:scale-90">
-                    <div className="h-14 w-14 rounded-2xl bg-brand-navy/10 border border-brand-navy/20 flex items-center justify-center shadow-sm group-hover:bg-brand-navy/20 transition-colors">
-                      <FileSearch className="h-6 w-6 text-brand-navy" />
+                    <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center shadow-sm transition-colors", 
+                      skin !== "default" ? "bg-primary/20 border border-primary/30" : "bg-brand-cyan/10 border border-brand-cyan/20 group-hover:bg-brand-cyan/20")}>
+                      <FileSearch className={cn("h-6 w-6", skin !== "default" ? "text-primary" : "text-brand-cyan")} />
                     </div>
                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">Logs</span>
                   </Link>

@@ -14,7 +14,7 @@ import { safeFormatMonth, safeFormatDay, safeFormatTime } from "@/lib/dateUtils"
 
 const HomePage = () => {
   const { profile, user, isVisitor, isAdmin, userGroupIds, routinePermissions } = useAuth();
-  const { theme } = useTheme();
+  const { skin } = useTheme();
 
   const { data: myActiveCheckin } = useQuery({
     queryKey: ["my-active-checkin", user?.id],
@@ -53,15 +53,29 @@ const HomePage = () => {
         .eq("user_id", user.id);
       const groupIds = memberGroups?.map((mg: any) => mg.group_id) || [];
 
-      let query = (supabase as any)
+      // Primeiro buscamos os anúncios
+      const { data: annData, error: annError } = await (supabase as any)
         .from("announcements")
-        .select("*, profiles:created_by(full_name)")
+        .select("*")
         .or(`type.eq.general,target_user_id.eq.${user.id}${groupIds.length > 0 ? `,and(type.eq.group,group_id.in.(${groupIds.join(",")}))` : ""}`)
         .order("created_at", { ascending: false })
         .limit(5);
 
-      const { data } = await query;
-      return data || [];
+      if (annError) throw annError;
+      if (!annData || annData.length === 0) return [];
+
+      // Depois buscamos os perfis dos criadores para evitar erro de Join (400) se não houver FK formal
+      const creatorIds = [...new Set(annData.map((a: any) => a.created_by))];
+      const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .in("user_id", creatorIds);
+
+      // Mapeamos os perfis de volta para os anúncios
+      return annData.map((ann: any) => ({
+        ...ann,
+        profiles: profilesData?.find((p: any) => p.user_id === ann.created_by) || null
+      }));
     },
     enabled: !!user,
   });
@@ -92,7 +106,7 @@ const HomePage = () => {
       const { data } = await supabase
         .from("devotionals")
         .select("*")
-        .in("status", ["published", "scheduled"])
+        .in("status", isAdmin ? ["published", "scheduled"] : ["published"])
         .lte("publish_date", new Date().toISOString())
         .order("publish_date", { ascending: false })
         .limit(1)
@@ -186,14 +200,14 @@ const HomePage = () => {
         {/* Quick Actions (Funções Liberadas) */}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {[
-            { icon: Calendar, label: "Agenda", path: "/agenda", color: "bg-brand-cyan text-white", routine: "agenda" },
-            { icon: BookOpen, label: "Devocionais", path: "/devocionais", color: "bg-brand-navy text-white", routine: "devocionais" },
-            { icon: HandHeart, label: "Voluntários", path: "/voluntarios", color: "bg-brand-charcoal text-white", routine: "voluntarios" },
-            { icon: MessageCircle, label: "Chat", path: "/chat", color: "bg-brand-light text-brand-navy", routine: "chat" },
-            { icon: Users, label: "Membros", path: "/membros", color: "bg-brand-cyan text-white", adminOnly: true, routine: "membros" },
-            { icon: ShieldCheck, label: "Check-in", path: "/checkin-kids", color: "bg-brand-navy text-white", adminOnly: true, routine: "kids" },
-            { icon: Megaphone, label: "Avisos", path: "/Disparos", color: "bg-brand-charcoal text-white", routine: "Disparos" },
-            { icon: BarChart3, label: "Relatórios", path: "/relatorios", color: "bg-brand-light text-brand-navy", adminOnly: true, routine: "relatorios" },
+            { icon: Calendar, label: "Agenda", path: "/agenda", color: skin !== "default" ? "bg-primary text-white" : "bg-brand-cyan text-white", routine: "agenda" },
+            { icon: BookOpen, label: "Devocionais", path: "/devocionais", color: skin !== "default" ? "bg-primary text-white" : "bg-brand-navy text-white", routine: "devocionais" },
+            { icon: HandHeart, label: "Voluntários", path: "/voluntarios", color: skin !== "default" ? "bg-primary text-white" : "bg-brand-charcoal text-white", routine: "voluntarios" },
+            { icon: MessageCircle, label: "Chat", path: "/chat", color: skin !== "default" ? "bg-primary text-white" : "bg-brand-navy text-white", routine: "chat" },
+            { icon: Users, label: "Membros", path: "/membros", color: skin !== "default" ? "bg-primary text-white" : "bg-brand-cyan text-white", adminOnly: true, routine: "membros" },
+            { icon: ShieldCheck, label: "Check-in", path: "/checkin-kids", color: skin !== "default" ? "bg-primary text-white" : "bg-brand-navy text-white", adminOnly: true, routine: "kids" },
+            { icon: Megaphone, label: "Avisos", path: "/Disparos", color: skin !== "default" ? "bg-primary text-white" : "bg-brand-charcoal text-white", routine: "Disparos" },
+            { icon: BarChart3, label: "Relatórios", path: "/relatorios", color: skin !== "default" ? "bg-primary text-white" : "bg-brand-cyan text-white", adminOnly: true, routine: "relatorios" },
           ].filter(item => {
             if (isVisitor) return ["/agenda", "/devocionais"].includes(item.path);
             if (item.adminOnly && !isAdmin) return false;

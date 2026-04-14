@@ -19,6 +19,8 @@ import {
 import { safeFormat } from "@/lib/dateUtils";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { useTheme } from "@/components/ThemeProvider";
+import { DashboardStatBox } from "@/components/DashboardStatBox";
 
 // ─── helpers ───────────────────────────────────────────────────────────────
 
@@ -92,7 +94,7 @@ const REPORT_TYPES = [
   { value: "celula", label: "Célula" },
 ];
 
-import { DashboardStatBox } from "@/components/DashboardStatBox";
+
 
 const StatBox = ({ label, value, accent, icon }: { label: string; value: number | string; accent?: boolean; icon?: React.ReactNode }) => (
   <div className={`relative overflow-hidden rounded-2xl p-4 sm:p-5 text-left border ${accent ? "bg-primary/5 border-primary/20 shadow-[0_4px_20px_-4px_rgba(var(--primary),0.1)]" : "bg-card/50 border-border/50 shadow-sm"} hover:shadow-md transition-all duration-300 group`}>
@@ -119,6 +121,7 @@ const Optional = () => <span className="text-[10px] text-muted-foreground font-n
 
 const Reports = () => {
   const { user, isAdmin } = useAuth();
+  const { skin } = useTheme();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -414,42 +417,42 @@ const Reports = () => {
             icon={<Users className="h-5 w-5" />} 
             label="Público Total" 
             value={totals.people} 
-            color="bg-brand-cyan text-white" 
+            color={skin !== "default" ? "bg-primary" : "bg-brand-cyan"} 
             description="Soma de todos os presentes"
           />
           <DashboardStatBox 
             icon={<Smile className="h-5 w-5" />} 
             label="Visitantes" 
             value={totals.visitors} 
-            color="bg-brand-navy text-white" 
+            color={skin !== "default" ? "bg-primary" : "bg-brand-navy"} 
             description="Membros pela primeira vez"
           />
           <DashboardStatBox 
             icon={<Baby className="h-5 w-5" />} 
             label="Crianças" 
             value={totals.children} 
-            color="bg-brand-charcoal text-white" 
+            color={skin !== "default" ? "bg-primary" : "bg-brand-charcoal"} 
             description="Mergulho Kids"
           />
           <DashboardStatBox 
             icon={<UserCheck className="h-5 w-5" />} 
             label="Jovens" 
             value={totals.youth} 
-            color="bg-brand-light text-brand-navy" 
+            color={skin !== "default" ? "bg-primary" : "bg-brand-navy"} 
             description="Juventude Mergulho"
           />
           <DashboardStatBox 
             icon={<HandHeart className="h-5 w-5" />} 
             label="Monitores" 
             value={totals.monitors} 
-            color="bg-brand-cyan text-white" 
+            color={skin !== "default" ? "bg-primary" : "bg-brand-cyan"} 
             description="Equipe voluntária"
           />
           <DashboardStatBox 
             icon={<BarChart3 className="h-5 w-5" />} 
             label="Média/Culto" 
             value={totals.count > 0 ? Math.round(totals.people / totals.count) : 0} 
-            color="bg-brand-navy text-white" 
+            color={skin !== "default" ? "bg-primary" : "bg-brand-navy"} 
             description="Média geral de presentes"
           />
         </div>

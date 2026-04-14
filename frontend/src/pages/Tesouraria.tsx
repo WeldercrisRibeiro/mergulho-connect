@@ -12,11 +12,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import {
-  Wallet, Copy, CheckCheck, Heart, DollarSign, Users, Baby,
-  Plus, Trash2, Edit2, BarChart3, QrCode, CalendarDays, TrendingUp,
-  ClipboardList, ChevronDown
-} from "lucide-react";
+import { DashboardStatBox } from "@/components/DashboardStatBox";
+import { DollarSign, Wallet, Heart, BarChart3, TrendingUp, Users, Plus, Filter, Download, ArrowUpRight, Search, FileText, Copy, CheckCheck, Baby, QrCode, CalendarDays, Trash2, Edit2, ClipboardList, ChevronDown } from "lucide-react";
+import { useTheme } from "@/components/ThemeProvider";
 import { safeFormat } from "@/lib/dateUtils";
 import { useToast } from "@/hooks/use-toast";
 
@@ -313,6 +311,7 @@ const MemberTesouraria = ({
 const AdminTesouraria = ({ pixKey, user }: { pixKey: string; user: any }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { skin } = useTheme();
 
   // Culto report form
   const [reportOpen, setReportOpen] = useState(false);
@@ -463,9 +462,6 @@ const AdminTesouraria = ({ pixKey, user }: { pixKey: string; user: any }) => {
     },
   });
 
-  //para deixar somente tesouraria, sem relatório de culto que já existe em outro luugar 
-  // você vai comentar essas linhas seguintes: 
-
   // Computed stats
   const totalTithes = allEntries?.filter(e => e.payment_type === "dizimo").reduce((s, e) => s + e.amount, 0) || 0;
   const totalOfferings = allEntries?.filter(e => e.payment_type === "oferta").reduce((s, e) => s + e.amount, 0) || 0;
@@ -489,25 +485,25 @@ const AdminTesouraria = ({ pixKey, user }: { pixKey: string; user: any }) => {
             icon={<DollarSign className="h-6 w-6"/>} 
             label="Total Arrecadado" 
             value={`R$ ${totalAmount.toFixed(2)}`} 
-            color="bg-brand-cyan text-white" 
+            color={skin !== "default" ? "bg-primary" : "bg-brand-cyan"} 
           />
           <DashboardStatBox 
             icon={<Heart className="h-6 w-6"/>} 
             label="Dízimos" 
             value={`R$ ${totalTithes.toFixed(2)}`} 
-            color="bg-brand-navy text-white" 
+            color={skin !== "default" ? "bg-primary" : "bg-brand-navy"} 
           />
           <DashboardStatBox 
             icon={<Wallet className="h-6 w-6"/>} 
             label="Ofertas" 
             value={`R$ ${totalOfferings.toFixed(2)}`} 
-            color="bg-brand-charcoal text-white" 
+            color={skin !== "default" ? "bg-primary" : "bg-brand-charcoal"} 
           />
           <DashboardStatBox 
             icon={<Users className="h-6 w-6"/>} 
             label="Dizimistas" 
             value={uniqueTithers} 
-            color="bg-brand-light text-brand-navy" 
+            color={skin !== "default" ? "bg-primary" : "bg-brand-cyan"} 
           />
         </div>
       </div>
@@ -517,9 +513,9 @@ const AdminTesouraria = ({ pixKey, user }: { pixKey: string; user: any }) => {
           <TabsTrigger value="entradas" className="flex-1 rounded-xl gap-2 py-2 text-xs">
             <DollarSign className="h-3.5 w-3.5" /> Entradas
           </TabsTrigger>
-          {/*<TabsTrigger value="relatorio" className="flex-1 rounded-xl gap-2 py-2 text-xs">
+          <TabsTrigger value="relatorio" className="flex-1 rounded-xl gap-2 py-2 text-xs">
             <ClipboardList className="h-3.5 w-3.5" /> Relatórios de Culto
-          </TabsTrigger>*/}
+          </TabsTrigger>
         </TabsList>
 
         {/* ── Entradas Tab ─────────────────────────────────────────────── */}
@@ -825,6 +821,7 @@ const AdminTesouraria = ({ pixKey, user }: { pixKey: string; user: any }) => {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const Tesouraria = () => {
   const { user, isAdmin, routinePermissions } = useAuth();
+  const { skin } = useTheme();
   
   const { data: siteSettings } = useQuery({
     queryKey: ["site-settings"],
