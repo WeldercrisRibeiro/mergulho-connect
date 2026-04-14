@@ -93,7 +93,6 @@ const Auth = () => {
 
       navigate("/home");
     } catch (error: any) {
-      console.error("Login error details:", error);
       toast({
         title: "Erro de Acesso",
         description: error.message || "Usuário ou senha incorretos. Verifique se digitou o usuário (ex: welder) ou seu telefone corretamente.",
@@ -379,6 +378,7 @@ const Auth = () => {
                       className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium pr-10"
                       required
                       minLength={6}
+                      autoComplete="current-password"
                     />
                     <button
                       type="button"

@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { devLog, devWarn, devError } from "@/lib/security";
 
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || "";
 
@@ -82,7 +83,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
       audio.volume = 0.5;
-      audio.play().catch((e) => console.log("Audio bloqueado pelo browser:", e));
+      audio.play().catch((e) => devLog("warn", "Audio bloqueado pelo browser:", e));
     } catch (_) {}
   };
 
@@ -91,7 +92,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const IS_DEBUG_ADMIN = localStorage.getItem("debug_admin") === "true";
 
     if (IS_DEBUG_ADMIN) {
-      console.warn("⚠️ MODO DEBUG ADMIN ATIVO: Ignorando autenticação Supabase.");
+      devWarn("⚠️ MODO DEBUG ADMIN ATIVO: Ignorando autenticação Supabase.");
       const mockUser: any = {
         id: "00000000-0000-0000-0000-000000000000",
         email: "admin@debug.com",
@@ -159,11 +160,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .maybeSingle();
 
       if (error && error.code !== "PGRST116") {
-        console.error("Erro ao buscar perfil:", error);
+        devError("Erro ao buscar perfil:", error.code);
       }
       if (data) setProfile(data);
     } catch (err) {
-      console.error("Exceção ao buscar perfil:", err);
+      devError("Exceção ao buscar perfil:", err);
     }
   };
 
@@ -190,7 +191,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .select("group_id, role")
         .eq("user_id", userId);
 
-      if (managedErr) console.error("Erro ao buscar grupos:", managedErr);
+      if (managedErr) devError("Erro ao buscar grupos:", managedErr?.code);
       const managedGroups = memberGroupsData || [];
 
       const allGroupIds = Array.from(new Set((managedGroups as any[]).map((m) => m.group_id)));
@@ -215,7 +216,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           .in("group_id", currentRoles);
 
         if (routineErr) {
-          console.error("Erro ao buscar permissões de rotina:", routineErr);
+          devError("Erro ao buscar permissões de rotina:", routineErr?.code);
           setRoutinePermissions({});
         } else {
           const perms: Record<string, boolean> = {};
@@ -225,11 +226,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setRoutinePermissions(perms);
         }
       } catch (e) {
-        console.error("Falha silenciosa na busca de rotinas:", e);
+        devError("Falha silenciosa na busca de rotinas:", e);
         setRoutinePermissions({});
       }
     } catch (err) {
-      console.error("Erro ao verificar roles:", err);
+      devError("Erro ao verificar roles:", err);
     }
   };
 
@@ -301,7 +302,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const resetTimer = () => {
       if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
       inactivityTimerRef.current = setTimeout(() => {
-        console.warn("Sessão expirada por inatividade.");
+        devWarn("Sessão expirada por inatividade.");
         signOutRef.current();
       }, INACTIVITY_TIMEOUT_MS);
     };
@@ -361,7 +362,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             },
             { onConflict: "user_id" }
           );
-        console.log("Push subscription salva com sucesso.");
+        devLog("log", "Push subscription salva com sucesso.");
       }
     } catch (err) {
       console.warn("Push subscription falhou:", err);
@@ -370,7 +371,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // ─── signOut ──────────────────────────────────────────────────────────────
   const signOut = async () => {
-    console.log("[AuthContext] Saindo...");
+    devLog("log", "[AuthContext] Saindo...");
     if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
     localStorage.removeItem("last_active_time");
     localStorage.removeItem("debug_admin");
