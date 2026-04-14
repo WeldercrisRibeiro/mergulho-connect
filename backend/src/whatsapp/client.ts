@@ -144,7 +144,17 @@ async function startSocket(): Promise<void> {
         if (statusCode === DisconnectReason.loggedOut) {
           // Logout explícito — limpa sessão e não reconecta
           console.log("[WA] Logout detectado. Limpando sessão.");
-          clearAuthFiles();
+          // Em produção usa currentClearState (Supabase Storage).
+          // Em dev usa clearAuthFiles (disco local).
+          // IMPORTANTE: clearAuthFiles() NÃO apaga a sessão do Supabase!
+          if (currentClearState) {
+            await currentClearState().catch((e) =>
+              console.error("[WA] Erro ao limpar sessão no Supabase:", e)
+            );
+          } else {
+            clearAuthFiles();
+          }
+          currentClearState = null;
           setStatus("disconnected", null);
           socket = null;
           return;
