@@ -38,25 +38,39 @@ const AuditLogs = () => {
   const { data: logs, isLoading, refetch } = useQuery({
     queryKey: ["audit-logs", filterUser, filterRoutine, filterAction],
     queryFn: async () => {
-      let query = (supabase as any)
-        .from("audit_logs")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(200);
+      try {
+        let query = (supabase as any)
+          .from("audit_logs")
+          .select("id, user_id, user_email, user_name, action, routine, details, device_info, created_at")
+          .order("created_at", { ascending: false })
+          .limit(100);
 
-      if (filterUser.trim()) {
-        query = query.or(`user_name.ilike.%${filterUser}%,user_email.ilike.%${filterUser}%`);
-      }
-      if (filterRoutine !== "all") {
-        query = query.eq("routine", filterRoutine);
-      }
-      if (filterAction !== "all") {
-        query = query.eq("action", filterAction);
-      }
+        if (filterUser.trim()) {
+          query = query.or(`user_name.ilike.%${filterUser}%,user_email.ilike.%${filterUser}%`);
+        }
+        if (filterRoutine !== "all") {
+          query = query.eq("routine", filterRoutine);
+        }
+        if (filterAction !== "all") {
+          query = query.eq("action", filterAction);
+        }
 
-      const { data, error } = await query;
-      if (error) throw error;
-      return data || [];
+        const { data, error } = await query;
+        if (error) {
+          console.error("[AuditLogs] DB Error:", error);
+          throw error;
+        }
+        return data || [];
+      } catch (err: any) {
+        console.error("[AuditLogs] Query Exception:", err);
+        // Fallback para evitar 406 crash
+        toast({ 
+          title: "Aviso de Sincronização", 
+          description: "Não foi possível carregar os logs mais recentes. Tente atualizar a página.",
+          variant: "destructive" 
+        });
+        return [];
+      }
     },
     refetchInterval: 10000, // Refresh every 10s for real-time feel
   });

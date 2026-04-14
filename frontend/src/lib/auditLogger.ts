@@ -21,11 +21,14 @@ export async function logAudit(
     if (!user) return;
 
     // Captura a role do usuário para contexto no log
-    const { data: roleData } = await (supabase as any)
+    const { data: roleData, error: roleError } = await (supabase as any)
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id)
+      .limit(1)
       .maybeSingle();
+
+    if (roleError) console.warn("[Audit] Role check fail:", roleError.message);
 
     const userRole = roleData?.role || "membro";
     const deviceInfo = navigator.userAgent.substring(0, 200);
