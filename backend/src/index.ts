@@ -19,7 +19,7 @@ import { tryAutoConnect } from "./whatsapp/client";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:8080";
+const FRONTEND_URL = process.env.FRONTEND_URL || "https://cc-mergulho-git-developer-weldercris-ribeiros-projects.vercel.app";
 
 // Middlewares
 app.use(cors({ origin: FRONTEND_URL, credentials: true }));
