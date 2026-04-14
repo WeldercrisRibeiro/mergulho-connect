@@ -37,6 +37,11 @@ app.get("/api/health", (_req, res) => {
   res.json({ ok: true, ts: new Date().toISOString() });
 });
 
+// Rota raiz para o UptimeRobot não dar 404
+app.get("/", (_req, res) => {
+  res.json({ status: "online", service: "mergulho-backend" });
+});
+
 // Start
 app.listen(PORT, async () => {
   console.log(`[Server] Rodando em http://localhost:${PORT}`);
