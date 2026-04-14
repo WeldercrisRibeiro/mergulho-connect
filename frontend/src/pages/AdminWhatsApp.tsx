@@ -26,12 +26,25 @@ const AdminWhatsApp = () => {
 
   // Conecta ao SSE para receber status em tempo real
   useEffect(() => {
-    const es = new EventSource("/api/whatsapp/events");
+    // Em produção usamos a URL direta do Render para evitar buffering do proxy da Vercel
+    const backendUrl = window.location.hostname === "localhost" 
+      ? "" 
+      : "https://mergulho-connect.onrender.com";
+      
+    console.log(`[WA] Conectando ao fluxo de eventos em: ${backendUrl || "local proxy"}/api/whatsapp/events`);
+    
+    const es = new EventSource(`${backendUrl}/api/whatsapp/events`);
     eventSourceRef.current = es;
+    
+    es.onopen = () => {
+      console.log("[WA] Conexão SSE estabelecida.");
+    };
 
     es.onmessage = (e) => {
       try {
         const data: WzStatusEvent = JSON.parse(e.data);
+        console.log("[WA] Evento recebido:", data.type, data.status);
+        
         if (data.type === "status") {
           setStatus(data.status);
           setQrCode(data.qrCode ?? null);
@@ -39,16 +52,18 @@ const AdminWhatsApp = () => {
             toast({ title: "WhatsApp Conectado!", description: "O bot está pronto para enviar mensagens." });
           }
         }
-      } catch {
-        // ignora mensagens malformadas
+      } catch (err) {
+        console.error("[WA] Erro ao processar mensagem SSE:", err);
       }
     };
 
-    es.onerror = () => {
+    es.onerror = (err) => {
+      console.warn("[WA] Erro na conexão SSE. Tentando reconectar...", err);
       // SSE vai tentar reconectar automaticamente
     };
 
     return () => {
+      console.log("[WA] Fechando conexão SSE.");
       es.close();
     };
   }, []);
