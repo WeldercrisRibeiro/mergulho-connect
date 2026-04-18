@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import api from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar, MapPin, Mic2, Clock, ChevronRight } from "lucide-react";
@@ -28,17 +28,10 @@ export const PublicAgenda = () => {
   const { data: events, isLoading } = useQuery({
     queryKey: ["public-agenda"],
     queryFn: async () => {
-      const today = new Date().toISOString();
-      const { data } = await (supabase as any)
-        .from("events")
-        .select("id, title, description, event_date, location, event_type, price, speakers, banner_url, is_general, is_public, groups(name)")
-        .or("is_general.eq.true,is_public.eq.true") // eventos gerais OU marcados como públicos
-        .gte("event_date", today)
-        .order("event_date", { ascending: true })
-        .limit(6);
+      const { data } = await api.get('/events', { params: { public: true, limit: 6, upcoming: true } });
       return data || [];
     },
-    refetchInterval: 60000, // refresh a cada 1 min
+    refetchInterval: 60000,
   });
 
   if (isLoading) {

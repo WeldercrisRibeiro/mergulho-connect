@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Moon, Sun, KeyRound, AlertCircle, ArrowLeft, Eye, EyeOff } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import api from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/components/ThemeProvider";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,7 @@ const Auth = () => {
   const [newPassword, setNewPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signIn } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const { toast } = useToast();
@@ -35,14 +35,12 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await supabase.from("contact_messages" as any).insert([
-        {
-          name: fullName,
-          phone: reqPhone,
-          subject: "Quero me tornar Membro",
-          message: "Solicitação gerada automaticamente pela tela de Acesso",
-        }
-      ] as any);
+      await api.post("/contact-messages", {
+        name: fullName,
+        phone: reqPhone,
+        subject: "Quero me tornar Membro",
+        message: "Solicitação gerada automaticamente pela tela de Acesso",
+      });
       toast({ title: "Solicitação enviada!", description: "Aguarde o contato dos administradores." });
       setFullName("");
       setReqPhone("");
@@ -66,24 +64,22 @@ const Auth = () => {
         ? cleanUsername
         : cleanUsername.replace(/\s+/g, ".") + "@ccmergulho.com";
 
-      const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
-
-      if (error) {
-        // Se falhou e parece um número, tenta o formato de telefone (para usuários antigos/aprovados via contato)
+      try {
+        await signIn(loginEmail, password);
+      } catch (error) {
+        // Se falhou e parece um número, tenta o formato de telefone
         const phoneDigits = cleanUsername.replace(/\D/g, "");
         if (phoneDigits.length >= 8) {
-          // Tenta com os dígitos exatos (pode ter 55 ou não)
           const phoneEmail = phoneDigits + "@ccmergulho.com";
-          const { error: phoneError } = await supabase.auth.signInWithPassword({ email: phoneEmail, password });
-
-          if (phoneError) {
+          try {
+            await signIn(phoneEmail, password);
+          } catch (phoneError) {
             // Se falhou, e NÃO começa com 55, tenta adicionar 55 (padrão Brasil)
             if (!phoneDigits.startsWith("55")) {
               const phoneEmail55 = "55" + phoneDigits + "@ccmergulho.com";
-              const { error: phoneError55 } = await supabase.auth.signInWithPassword({ email: phoneEmail55, password });
-              if (phoneError55) throw error; // Lança o erro original
+              await signIn(phoneEmail55, password);
             } else {
-              throw error; // Lança o erro original
+              throw phoneError; // Lança o erro original
             }
           }
         } else {
@@ -322,7 +318,7 @@ const Auth = () => {
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="Mínimo 6 caracteres"
                       required
-                      minLength={6}
+                      minLength={3}
                     />
                     <button
                       type="button"
@@ -377,7 +373,7 @@ const Auth = () => {
                       onChange={(e) => setPassword(e.target.value)}
                       className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium pr-10"
                       required
-                      minLength={6}
+                      minLength={3}
                       autoComplete="current-password"
                     />
                     <button

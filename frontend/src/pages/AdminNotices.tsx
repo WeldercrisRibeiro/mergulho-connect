@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import api from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,49 +23,23 @@ import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 type AttachmentType = "image" | "video" | "document" | "audio";
-
-type LocalAttachment = {
-  id: string;
-  file?: File;
-  existingApiId?: string;
-  type: AttachmentType;
-  url: string;
-  name: string;
-};
-
-type ApiAttachment = {
-  id: string;
-  type: AttachmentType;
-  filename: string;
-  filepath: string;
-  mimetype: string;
-};
-
+type LocalAttachment = { id: string; file?: File; existingApiId?: string; type: AttachmentType; url: string; name: string; };
+type ApiAttachment = { id: string; type: AttachmentType; filename: string; filepath: string; mimetype: string; };
 type Dispatch = {
-  id: string;
-  title: string;
-  content: string | null;
-  type: string;
-  priority: string;
-  target_group_id: string | null;
-  target_user_id: string | null;
+  id: string; title: string; content: string | null; type: string; priority: string;
+  target_group_id: string | null; target_user_id: string | null;
   status: "pending" | "sending" | "sent" | "error";
-  scheduled_at: string;
-  sent_at: string | null;
-  error_message: string | null;
-  created_at: string;
+  scheduled_at: string; sent_at: string | null; error_message: string | null; created_at: string;
   attachments: ApiAttachment[];
   logs: { id: string; recipient: string; status: string; error: string | null }[];
 };
 
-// Bolha de mensagem estilo WhatsApp (preview)
 function WaBubble({ children, time }: { children: React.ReactNode; time: string }) {
   return (
-    <div className="self-end bg-[#DCF8C6] p-1.5 pb-5 rounded-xl rounded-tr-sm shadow-sm relative max-w-[85%] animate-in slide-in-from-right-4 fade-in duration-300 min-w-[80px]">
+    <div className="self-end bg-[#DCF8C6] p-1.5 pb-5 rounded-xl rounded-tr-sm shadow-sm relative max-w-[85%] animate-in fade-in duration-300 min-w-[80px]">
       {children}
       <span className="text-[10.5px] text-[#075E54]/70 font-medium absolute bottom-1 right-2 inline-flex items-center gap-1">
-        {time}
-        <CheckCircle2 className="h-[14px] w-[14px] text-[#34B7F1]" strokeWidth={2.5} />
+        {time}<CheckCircle2 className="h-[14px] w-[14px] text-[#34B7F1]" strokeWidth={2.5} />
       </span>
       <svg viewBox="0 0 8 13" width="8" height="13" className="absolute top-0 -right-[7px] text-[#DCF8C6]">
         <path opacity=".13" d="M5.188 1H0v11.193l6.467-8.625C7.526 2.156 6.958 1 5.188 1z" />
@@ -75,101 +49,32 @@ function WaBubble({ children, time }: { children: React.ReactNode; time: string 
   );
 }
 
-async function apiGet(url: string) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error((await res.json()).error || "Erro ao buscar dados.");
-  return res.json();
-}
+async function apiGet(url: string) { const res = await fetch(url); if (!res.ok) throw new Error("Erro."); return res.json(); }
+async function apiPost(url: string, body?: object) { const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined }); if (!res.ok) throw new Error("Erro."); return res.json(); }
+async function apiDelete(url: string) { const res = await fetch(url, { method: "DELETE" }); if (!res.ok) throw new Error("Erro."); return res.json(); }
 
-async function apiPost(url: string, body?: object) {
-  const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
-  if (!res.ok) throw new Error((await res.json()).error || "Erro na requisição.");
-  return res.json();
-}
-
-async function apiDelete(url: string) {
-  const res = await fetch(url, { method: "DELETE" });
-  if (!res.ok) throw new Error((await res.json()).error || "Erro ao excluir.");
-  return res.json();
-}
-
-// Player de áudio estilo WhatsApp com botão play/pause visível
 function AudioBubblePlayer({ src }: { src: string }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
-
-  const toggle = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    if (playing) { audio.pause(); } else { audio.play(); }
-    setPlaying(!playing);
-  };
-
-  const formatSecs = (s: number) => {
-    if (!s || !isFinite(s)) return "0:00";
-    const m = Math.floor(s / 60);
-    const sec = Math.floor(s % 60);
-    return `${m}:${sec < 10 ? "0" : ""}${sec}`;
-  };
-
-  const handleTimeUpdate = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    setCurrentTime(audio.currentTime);
-    setProgress(audio.duration ? (audio.currentTime / audio.duration) * 100 : 0);
-  };
-
-  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
-    const audio = audioRef.current;
-    if (!audio || !audio.duration) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    audio.currentTime = pct * audio.duration;
-  };
-
+  const toggle = () => { const a = audioRef.current; if (!a) return; if (playing) a.pause(); else a.play(); setPlaying(!playing); };
+  const fmt = (s: number) => { if (!s || !isFinite(s)) return "0:00"; return `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`; };
+  const handleTimeUpdate = () => { const a = audioRef.current; if (!a) return; setCurrentTime(a.currentTime); setProgress(a.duration?(a.currentTime/a.duration)*100:0); };
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => { const a = audioRef.current; if (!a||!a.duration) return; const r=e.currentTarget.getBoundingClientRect(); a.currentTime=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*a.duration; };
+  const heights = [6,10,14,8,16,12,18,10,6,14,18,10,8,16,12,6,14,10,18,8,12,16,6,10,14,8,18,12];
   return (
     <div className="flex items-center gap-2.5 px-2 py-1.5 min-w-[220px]">
-      <audio
-        ref={audioRef}
-        src={src}
-        preload="metadata"
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={() => setDuration(audioRef.current?.duration || 0)}
-        onEnded={() => { setPlaying(false); setProgress(0); setCurrentTime(0); }}
-      />
-      <button
-        type="button"
-        onClick={toggle}
-        className="h-10 w-10 shrink-0 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-md hover:bg-[#1DA851] transition-colors"
-      >
+      <audio ref={audioRef} src={src} preload="metadata" onTimeUpdate={handleTimeUpdate} onLoadedMetadata={()=>setDuration(audioRef.current?.duration||0)} onEnded={()=>{setPlaying(false);setProgress(0);setCurrentTime(0);}} />
+      <button type="button" onClick={toggle} className="h-10 w-10 shrink-0 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-md hover:bg-[#1DA851] transition-colors">
         {playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
       </button>
       <div className="flex-1 flex flex-col gap-1">
-        {/* Barra de progresso estilo waveform */}
-        <div className="flex items-center gap-1.5 h-[18px]" onClick={handleSeek} style={{ cursor: "pointer" }}>
-          {Array.from({ length: 28 }).map((_, i) => {
-            const pct = (i / 28) * 100;
-            const heights = [6, 10, 14, 8, 16, 12, 18, 10, 6, 14, 18, 10, 8, 16, 12, 6, 14, 10, 18, 8, 12, 16, 6, 10, 14, 8, 18, 12];
-            return (
-              <div
-                key={i}
-                className="rounded-full transition-colors duration-150"
-                style={{
-                  width: 2.5,
-                  height: heights[i % heights.length],
-                  backgroundColor: pct <= progress ? "#25D366" : "#B0B0B0",
-                  opacity: pct <= progress ? 1 : 0.45,
-                }}
-              />
-            );
-          })}
+        <div className="flex items-center gap-1.5 h-[18px]" onClick={handleSeek} style={{cursor:"pointer"}}>
+          {Array.from({length:28}).map((_,i)=><div key={i} className="rounded-full" style={{width:2.5,height:heights[i%heights.length],backgroundColor:((i/28)*100)<=progress?"#25D366":"#B0B0B0",opacity:((i/28)*100)<=progress?1:0.45}} />)}
         </div>
-        <span className="text-[10px] text-[#666] font-medium leading-none">
-          {playing || currentTime > 0 ? formatSecs(currentTime) : formatSecs(duration)}
-        </span>
+        <span className="text-[10px] text-[#666] font-medium leading-none">{playing||currentTime>0?fmt(currentTime):fmt(duration)}</span>
       </div>
     </div>
   );
@@ -179,7 +84,6 @@ const AdminNotices = () => {
   const { user, profile, isAdmin, isGerente, managedGroupIds } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [type, setType] = useState(isAdmin ? "general" : "group");
@@ -188,20 +92,13 @@ const AdminNotices = () => {
   const [targetUserId, setTargetUserId] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [scheduledAt, setScheduledAt] = useState("");
-  
   const [editId, setEditId] = useState<string | null>(null);
-
   const [attachments, setAttachments] = useState<LocalAttachment[]>([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const cursorPositionRef = useRef<number>(0);
   const [signEnabled, setSignEnabled] = useState(false);
-
-  const signatureName = useMemo(() => {
-    return profile?.full_name || user?.user_metadata?.full_name || "";
-  }, [profile, user]);
-
-  // Audio Recording
+  const signatureName = useMemo(() => profile?.full_name || profile?.fullName || user?.user_metadata?.full_name || "", [profile, user]);
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -211,9 +108,9 @@ const AdminNotices = () => {
   const { data: groups } = useQuery({
     queryKey: ["groups-list-notices"],
     queryFn: async () => {
-      let query = supabase.from("groups").select("id, name");
-      if (!isAdmin && managedGroupIds.length > 0) query = query.in("id", managedGroupIds);
-      const { data } = await query;
+      const params: any = {};
+      if (!isAdmin && managedGroupIds.length > 0) params.ids = managedGroupIds.join(',');
+      const { data } = await api.get('/groups', { params });
       return data || [];
     },
   });
@@ -221,13 +118,9 @@ const AdminNotices = () => {
   const { data: members } = useQuery({
     queryKey: ["members-list-notices"],
     queryFn: async () => {
-      let query = supabase.from("profiles").select("user_id, full_name");
-      if (!isAdmin && managedGroupIds.length > 0) {
-        const { data: memberData } = await supabase.from("member_groups").select("user_id").in("group_id", managedGroupIds);
-        const ids = memberData?.map((m) => m.user_id) || [];
-        query = query.in("user_id", ids);
-      }
-      const { data } = await query;
+      const params: any = {};
+      if (!isAdmin && managedGroupIds.length > 0) params.groupIds = managedGroupIds.join(',');
+      const { data } = await api.get('/profiles', { params });
       return data || [];
     },
   });
@@ -235,7 +128,6 @@ const AdminNotices = () => {
   const { data: dispatches, isLoading } = useQuery<Dispatch[]>({
     queryKey: ["wz-dispatches"],
     queryFn: () => apiGet("/api/dispatches"),
-    // Polling adaptativo: 3s quando há dispatches ativos/iminentes, 10s caso contrário
     refetchInterval: (query) => {
       const data = query.state.data as Dispatch[] | undefined;
       if (!data) return 5000;

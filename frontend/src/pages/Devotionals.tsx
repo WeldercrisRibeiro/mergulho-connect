@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import api from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -82,27 +82,27 @@ const Devotionals = () => {
   const { data: devotionals } = useQuery({
     queryKey: ["devotionals", isAdmin],
     queryFn: async () => {
-      let query = supabase.from("devotionals").select("*").order("publish_date", { ascending: false }) as any;
+      const { data } = await api.get('/devotionals');
+      const all = data || [];
       if (!isAdmin) {
         const now = new Date().toISOString();
-        query = query
-          .eq("status", "published")
-          .eq("is_active", true)
-          .lte("publish_date", now)
-          .or(`expiration_date.is.null,expiration_date.gt.${now}`);
+        return all.filter((d: any) =>
+          d.status === 'published' && d.isActive &&
+          d.publishDate <= now &&
+          (!d.expirationDate || d.expirationDate > now)
+        ).map((d: any) => ({ ...d, publish_date: d.publishDate, media_url: d.mediaUrl, is_active: d.isActive, expiration_date: d.expirationDate }));
       }
-      const { data } = await query;
-      return data || [];
+      return all.map((d: any) => ({ ...d, publish_date: d.publishDate, media_url: d.mediaUrl, is_active: d.isActive, expiration_date: d.expirationDate }));
     },
   });
 
   const { data: likeCounts } = useQuery({
     queryKey: ["devotional-like-counts"],
     queryFn: async () => {
-      const { data } = await (supabase as any).from("devotional_likes").select("devotional_id");
+      const { data } = await api.get('/devotional-likes');
       const counts: Record<string, number> = {};
       (data || []).forEach((l: any) => {
-        counts[l.devotional_id] = (counts[l.devotional_id] || 0) + 1;
+        counts[l.devotionalId] = (counts[l.devotionalId] || 0) + 1;
       });
       return counts;
     },
@@ -111,11 +111,8 @@ const Devotionals = () => {
   const { data: myLikes } = useQuery({
     queryKey: ["my-likes", user?.id],
     queryFn: async () => {
-      const { data } = await (supabase as any)
-        .from("devotional_likes")
-        .select("devotional_id")
-        .eq("user_id", user!.id);
-      return new Set((data || []).map((l: any) => l.devotional_id));
+      const { data } = await api.get('/devotional-likes', { params: { userId: user!.id } });
+      return new Set((data || []).map((l: any) => l.devotionalId));
     },
     enabled: !!user,
   });
@@ -123,14 +120,11 @@ const Devotionals = () => {
   const { data: likers } = useQuery({
     queryKey: ["devotional-likers", likersDevId],
     queryFn: async () => {
-      const { data: likes } = await (supabase as any)
-        .from("devotional_likes")
-        .select("user_id")
-        .eq("devotional_id", likersDevId);
+      const { data: likes } = await api.get('/devotional-likes', { params: { devotionalId: likersDevId } });
       if (!likes || likes.length === 0) return [];
-      const uids = likes.map((l: any) => l.user_id);
-      const { data: profiles } = await supabase.from("profiles").select("user_id, full_name").in("user_id", uids);
-      return profiles || [];
+      const uids = likes.map((l: any) => l.userId);
+      const { data: profiles } = await api.get('/profiles');
+      return (profiles || []).filter((p: any) => uids.includes(p.userId)).map((p: any) => ({ ...p, user_id: p.userId, full_name: p.fullName }));
     },
     enabled: !!likersDevId,
   });
@@ -139,15 +133,9 @@ const Devotionals = () => {
     mutationFn: async (devId: string) => {
       const liked = myLikes?.has(devId);
       if (liked) {
-        await (supabase as any)
-          .from("devotional_likes")
-          .delete()
-          .eq("devotional_id", devId)
-          .eq("user_id", user!.id);
+        await api.delete('/devotional-likes', { params: { devotionalId: devId, userId: user!.id } });
       } else {
-        await (supabase as any)
-          .from("devotional_likes")
-          .insert({ devotional_id: devId, user_id: user!.id });
+        await api.post('/devotional-likes', { devotionalId: devId, userId: user!.id });
       }
     },
     onSuccess: () => {
@@ -197,22 +185,20 @@ const Devotionals = () => {
         ? new Date(publishDate).toISOString()
         : new Date().toISOString();
 
-      const payload: any = {
+      const camelPayload: any = {
         title,
         content,
-        media_url: mediaUrl || null,
+        mediaUrl: mediaUrl || null,
         status,
-        is_active: isActive,
-        publish_date: scheduledAt,
-        expiration_date: expirationDate ? new Date(expirationDate).toISOString() : null,
+        isActive,
+        publishDate: scheduledAt,
+        expirationDate: expirationDate ? new Date(expirationDate).toISOString() : null,
       };
 
       if (editingDev) {
-        const { error } = await supabase.from("devotionals").update(payload).eq("id", editingDev.id);
-        if (error) throw error;
+        await api.patch(`/devotionals/${editingDev.id}`, camelPayload);
       } else {
-        const { error } = await supabase.from("devotionals").insert(payload);
-        if (error) throw error;
+        await api.post(`/devotionals`, camelPayload);
       }
 
       // Cria o disparo WhatsApp se o toggle estiver ativo
@@ -252,8 +238,7 @@ const Devotionals = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("devotionals").delete().eq("id", id);
-      if (error) throw error;
+      await api.delete(`/devotionals/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["devotionals"] });
@@ -500,12 +485,10 @@ const DevForm = ({
     if (!file) return;
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop();
-      const fileName = `img_${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("devotionals").upload(fileName, file, { upsert: true });
-      if (error) throw error;
-      const { data: urlData } = supabase.storage.from("devotionals").getPublicUrl(fileName);
-      setMediaUrl(urlData.publicUrl);
+      const formData = new FormData();
+      formData.append('file', file);
+      const { data } = await api.post('/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      setMediaUrl(data.url);
     } catch (err: any) {
       console.error("Upload error:", getErrorMessage(err));
     } finally {
@@ -518,12 +501,10 @@ const DevForm = ({
     if (!file) return;
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop();
-      const fileName = `video_${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("devotionals").upload(fileName, file, { upsert: true });
-      if (error) throw error;
-      const { data: urlData } = supabase.storage.from("devotionals").getPublicUrl(fileName);
-      setMediaUrl(urlData.publicUrl);
+      const formData = new FormData();
+      formData.append('file', file);
+      const { data } = await api.post('/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      setMediaUrl(data.url);
     } catch (err: any) {
       console.error("Upload error:", getErrorMessage(err));
     } finally {

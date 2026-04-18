@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import api from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,34 +12,29 @@ const ArchivedChats = () => {
   const { data: archivedStats, isLoading } = useQuery({
     queryKey: ["archived-chats-stats"],
     queryFn: async () => {
-      // Fetch all hidden conversation entries
-      const { data: hidden } = await (supabase as any).from("hidden_conversations").select("*, profiles!target_user_id(full_name), groups(name)");
+      const { data: hidden } = await api.get('/hidden-conversations');
       
-      // Group by distinct conversations (target_user or group)
       const statsMap = new Map<string, any>();
-
       for (const h of (hidden || [])) {
-        const id = h.group_id || h.target_user_id;
-        const type = h.group_id ? "group" : "direct";
-        const name = h.group_id ? h.groups?.name : h.profiles?.full_name;
+        const id = h.groupId || h.targetUserId;
+        const type = h.groupId ? "group" : "direct";
+        const name = h.groupId ? h.group?.name : h.profile?.fullName;
         
         if (!statsMap.has(id)) {
           statsMap.set(id, {
-            id,
-            type,
+            id, type,
             name: name || "Desconhecido",
             archivedBy: [],
-            lastArchiveAt: h.hidden_at
+            lastArchiveAt: h.hiddenAt
           });
         }
         
         const entry = statsMap.get(id);
-        entry.archivedBy.push(h.user_id); // In a real app, join with profiles to get names
-        if (new Date(h.hidden_at) > new Date(entry.lastArchiveAt)) {
-          entry.lastArchiveAt = h.hidden_at;
+        entry.archivedBy.push(h.userId);
+        if (new Date(h.hiddenAt) > new Date(entry.lastArchiveAt)) {
+          entry.lastArchiveAt = h.hiddenAt;
         }
       }
-
       return Array.from(statsMap.values());
     },
     enabled: isAdmin,

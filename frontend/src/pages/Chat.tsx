@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import api from "@/lib/api";
+import { io } from "socket.io-client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
@@ -136,11 +137,8 @@ const Chat = () => {
   const { data: groups } = useQuery({
     queryKey: ["my-groups"],
     queryFn: async () => {
-      const { data: memberGroups } = await supabase
-        .from("member_groups")
-        .select("group_id, groups(id, name, icon)")
-        .eq("user_id", user!.id);
-      return memberGroups?.map((mg) => mg.groups).filter(Boolean) || [];
+      const { data } = await api.get('/member-groups');
+      return data?.map((mg: any) => mg.group).filter(Boolean) || [];
     },
     enabled: !!user,
   });
@@ -148,8 +146,8 @@ const Chat = () => {
   const { data: allMembers } = useQuery({
     queryKey: ["members-for-dm"],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("user_id, full_name").order("full_name");
-      return (data || []).filter((m) => m.user_id !== user!.id);
+      const { data } = await api.get('/profiles');
+      return (data || []).map((m: any) => ({ user_id: m.userId, full_name: m.fullName })).filter((m: any) => m.user_id !== user!.id);
     },
     enabled: !!user,
   });
@@ -157,36 +155,18 @@ const Chat = () => {
 const { data: conversations } = useQuery({
     queryKey: ["conversations"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("messages")
-        .select("*")
-        .or(`sender_id.eq.${user!.id},recipient_id.eq.${user!.id}`)
-        .is("group_id", null)
-        .order("created_at", { ascending: false });
-
-      const userIds = new Set<string>();
-      data?.forEach((msg) => {
-        if (msg.sender_id !== user!.id) userIds.add(msg.sender_id);
-        if (msg.recipient_id && msg.recipient_id !== user!.id) userIds.add(msg.recipient_id);
-      });
-      if (userIds.size === 0) return [];
-
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, full_name")
-        .in("user_id", Array.from(userIds));
-      const profileMap = new Map(profiles?.map((p) => [p.user_id, p.full_name]) || []);
-
+      const { data } = await api.get(`/messages/user/${user!.id}`);
       const convMap = new Map<string, any>();
-      data?.forEach((msg) => {
-        const otherId = msg.sender_id === user!.id ? msg.recipient_id : msg.sender_id;
+      (data || []).forEach((msg: any) => {
+        const otherId = msg.senderId === user!.id ? msg.recipientId : msg.senderId;
+        const otherProfile = msg.senderId === user!.id ? msg.recipient?.profile : msg.sender?.profile;
         if (otherId && !convMap.has(otherId)) {
           convMap.set(otherId, {
             userId: otherId,
-            name: profileMap.get(otherId) || "Membro",
+            name: otherProfile?.fullName || "Membro",
             lastMessage: msg.content,
-            time: msg.created_at,
-            lastSenderId: msg.sender_id,
+            time: msg.createdAt,
+            lastSenderId: msg.senderId,
           });
         }
       });
@@ -203,16 +183,12 @@ const { data: conversations } = useQuery({
     queryFn: async () => {
       if (!groups || (groups as any[]).length === 0) return {};
       const groupIds = (groups as any[]).map((g: any) => g?.id).filter(Boolean);
-      const { data } = await supabase
-        .from("messages")
-        .select("group_id, sender_id, created_at")
-        .in("group_id", groupIds)
-        .neq("sender_id", user!.id)
-        .order("created_at", { ascending: false });
+      const { data } = await api.get('/messages/group-messages', { params: { groupIds: groupIds.join(','), excludeUserId: user!.id }});
+      
       const result: Record<string, { time: string; senderId: string }> = {};
       data?.forEach((m: any) => {
-        if (m.group_id && !result[m.group_id]) {
-          result[m.group_id] = { time: m.created_at, senderId: m.sender_id };
+        if (m.groupId && !result[m.groupId]) {
+          result[m.groupId] = { time: m.createdAt, senderId: m.senderId };
         }
       });
       return result;
@@ -245,39 +221,20 @@ const { data: conversations } = useQuery({
   const { data: messages } = useQuery({
     queryKey: ["messages", chatId],
     queryFn: async () => {
-      let query = supabase
-        .from("messages")
-        .select("*")
-        .order("created_at", { ascending: true });
-
-      if (view.type === "group") {
-        query = query.eq("group_id", view.groupId);
-      } else if (view.type === "direct") {
-        query = query
-          .is("group_id", null)
-          .or(
-            `and(sender_id.eq.${user!.id},recipient_id.eq.${view.userId}),and(sender_id.eq.${view.userId},recipient_id.eq.${user!.id})`
-          );
-      }
-
-      const { data } = await query;
-      if (!data) return [];
-
-      let filteredData = data;
-      const uids = new Set(filteredData.map((m: any) => m.sender_id));
-
-      let map = new Map();
-      if (uids.size > 0) {
-        const { data: profs } = await supabase
-          .from("profiles")
-          .select("user_id, full_name")
-          .in("user_id", Array.from(uids));
-        map = new Map(profs?.map((p: any) => [p.user_id, p.full_name]) || []);
-      }
-
-      return filteredData.map((m: any) => ({
+      const isGroup = view.type === "group";
+      const idStr = isGroup ? (view as any).groupId : (view as any).userId;
+      
+      const { data } = await api.get(`/messages/chat/${idStr}`, { params: { isGroup, userId: user!.id } });
+      
+      return (data || []).map((m: any) => ({
         ...m,
-        senderName: map.get(m.sender_id)
+        id: m.id,
+        content: m.content,
+        created_at: m.createdAt,
+        sender_id: m.senderId,
+        recipient_id: m.recipientId,
+        group_id: m.groupId,
+        senderName: m.sender?.profile?.fullName || "Membro"
       }));
     },
     enabled: view.type !== "list" && !!user,
@@ -371,15 +328,23 @@ const { data: conversations } = useQuery({
 
   useEffect(() => {
     if (!user) return;
-    const channel = supabase
-      .channel("global-chat-notifications")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages" },
-        handleNewMessage
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    const WS_URL = import.meta.env.VITE_API_URL?.replace('http', 'ws') || "ws://localhost:3001";
+    const socket = io(WS_URL + "/chat");
+    socket.on("new_message", (payload: any) => {
+      // payload structure emitted from Nest is { new: message_obj_in_camelCase }
+      const newMsg = payload.new;
+      handleNewMessage({
+        new: {
+          id: newMsg.id,
+          content: newMsg.content,
+          created_at: newMsg.createdAt,
+          sender_id: newMsg.senderId,
+          recipient_id: newMsg.recipientId,
+          group_id: newMsg.groupId
+        }
+      });
+    });
+    return () => { socket.disconnect(); };
   }, [user, handleNewMessage]);
 
   useEffect(() => {
@@ -390,11 +355,11 @@ const { data: conversations } = useQuery({
 
   const sendMutation = useMutation({
     mutationFn: async (content: string) => {
-      const payload: any = { sender_id: user!.id, content };
-      if (view.type === "group") payload.group_id = view.groupId;
-      else if (view.type === "direct") payload.recipient_id = view.userId;
-      const { error } = await supabase.from("messages").insert(payload);
-      if (error) throw error;
+      const payload: any = { senderId: user!.id, content };
+      if (view.type === "group") payload.groupId = view.groupId;
+      else if (view.type === "direct") payload.recipientId = view.userId;
+      
+      await api.post("/messages", payload);
     },
     onSuccess: () => {
       setMessage("");
@@ -416,15 +381,9 @@ const { data: conversations } = useQuery({
   const deleteChatMutation = useMutation({
     mutationFn: async ({ type, id }: { type: "group" | "direct"; id: string }) => {
       if (type === "group") {
-        const { error } = await supabase.from("messages").delete().eq("group_id", id);
-        if (error) throw error;
+        await api.delete(`/messages/group/${id}`);
       } else {
-        const { error } = await supabase
-          .from("messages")
-          .delete()
-          .is("group_id", null)
-          .or(`and(sender_id.eq.${user!.id},recipient_id.eq.${id}),and(sender_id.eq.${id},recipient_id.eq.${user!.id})`);
-        if (error) throw error;
+        await api.delete(`/messages/direct/${user!.id}/${id}`);
       }
     },
     onSuccess: (data, variables) => {

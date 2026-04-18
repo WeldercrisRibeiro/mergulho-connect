@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import api from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -55,60 +55,31 @@ const Volunteers = () => {
   const { data: volunteers } = useQuery({
     queryKey: ["volunteers"],
     queryFn: async () => {
-      const { data } = await (supabase as any).from("volunteers").select("*").order("created_at", { ascending: false });
+      const { data } = await api.get('/volunteers');
       return data || [];
     },
   });
 
-  // ✅ CORRIGIDO: sem nenhum join automático — tudo buscado manualmente
   const { data: schedules } = useQuery({
     queryKey: ["volunteer-schedules", userGroupIds, isAdmin],
     queryFn: async () => {
-      // 1. Busca escalas sem nenhum join (select simples)
-      let query = (supabase as any)
-        .from("volunteer_schedules")
-        .select("*")
-        .order("schedule_date", { ascending: true });
+      const params: any = {};
+      if (!isAdmin && userGroupIds.length > 0) params.groupIds = userGroupIds.join(',');
+      else if (!isAdmin) return [];
 
-      if (!isAdmin) {
-        if (userGroupIds.length === 0) return [];
-        query = query.in("group_id", userGroupIds);
-      }
-
-      const { data, error } = await query;
-      if (error) {
-        console.error("Volunteer Schedules Query Error:", error);
-        throw error;
-      }
+      const { data } = await api.get('/volunteer-schedules', { params });
       if (!data || data.length === 0) return [];
 
-      // 2. Busca perfis pelo item_user_id manualmente
-      const userIds = [...new Set(data.map((s: any) => s.item_user_id).filter(Boolean))] as string[];
-      const profileMap = new Map<string, string>();
-      if (userIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("user_id, full_name")
-          .in("user_id", userIds);
-        profiles?.forEach((p: any) => profileMap.set(p.user_id, p.full_name));
-      }
-
-      // 3. Busca nomes dos grupos manualmente
-      const groupIds = [...new Set(data.map((s: any) => s.group_id).filter(Boolean))] as string[];
-      const groupMap = new Map<string, string>();
-      if (groupIds.length > 0) {
-        const { data: grps } = await supabase
-          .from("groups")
-          .select("id, name")
-          .in("id", groupIds);
-        grps?.forEach((g: any) => groupMap.set(g.id, g.name));
-      }
-
-      // 4. Injeta dados manualmente em cada escala
       return data.map((s: any) => ({
         ...s,
-        profiles: { full_name: profileMap.get(s.item_user_id) || "—" },
-        groups: { name: groupMap.get(s.group_id) || "Geral" },
+        item_user_id: s.itemUserId || s.item_user_id,
+        volunteer_id: s.volunteerId || s.volunteer_id,
+        group_id: s.groupId || s.group_id,
+        schedule_date: s.scheduleDate || s.schedule_date,
+        role_function: s.roleFunction || s.role_function,
+        created_by: s.createdBy || s.created_by,
+        profiles: { full_name: s.user?.profile?.fullName || s.profiles?.full_name || '—' },
+        groups: { name: s.group?.name || s.groups?.name || 'Geral' },
       }));
     },
   });
@@ -116,10 +87,7 @@ const Volunteers = () => {
   const { data: announcements } = useQuery({
     queryKey: ["volunteer-announcements"],
     queryFn: async () => {
-      const { data } = await (supabase as any)
-        .from("announcements")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const { data } = await api.get('/announcements');
       return data || [];
     },
   });
@@ -127,14 +95,14 @@ const Volunteers = () => {
   const { data: groups } = useQuery({
     queryKey: ["volunteer-groups"],
     queryFn: async () => {
-      let query = supabase.from("groups").select("id, name");
+      const { data } = await api.get('/groups');
+      let all = data || [];
       if (!isAdmin && userGroupIds.length > 0) {
-        query = query.in("id", userGroupIds);
+        all = all.filter((g: any) => userGroupIds.includes(g.id));
       } else if (!isAdmin) {
         return [];
       }
-      const { data } = await query;
-      return data || [];
+      return all.map((g: any) => ({ id: g.id, name: g.name }));
     },
   });
 
@@ -142,57 +110,43 @@ const Volunteers = () => {
     queryKey: ["department-members", scheduleGroupId],
     queryFn: async () => {
       if (!scheduleGroupId) return [];
-
       if (scheduleGroupId === "general") {
-        const { data: allProfiles } = await supabase.from("profiles").select("user_id, full_name").order("full_name");
-        return allProfiles?.map(p => ({
-          user_id: p.user_id,
-          profiles: { full_name: p.full_name }
-        })) || [];
+        const { data } = await api.get('/profiles');
+        return (data || []).map((p: any) => ({
+          user_id: p.userId || p.user_id,
+          profiles: { full_name: p.fullName || p.full_name }
+        }));
       }
-
-      const { data: groupLinks, error: linkErr } = await supabase
-        .from("member_groups")
-        .select("user_id")
-        .eq("group_id", scheduleGroupId);
-
-      if (linkErr || !groupLinks || groupLinks.length === 0) return [];
-
-      const userIds = groupLinks.map(l => l.user_id);
-
-      const { data: profiles, error: profErr } = await supabase
-        .from("profiles")
-        .select("user_id, full_name")
-        .in("user_id", userIds)
-        .order("full_name");
-
-      if (profErr) return [];
-
-      return profiles.map(p => ({
-        user_id: p.user_id,
-        profiles: { full_name: p.full_name }
-      }));
+      const { data: memberGroups } = await api.get('/member-groups', { params: { groupId: scheduleGroupId } });
+      if (!memberGroups || memberGroups.length === 0) return [];
+      const userIds = memberGroups.map((m: any) => m.userId || m.user_id);
+      const { data: allProfiles } = await api.get('/profiles');
+      return (allProfiles || [])
+        .filter((p: any) => userIds.includes(p.userId || p.user_id))
+        .map((p: any) => ({
+          user_id: p.userId || p.user_id,
+          profiles: { full_name: p.fullName || p.full_name }
+        }));
     },
     enabled: !!scheduleGroupId,
   });
 
-  const myVolunteer = volunteers?.find((v: any) => v.user_id === user?.id);
+  const myVolunteer = volunteers?.find((v: any) => (v.userId || v.user_id) === user?.id);
   const isVolunteer = !!myVolunteer;
   const volunteerStatus = myVolunteer?.status || "pending";
   const isActive = volunteerStatus === "completed" || volunteerStatus === "in_progress";
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await (supabase as any).from("volunteers").insert({
-        user_id: user!.id,
-        full_name: fullName.trim(),
+      await api.post('/volunteers', {
+        userId: user!.id,
+        fullName: fullName.trim(),
         phone: phone.trim() || null,
         availability: availability.trim() || null,
-        interest_areas: interestAreas,
-        interest_area: interestAreas[0] || null,
+        interestAreas: interestAreas,
+        interestArea: interestAreas[0] || null,
         status: "pending",
       });
-      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["volunteers"] });
@@ -205,12 +159,7 @@ const Volunteers = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const volunteerToDelete = volunteers?.find((v: any) => v.id === id);
-      if (volunteerToDelete) {
-        await supabase.from("member_groups").delete().eq("user_id", volunteerToDelete.user_id);
-      }
-      const { error } = await (supabase as any).from("volunteers").delete().eq("id", id);
-      if (error) throw error;
+      await api.delete(`/volunteers/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["volunteers"] });
@@ -220,27 +169,7 @@ const Volunteers = () => {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error: statusErr } = await (supabase as any).from("volunteers").update({ status }).eq("id", id);
-      if (statusErr) throw statusErr;
-
-      if (status === "completed") {
-        const volunteer = volunteers?.find((v: any) => v.id === id);
-        if (volunteer && volunteer.interest_areas?.length > 0) {
-          const { data: matchedGroups } = await supabase
-            .from("groups")
-            .select("id, name")
-            .in("name", volunteer.interest_areas);
-
-          if (matchedGroups && matchedGroups.length > 0) {
-            const inserts = matchedGroups.map(g => ({
-              user_id: volunteer.user_id,
-              group_id: g.id,
-              role: "member"
-            }));
-            await (supabase as any).from("member_groups").upsert(inserts, { onConflict: "user_id,group_id" });
-          }
-        }
-      }
+      await api.patch(`/volunteers/${id}`, { status });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["volunteers"] });
@@ -253,26 +182,23 @@ const Volunteers = () => {
   const saveScheduleMutation = useMutation({
     mutationFn: async () => {
       const finalGroupId = scheduleGroupId === "general" || !scheduleGroupId ? null : scheduleGroupId;
-      const volRecord = volunteers?.find((v: any) => v.user_id === scheduleVolunteerId);
+      const volRecord = volunteers?.find((v: any) =>
+        (v.userId || v.user_id) === scheduleVolunteerId
+      );
 
       const payload = {
-        item_user_id: scheduleVolunteerId,
-        volunteer_id: volRecord?.id || null,
-        group_id: finalGroupId,
-        schedule_date: scheduleDate,
-        role_function: scheduleRole,
-        created_by: user!.id,
+        itemUserId: scheduleVolunteerId,
+        volunteerId: volRecord?.id || null,
+        groupId: finalGroupId,
+        scheduleDate: scheduleDate,
+        roleFunction: scheduleRole,
+        createdBy: user!.id,
       };
 
       if (editingSchedule) {
-        const { error } = await (supabase as any)
-          .from("volunteer_schedules")
-          .update(payload)
-          .eq("id", editingSchedule.id);
-        if (error) throw error;
+        await api.patch(`/volunteer-schedules/${editingSchedule.id}`, payload);
       } else {
-        const { error } = await (supabase as any).from("volunteer_schedules").insert(payload);
-        if (error) throw error;
+        await api.post('/volunteer-schedules', payload);
       }
     },
     onSuccess: () => {
@@ -287,8 +213,7 @@ const Volunteers = () => {
 
   const deleteScheduleMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from("volunteer_schedules").delete().eq("id", id);
-      if (error) throw error;
+      await api.delete(`/volunteer-schedules/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["volunteer-schedules"] });
@@ -296,14 +221,13 @@ const Volunteers = () => {
     },
   });
 
-  // ✅ CORRIGIDO: usa item_user_id ao editar (não volunteer_id que pode ser null)
   const handleOpenSchedule = (s: any = null) => {
     if (s) {
       setEditingSchedule(s);
-      setScheduleDate(s.schedule_date);
-      setScheduleRole(s.role_function);
-      setScheduleVolunteerId(s.item_user_id); // ✅ corrigido
-      setScheduleGroupId(s.group_id || "");
+      setScheduleDate(s.schedule_date || s.scheduleDate);
+      setScheduleRole(s.role_function || s.roleFunction);
+      setScheduleVolunteerId(s.item_user_id || s.itemUserId);
+      setScheduleGroupId(s.group_id || s.groupId || "");
       setCreatingSchedule(true);
     } else {
       setEditingSchedule(null);
@@ -316,8 +240,8 @@ const Volunteers = () => {
   };
 
   const handleOpen = () => {
-    setFullName(profile?.full_name || "");
-    setPhone(profile?.whatsapp_phone || "");
+    setFullName(profile?.full_name || profile?.fullName || "");
+    setPhone(profile?.whatsapp_phone || profile?.whatsappPhone || "");
     setAvailability("");
     setInterestAreas([]);
     setCreating(true);
@@ -548,20 +472,20 @@ const Volunteers = () => {
                   <CardContent className="p-4 flex items-start justify-between">
                     <div className="flex-1 min-w-0 mr-4 space-y-1">
                       <p className="font-bold text-sm text-foreground truncate flex items-center gap-2">
-                        <User className="h-4 w-4 text-primary shrink-0" /> {v.full_name}
+                        <User className="h-4 w-4 text-primary shrink-0" /> {v.fullName || v.full_name}
                       </p>
                       {v.phone && <p className="text-[11px] text-muted-foreground font-medium">📱 {v.phone}</p>}
                       <div className="flex flex-wrap gap-1 mt-1">
                         <Badge className={cn("text-[9px] px-2 py-0.5 uppercase tracking-tighter shadow-sm font-black", sc.color)}>
                           <StatusIcon className="h-2.5 w-2.5 mr-1" /> {sc.label}
                         </Badge>
-                        {v.interest_areas?.map((area: string) => (
+                        {(v.interestAreas || v.interest_areas)?.map((area: string) => (
                           <Badge key={area} variant="secondary" className="text-[9px] px-2 py-0.5 uppercase font-black tracking-tighter bg-muted/50 border-0">{area}</Badge>
                         ))}
                       </div>
                       {v.availability && <p className="text-[10px] text-muted-foreground mt-1 truncate">📅 {v.availability}</p>}
                       <p className="text-[9px] font-medium text-muted-foreground/60">
-                        Inscrito em {format(new Date(v.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                        Inscrito em {format(new Date(v.createdAt || v.created_at), "dd/MM/yyyy", { locale: ptBR })}
                       </p>
                     </div>
                     <div className="flex gap-1">
@@ -642,7 +566,7 @@ const Volunteers = () => {
       {/* Edit Status Dialog */}
       <Dialog open={!!editingStatus} onOpenChange={v => !v && setEditingStatus(null)}>
         <DialogContent className="sm:max-w-md rounded-3xl border-0 shadow-2xl">
-          <DialogHeader><DialogTitle className="text-xl font-bold">Alterar Status: {editingStatus?.full_name}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="text-xl font-bold">Alterar Status: {editingStatus?.fullName || editingStatus?.full_name}</DialogTitle></DialogHeader>
           <div className="py-6 space-y-4 text-center">
             <div className={cn("h-16 w-16 mx-auto rounded-full flex items-center justify-center mb-2", STATUS_CONFIG[editingStatus?.status || "pending"]?.color)}>
               <User className="h-8 w-8" />
@@ -700,14 +624,11 @@ const Volunteers = () => {
                   <SelectValue placeholder={scheduleGroupId ? "Selecione o Membro" : "Selecione o departamento primeiro"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {departmentMembers?.map((m: any) => {
-                    const isApprovedVolunteer = volunteers?.some((v: any) => v.user_id === m.user_id && v.status === "completed");
-                    return (
-                      <SelectItem key={m.user_id} value={m.user_id}>
-                        {m.profiles?.full_name}
-                      </SelectItem>
-                    );
-                  })}
+                  {departmentMembers?.map((m: any) => (
+                    <SelectItem key={m.user_id} value={m.user_id}>
+                      {m.profiles?.full_name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -738,7 +659,7 @@ const Volunteers = () => {
       <ConfirmDialog
         open={!!deleting}
         title="Remover Voluntário"
-        description={`Remover "${deleting?.full_name}" da lista?`}
+        description={`Remover "${deleting?.fullName || deleting?.full_name}" da lista?`}
         confirmLabel="Remover"
         variant="danger"
         onConfirm={() => deleteMutation.mutate(deleting?.id)}

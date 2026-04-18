@@ -1,0 +1,18 @@
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { GroupRoutinesService } from './group-routines.service';
+import { CreateGroupRoutineDto } from './dto/create-group-routine.dto';
+import { UpdateGroupRoutineDto } from './dto/update-group-routine.dto';
+
+@ApiTags('Group Routines')
+@ApiBearerAuth()
+@Controller('group-routines')
+export class GroupRoutinesController {
+  constructor(private readonly service: GroupRoutinesService) {}
+  @Post() create(@Body() dto: CreateGroupRoutineDto) { return this.service.create(dto); }
+  @Get() @ApiQuery({ name: 'groupId', required: false }) findAll(@Query('groupId') groupId?: string) { return this.service.findAll(groupId); }
+  @Get('groups') @ApiQuery({ name: 'groupIds', required: true }) findByGroups(@Query('groupIds') groupIds: string) { return this.service.findByGroups(groupIds); }
+  @Get(':id') findOne(@Param('id') id: string) { return this.service.findOne(id); }
+  @Patch(':id') update(@Param('id') id: string, @Body() dto: UpdateGroupRoutineDto) { return this.service.update(id, dto); }
+  @Delete(':id') remove(@Param('id') id: string) { return this.service.remove(id); }
+}

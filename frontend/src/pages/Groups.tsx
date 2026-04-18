@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import api from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +12,6 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { Shield, Plus, Edit2, Trash2, Users, Camera, Upload } from "lucide-react";
-import { useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorMessages";
 
@@ -37,19 +36,19 @@ const Groups = () => {
   const { data: groups } = useQuery({
     queryKey: ["groups-admin"],
     queryFn: async () => {
-      const { data: grps } = await supabase.from("groups").select("*").order("name");
-      const { data: memberCounts } = await supabase.from("member_groups").select("group_id");
+      const { data: grps } = await api.get('/groups');
+      const { data: memberGroups } = await api.get('/member-groups');
       const countMap = new Map<string, number>();
-      memberCounts?.forEach(mg => countMap.set(mg.group_id, (countMap.get(mg.group_id) || 0) + 1));
-      return (grps || []).map(g => ({ ...g, memberCount: countMap.get(g.id) || 0 }));
+      (memberGroups || []).forEach((mg: any) => countMap.set(mg.groupId, (countMap.get(mg.groupId) || 0) + 1));
+      return (grps || []).map((g: any) => ({ ...g, memberCount: countMap.get(g.id) || 0 }));
     },
   });
 
   const { data: allMembers } = useQuery({
     queryKey: ["all-profiles-groups"],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("user_id, full_name").order("full_name");
-      return data || [];
+      const { data } = await api.get('/profiles');
+      return (data || []).map((p: any) => ({ user_id: p.userId, full_name: p.fullName }));
     },
   });
 
@@ -57,8 +56,8 @@ const Groups = () => {
     queryKey: ["group-members", managingGroup?.id],
     queryFn: async () => {
       if (!managingGroup) return [];
-      const { data } = await supabase.from("member_groups").select("user_id").eq("group_id", managingGroup.id);
-      const ids = data?.map(m => m.user_id) || [];
+      const { data } = await api.get('/member-groups', { params: { groupId: managingGroup.id } });
+      const ids = data?.map((m: any) => m.userId) || [];
       setSelectedMembers(ids);
       return ids;
     },
@@ -69,11 +68,9 @@ const Groups = () => {
     mutationFn: async () => {
       const payload = { name: groupName, description: groupDesc, icon: groupIcon };
       if (editingGroup) {
-        const { error } = await supabase.from("groups").update(payload).eq("id", editingGroup.id);
-        if (error) throw error;
+        await api.patch(`/groups/${editingGroup.id}`, payload);
       } else {
-        const { error } = await supabase.from("groups").insert(payload as any);
-        if (error) throw error;
+        await api.post(`/groups`, payload);
       }
     },
     onSuccess: () => {
@@ -89,10 +86,9 @@ const Groups = () => {
   const saveMembersMutation = useMutation({
     mutationFn: async () => {
       if (!managingGroup) return;
-      await supabase.from("member_groups").delete().eq("group_id", managingGroup.id);
+      await api.delete('/member-groups', { params: { groupId: managingGroup.id } });
       if (selectedMembers.length > 0) {
-        const inserts = selectedMembers.map(uid => ({ user_id: uid, group_id: managingGroup.id }));
-        await supabase.from("member_groups").insert(inserts as any);
+        await api.post('/member-groups/bulk', { groupId: managingGroup.id, userIds: selectedMembers });
       }
     },
     onSuccess: () => {
@@ -107,20 +103,12 @@ const Groups = () => {
   const handleIconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop();
-      const fileName = `group_icon_${Date.now()}.${ext}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from("group-icons")
-        .upload(fileName, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage.from("group-icons").getPublicUrl(fileName);
-      setGroupIcon(urlData.publicUrl);
+      const formData = new FormData();
+      formData.append('file', file);
+      const { data } = await api.post('/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      setGroupIcon(data.url);
       toast({ title: "Foto selecionada!", description: "Clique em Salvar para confirmar." });
     } catch (err: any) {
       toast({ title: "Erro no upload", description: getErrorMessage(err), variant: "destructive" });
@@ -131,9 +119,8 @@ const Groups = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await supabase.from("member_groups").delete().eq("group_id", id);
-      const { error } = await supabase.from("groups").delete().eq("id", id);
-      if (error) throw error;
+      await api.delete(`/member-groups`, { params: { groupId: id } });
+      await api.delete(`/groups/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["groups-admin"] });
@@ -299,7 +286,7 @@ export default Groups;
 const GroupForm = ({ groupIcon, setGroupIcon, groupName, setGroupName, groupDesc, setGroupDesc, handleIconUpload, uploading, fileInputRef }: any) => (
   <div className="space-y-6 py-4">
     <div className="flex flex-col items-center justify-center gap-4 py-4 mb-2 bg-muted/20 rounded-3xl border border-dashed border-border/50">
-      <div 
+      <div
         className="h-24 w-24 rounded-3xl bg-primary/10 flex items-center justify-center overflow-hidden border-2 border-primary/20 relative cursor-pointer group"
         onClick={() => fileInputRef.current?.click()}
       >
@@ -318,14 +305,14 @@ const GroupForm = ({ groupIcon, setGroupIcon, groupName, setGroupName, groupDesc
         )}
       </div>
       <div className="text-center">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="rounded-xl border-2 gap-2 h-9" 
+        <Button
+          variant="outline"
+          size="sm"
+          className="rounded-xl border-2 gap-2 h-9"
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
         >
-          <Upload className="h-4 w-4" /> 
+          <Upload className="h-4 w-4" />
           {groupIcon ? 'Trocar Foto' : 'Carregar Foto'}
         </Button>
       </div>
@@ -344,4 +331,3 @@ const GroupForm = ({ groupIcon, setGroupIcon, groupName, setGroupName, groupDesc
     </div>
   </div>
 );
-

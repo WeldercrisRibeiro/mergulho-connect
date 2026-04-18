@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import api from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -18,15 +18,11 @@ const DevotionalWelcome = () => {
   const { data: devotional } = useQuery({
     queryKey: ["latest-devotional"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("devotionals")
-        .select("*")
-        .eq("status", "published")
-        .lte("publish_date", new Date().toISOString())
-        .order("publish_date", { ascending: false })
-        .limit(1)
-        .single();
-      return data;
+      const { data } = await api.get("/devotionals", { params: { status: 'published' } });
+      const valid = (data || []).filter((d: any) => new Date(d.publishDate) <= new Date());
+      // Sort by publishDate desc
+      valid.sort((a: any, b: any) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime());
+      return valid[0] || null;
     },
     enabled: !!user,
   });
@@ -34,13 +30,8 @@ const DevotionalWelcome = () => {
   const { data: myLike } = useQuery({
     queryKey: ["my-like", devotional?.id],
     queryFn: async () => {
-      const { data } = await (supabase as any)
-        .from("devotional_likes")
-        .select("id")
-        .eq("devotional_id", devotional!.id)
-        .eq("user_id", user!.id)
-        .maybeSingle();
-      return data;
+      const { data } = await api.get(`/devotional-likes`, { params: { devotionalId: devotional!.id, userId: user!.id } });
+      return data?.[0] || null;
     },
     enabled: !!devotional && !!user,
   });
@@ -48,11 +39,9 @@ const DevotionalWelcome = () => {
   const { data: likeCount } = useQuery({
     queryKey: ["like-count", devotional?.id],
     queryFn: async () => {
-      const { count } = await (supabase as any)
-        .from("devotional_likes")
-        .select("*", { count: "exact", head: true })
-        .eq("devotional_id", devotional!.id);
-      return count || 0;
+      // In a real API we might have a /count endpoint, getting all and getting length for now
+      const { data } = await api.get(`/devotional-likes`, { params: { devotionalId: devotional!.id } });
+      return data?.length || 0;
     },
     enabled: !!devotional,
   });
@@ -60,14 +49,9 @@ const DevotionalWelcome = () => {
   const likeMutation = useMutation({
     mutationFn: async () => {
       if (myLike) {
-        await (supabase as any)
-          .from("devotional_likes")
-          .delete()
-          .eq("id", myLike.id);
+        await api.delete(`/devotional-likes/${myLike.id}`);
       } else {
-        await (supabase as any)
-          .from("devotional_likes")
-          .insert({ devotional_id: devotional!.id, user_id: user!.id });
+        await api.post(`/devotional-likes`, { devotionalId: devotional!.id, userId: user!.id });
       }
     },
     onSuccess: () => {
@@ -112,7 +96,7 @@ const DevotionalWelcome = () => {
         <div className="p-6">
           <h2 className="text-xl font-bold mb-1">{devotional.title}</h2>
           <p className="text-xs text-muted-foreground mb-4">
-            {safeFormat(devotional.publish_date, "dd 'de' MMMM 'de' yyyy")}
+            {safeFormat(devotional.publishDate, "dd 'de' MMMM 'de' yyyy")}
           </p>
 
           <div className="max-h-52 overflow-y-auto pr-1 mb-4">
@@ -121,11 +105,11 @@ const DevotionalWelcome = () => {
             </p>
           </div>
 
-          {((devotional as any).video_url || devotional.media_url) && (
+          {((devotional as any).videoUrl || devotional.mediaUrl) && (
             <div className="rounded-xl overflow-hidden mb-4 shadow-md">
               <VideoPlayer 
-                url={(devotional as any).video_url || devotional.media_url || ""} 
-                isUpload={(devotional as any).is_video_upload}
+                url={(devotional as any).videoUrl || devotional.mediaUrl || ""} 
+                isUpload={(devotional as any).isVideoUpload}
               />
             </div>
           )}

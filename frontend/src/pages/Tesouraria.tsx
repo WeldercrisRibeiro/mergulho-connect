@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import api from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -89,12 +89,8 @@ const MemberTesouraria = ({
   const { data: myEntries } = useQuery({
     queryKey: ["treasury-my-entries", user?.id],
     queryFn: async () => {
-      const { data } = await (supabase as any)
-        .from("treasury_entries")
-        .select("*")
-        .eq("created_by", user?.id)
-        .order("payment_date", { ascending: false });
-      return (data || []) as TreasuryEntry[];
+      const { data } = await api.get('/treasury-entries', { params: { createdBy: user?.id } });
+      return (data || []).map((e: any) => ({ ...e, member_name: e.memberName, payment_type: e.paymentType, payment_date: e.paymentDate })) as TreasuryEntry[];
     },
     enabled: !!user?.id,
   });
@@ -103,15 +99,14 @@ const MemberTesouraria = ({
     mutationFn: async () => {
       if (!amount || Number(amount) <= 0) throw new Error("Informe um valor válido.");
       const payload = {
-        member_name: memberName.trim(),
+        memberName: memberName.trim(),
         amount: Number(amount),
-        payment_type: paymentType,
-        payment_date: paymentDate,
+        paymentType: paymentType,
+        paymentDate: paymentDate,
         notes: notes.trim() || null,
-        created_by: user?.id,
+        createdBy: user?.id,
       };
-      const { error } = await (supabase as any).from("treasury_entries").insert(payload);
-      if (error) throw error;
+      await api.post('/treasury-entries', payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["treasury-my-entries", user?.id] });
@@ -333,36 +328,36 @@ const AdminTesouraria = ({ pixKey, user }: { pixKey: string; user: any }) => {
   const { data: events } = useQuery({
     queryKey: ["events-for-reports"],
     queryFn: async () => {
-      const { data } = await supabase.from("events").select("id, title, event_date").order("event_date", { ascending: false }).limit(20);
-      return data || [];
+      const { data } = await api.get('/events');
+      return (data || []).slice(0, 20).map((e: any) => ({ id: e.id, title: e.title, event_date: e.eventDate }));
     }
   });
 
   const { data: allEntries } = useQuery({
     queryKey: ["treasury-all-entries"],
     queryFn: async () => {
-      const { data } = await (supabase as any)
-        .from("treasury_entries")
-        .select("*")
-        .order("payment_date", { ascending: false });
-      return (data || []) as TreasuryEntry[];
+      const { data } = await api.get('/treasury-entries');
+      return (data || []).map((e: any) => ({ ...e, member_name: e.memberName, payment_type: e.paymentType, payment_date: e.paymentDate })) as TreasuryEntry[];
     },
   });
 
   const { data: cultoReports } = useQuery({
     queryKey: ["culto-reports"],
     queryFn: async () => {
-      const { data } = await (supabase as any)
-        .from("culto_reports")
-        .select(`
-          *,
-          event:event_id(title)
-        `)
-        .order("report_date", { ascending: false });
-      
+      const { data } = await api.get('/culto-reports');
       return (data || []).map((r: any) => ({
         ...r,
-        event_title: r.event?.title
+        report_date: r.reportDate,
+        report_type: r.reportType,
+        total_attendees: r.totalAttendees,
+        children_count: r.childrenCount,
+        youth_count: r.youthCount,
+        monitors_count: r.monitorsCount,
+        public_count: r.publicCount,
+        event_id: r.eventId,
+        created_by: r.createdBy,
+        escala_data: r.escalaData,
+        event_title: r.event?.title,
       })) as CultoReport[];
     },
   });
@@ -397,24 +392,22 @@ const AdminTesouraria = ({ pixKey, user }: { pixKey: string; user: any }) => {
   const saveReportMutation = useMutation({
     mutationFn: async () => {
       const payload = {
-        report_date: reportDate,
-        report_type: reportType,
-        total_attendees: totalAttendees,
-        children_count: childrenCount,
-        youth_count: youthCount,
-        monitors_count: monitorsCount,
-        public_count: Math.max(0, totalAttendees - childrenCount - monitorsCount),
+        reportDate: reportDate,
+        reportType: reportType,
+        totalAttendees: totalAttendees,
+        childrenCount: childrenCount,
+        youthCount: youthCount,
+        monitorsCount: monitorsCount,
+        publicCount: Math.max(0, totalAttendees - childrenCount - monitorsCount),
         notes: reportNotes.trim() || null,
-        created_by: user?.id,
-        event_id: selectedEventId,
-        escala_data: escala,
+        createdBy: user?.id,
+        eventId: selectedEventId,
+        escalaData: escala,
       };
       if (editingReport) {
-        const { error } = await (supabase as any).from("culto_reports").update(payload).eq("id", editingReport.id);
-        if (error) throw error;
+        await api.patch(`/culto-reports/${editingReport.id}`, payload);
       } else {
-        const { error } = await (supabase as any).from("culto_reports").insert(payload);
-        if (error) throw error;
+        await api.post('/culto-reports', payload);
       }
     },
     onSuccess: () => {
@@ -429,11 +422,11 @@ const AdminTesouraria = ({ pixKey, user }: { pixKey: string; user: any }) => {
   const suggestCounts = async () => {
     if (!selectedEventId) return;
     try {
-      // Check-ins for total
-      const { count: checkins } = await supabase.from("event_checkins").select("*", { count: 'exact', head: true }).eq("event_id", selectedEventId);
-      if (checkins !== null && checkins > 0) {
-        setTotalAttendees(checkins);
-        toast({ title: "Sugestão aplicada", description: `${checkins} presenças detectadas via check-in.` });
+      const { data } = await api.get(`/event-checkins`, { params: { eventId: selectedEventId } });
+      const count = (data || []).length;
+      if (count > 0) {
+        setTotalAttendees(count);
+        toast({ title: "Sugestão aplicada", description: `${count} presenças detectadas via check-in.` });
       } else {
         toast({ title: "Sem dados", description: "Nenhum check-in registrado para este evento ainda.", variant: "destructive" });
       }
@@ -452,8 +445,7 @@ const AdminTesouraria = ({ pixKey, user }: { pixKey: string; user: any }) => {
 
   const deleteReportMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from("culto_reports").delete().eq("id", id);
-      if (error) throw error;
+      await api.delete(`/culto-reports/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["culto-reports"] });

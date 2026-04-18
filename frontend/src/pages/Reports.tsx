@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import api from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -162,33 +162,40 @@ const Reports = () => {
   const { data: reports } = useQuery({
     queryKey: ["event-reports"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("event_reports")
-        .select("*")
-        .order("report_date", { ascending: false });
-      if (error) throw error;
-      return data || [];
+      const { data } = await api.get('/event-reports');
+      return (data || []).map((r: any) => ({
+        ...r,
+        report_date: r.reportDate,
+        report_type: r.reportType,
+        total_attendees: r.totalAttendees,
+        children_count: r.childrenCount,
+        monitors_count: r.monitorsCount,
+        youth_count: r.youthCount,
+        visitors_count: r.visitorsCount,
+        group_id: r.groupId,
+        event_id: r.eventId,
+        sermon_ref: r.sermonRef,
+        worship_team: r.worshipTeam,
+        welcome_team: r.welcomeTeam,
+        media_team: r.mediaTeam,
+        created_by: r.createdBy,
+      }));
     },
   });
 
   const { data: groups } = useQuery({
     queryKey: ["groups-for-reports"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("groups").select("id, name");
-      if (error) throw error;
-      return data || [];
+      const { data } = await api.get('/groups');
+      return (data || []).map((g: any) => ({ id: g.id, name: g.name }));
     },
   });
 
   const { data: events } = useQuery({
     queryKey: ["events-for-reports"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("events")
-        .select("id, title, event_date")
-        .order("event_date", { ascending: false })
-        .limit(50);
-      return data || [];
+      const { data } = await api.get('/events');
+      return (data || []).slice(0, 50).map((e: any) => ({ id: e.id, title: e.title, event_date: e.eventDate }));
     },
   });
 
@@ -258,30 +265,28 @@ const Reports = () => {
   const saveMutation = useMutation({
     mutationFn: async () => {
       const payload: any = {
-        report_date: reportDate,
-        report_type: reportType,
-        total_attendees: totalAttendees,
-        children_count: childrenCount,
-        monitors_count: monitorsCount,
-        youth_count: youthCount,
-        visitors_count: visitorsCount,
+        reportDate: reportDate,
+        reportType: reportType,
+        totalAttendees: totalAttendees,
+        childrenCount: childrenCount,
+        monitorsCount: monitorsCount,
+        youthCount: youthCount,
+        visitorsCount: visitorsCount,
         notes: notes.trim() || null,
-        event_id: eventId || null,
-        group_id: groupId || null,
-        created_by: user?.id,
+        eventId: eventId || null,
+        groupId: groupId || null,
+        createdBy: user?.id,
         preacher: preacher.trim() || null,
-        sermon_ref: sermonRef.trim() || null,
+        sermonRef: sermonRef.trim() || null,
         pastors: pastors.length ? pastors : null,
-        worship_team: worshipTeam.length ? worshipTeam : null,
-        welcome_team: welcomeTeam.length ? welcomeTeam : null,
-        media_team: mediaTeam.length ? mediaTeam : null,
+        worshipTeam: worshipTeam.length ? worshipTeam : null,
+        welcomeTeam: welcomeTeam.length ? welcomeTeam : null,
+        mediaTeam: mediaTeam.length ? mediaTeam : null,
       };
       if (editing) {
-        const { error } = await (supabase as any).from("event_reports").update(payload).eq("id", editing.id);
-        if (error) throw error;
+        await api.patch(`/event-reports/${editing.id}`, payload);
       } else {
-        const { error } = await (supabase as any).from("event_reports").insert(payload);
-        if (error) throw error;
+        await api.post(`/event-reports`, payload);
       }
     },
     onSuccess: () => {
@@ -296,8 +301,7 @@ const Reports = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from("event_reports").delete().eq("id", id);
-      if (error) throw error;
+      await api.delete(`/event-reports/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["event-reports"] });

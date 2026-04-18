@@ -1,0 +1,501 @@
+// Prisma Schema — Mergulho Connect
+// NestJS + PostgreSQL (Docker local)
+
+generator client {
+  provider        = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────
+
+enum AppRole {
+  admin
+  admin_ccm
+  gerente
+  pastor
+  membro
+
+  @@map("app_role")
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  cancelled
+
+  @@map("payment_status")
+}
+
+// ─────────────────────────────────────────────
+// MODELS
+// ─────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  profile  Profile?
+  userRole UserRole?
+
+  @@map("users")
+}
+
+model AuditLog {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  userEmail  String?  @map("user_email")
+  userName   String?  @map("user_name")
+  action     String
+  routine    String
+  details    Json     @default("{}")
+  ipAddress  String?  @map("ip_address")
+  deviceInfo String?  @map("device_info")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@index([createdAt(sort: Desc)], map: "idx_audit_logs_created_at")
+  @@index([routine], map: "idx_audit_logs_routine")
+  @@index([userId], map: "idx_audit_logs_user_id")
+  @@map("audit_logs")
+}
+
+model ContactMessage {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  phone     String?
+  subject   String?
+  message   String?
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz()
+  status    String?   @default("pending")
+
+  @@map("contact_messages")
+}
+
+model DevotionalLike {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  devotionalId String   @map("devotional_id") @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  devotional Devotional @relation(fields: [devotionalId], references: [id])
+
+  @@unique([devotionalId, userId])
+  @@map("devotional_likes")
+}
+
+model Devotional {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title          String
+  content        String
+  mediaUrl       String?   @map("media_url")
+  publishDate    DateTime  @default(now()) @map("publish_date") @db.Timestamptz()
+  status         String    @default("draft")
+  authorId       String?   @map("author_id") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+  expirationDate DateTime? @map("expiration_date") @db.Timestamptz()
+  isActive       Boolean   @default(true) @map("is_active")
+  videoUrl       String?   @map("video_url")
+  isVideoUpload  Boolean?  @default(false) @map("is_video_upload")
+
+  likes DevotionalLike[]
+
+  @@map("devotionals")
+}
+
+model Group {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  description String?
+  icon        String?  @default("users")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  memberGroups       MemberGroup[]
+  events             Event[]
+  groupRoutines      GroupRoutine[]
+  eventReports       EventReport[]
+  volunteerSchedules VolunteerSchedule[]
+  announcements      Announcement[]
+
+  @@map("groups")
+}
+
+model GroupRoutine {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  groupId    String?   @map("group_id") @db.Uuid
+  routineKey String    @map("routine_key")
+  isEnabled  Boolean?  @default(true) @map("is_enabled")
+  updatedAt  DateTime? @default(now()) @map("updated_at") @db.Timestamptz()
+
+  group Group? @relation(fields: [groupId], references: [id])
+
+  @@unique([groupId, routineKey])
+  @@map("group_routines")
+}
+
+model LandingPhoto {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  url       String
+  caption   String?
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz()
+  expiresAt DateTime? @map("expires_at") @db.Timestamptz()
+  priority  Int?      @default(0)
+  isBanner  Boolean?  @default(false) @map("is_banner")
+
+  @@map("landing_photos")
+}
+
+model LandingTestimonial {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  role      String?
+  text      String
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@map("landing_testimonials")
+}
+
+model Message {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  senderId    String   @map("sender_id") @db.Uuid
+  recipientId String?  @map("recipient_id") @db.Uuid
+  groupId     String?  @map("group_id") @db.Uuid
+  content     String
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  sender    Profile  @relation("SentMessages", fields: [senderId], references: [userId])
+  recipient Profile? @relation("ReceivedMessages", fields: [recipientId], references: [userId])
+
+  @@map("messages")
+}
+
+model Profile {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String   @unique @map("user_id") @db.Uuid
+  fullName      String   @default("") @map("full_name")
+  avatarUrl     String?  @map("avatar_url")
+  whatsappPhone String?  @map("whatsapp_phone")
+  username      String?
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sentMessages       Message[]           @relation("SentMessages")
+  receivedMessages   Message[]           @relation("ReceivedMessages")
+  announcements      Announcement[]
+  eventReports       EventReport[]
+  volunteerSchedules VolunteerSchedule[]
+  kidsCheckins       KidsCheckin[]
+
+  @@map("profiles")
+}
+
+model SiteSetting {
+  id        String    @id
+  value     String?
+  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz()
+
+  @@map("site_settings")
+}
+
+model UserPushSubscription {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String?   @map("user_id") @db.Uuid
+  subscription Json
+  deviceInfo   Json?     @map("device_info")
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt    DateTime? @default(now()) @map("updated_at") @db.Timestamptz()
+
+  @@map("user_push_subscriptions")
+}
+
+model UserRole {
+  id     String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId String  @unique @map("user_id") @db.Uuid
+  role   AppRole @default(membro)
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, role])
+  @@map("user_roles")
+}
+
+model Volunteer {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  fullName      String   @map("full_name")
+  phone         String?
+  availability  String?
+  interestArea  String?  @map("interest_area")
+  interestAreas String[] @default([]) @map("interest_areas")
+  status        String   @default("pending")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@map("volunteers")
+}
+
+model WzDispatch {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title         String
+  content       String?
+  type          String
+  targetGroupId String?   @map("target_group_id")
+  targetUserId  String?   @map("target_user_id")
+  priority      String    @default("normal")
+  status        String    @default("pending")
+  scheduledAt   DateTime  @map("scheduled_at") @db.Timestamp()
+  sentAt        DateTime? @map("sent_at") @db.Timestamp()
+  errorMessage  String?   @map("error_message")
+  createdBy     String?   @map("created_by")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp()
+
+  attachments WzDispatchAttachment[]
+  logs        WzDispatchLog[]
+
+  @@map("wz_dispatches")
+}
+
+model WzDispatchAttachment {
+  id         String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  dispatchId String @map("dispatch_id") @db.Uuid
+  type       String
+  filename   String
+  filepath   String
+  mimetype   String
+
+  dispatch WzDispatch @relation(fields: [dispatchId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("wz_dispatch_attachments")
+}
+
+model WzDispatchLog {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  dispatchId String   @map("dispatch_id") @db.Uuid
+  recipient  String
+  status     String
+  error      String?
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamp()
+
+  dispatch WzDispatch @relation(fields: [dispatchId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("wz_dispatch_logs")
+}
+
+model Announcement {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title         String
+  content       String
+  type          String
+  groupId       String?   @map("group_id") @db.Uuid
+  targetUserId  String?   @map("target_user_id") @db.Uuid
+  targetGroupId String?   @map("target_group_id") @db.Uuid
+  createdBy     String?   @map("created_by") @db.Uuid
+  priority      String?   @default("normal")
+  sendWhatsapp  Boolean?  @default(false) @map("send_whatsapp")
+  createdAt     DateTime? @default(now()) @map("created_at") @db.Timestamptz()
+
+  group   Group?   @relation(fields: [groupId], references: [id])
+  creator Profile? @relation(fields: [createdBy], references: [userId], onDelete: SetNull)
+
+  @@map("announcements")
+}
+
+model EventReport {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  eventId         String?  @map("event_id") @db.Uuid
+  groupId         String?  @map("group_id") @db.Uuid
+  reportDate      DateTime @default(dbgenerated("CURRENT_DATE")) @map("report_date") @db.Date
+  reportType      String   @default("culto") @map("report_type")
+  totalAttendees  Int?     @default(0) @map("total_attendees")
+  childrenCount   Int?     @default(0) @map("children_count")
+  monitorsCount   Int?     @default(0) @map("monitors_count")
+  youthCount      Int?     @default(0) @map("youth_count")
+  publicCount     Int?     @default(0) @map("public_count")
+  totalOfferings  Decimal? @default(0) @map("total_offerings") @db.Decimal
+  tithesAmount    Decimal? @default(0) @map("tithes_amount") @db.Decimal
+  tithers         Json?    @default("[]")
+  notes           String?
+  createdBy       String?  @map("created_by") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+  visitorsCount   Int      @default(0) @map("visitors_count")
+  preacher        String?
+  sermonRef       String?  @map("sermon_ref")
+  pastors         String[] @map("pastors")
+  worshipTeam     String[] @map("worship_team")
+  welcomeTeam     String[] @map("welcome_team")
+  mediaTeam       String[] @map("media_team")
+
+  event         Event?   @relation(fields: [eventId], references: [id])
+  group         Group?   @relation(fields: [groupId], references: [id])
+  createdByUser Profile? @relation(fields: [createdBy], references: [userId], onDelete: SetNull)
+
+  @@map("event_reports")
+}
+
+model Event {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title           String
+  description     String?
+  eventDate       DateTime  @map("event_date") @db.Timestamptz()
+  location        String?
+  isGeneral       Boolean   @default(true) @map("is_general")
+  groupId         String?   @map("group_id") @db.Uuid
+  createdBy       String?   @map("created_by") @db.Uuid
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+  eventType       String    @default("simple") @map("event_type")
+  bannerUrl       String?   @map("banner_url")
+  speakers        String?
+  price           Decimal?  @default(0) @db.Decimal
+  pixKey          String?   @map("pix_key")
+  pixQrcodeUrl    String?   @map("pix_qrcode_url")
+  mapUrl          String?   @map("map_url")
+  sendWhatsapp    Boolean?  @default(false) @map("send_whatsapp")
+  requireCheckin  Boolean?  @default(false) @map("require_checkin")
+  checkinQrSecret String?   @map("checkin_qr_secret")
+  isPublic        Boolean   @default(false) @map("is_public")
+
+  group         Group?              @relation(fields: [groupId], references: [id])
+  checkins      EventCheckin[]
+  registrations EventRegistration[]
+  rsvps         EventRsvp[]
+  reports       EventReport[]
+  cultoReports  CultoReport[]
+
+  @@index([isPublic], map: "idx_events_is_public")
+  @@map("events")
+}
+
+model KidsCheckin {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  childName        String    @map("child_name")
+  guardianId       String?   @map("guardian_id") @db.Uuid
+  itemsDescription String?   @map("items_description")
+  validationToken  String    @map("validation_token")
+  status           String?   @default("active")
+  callRequested    Boolean?  @default(false) @map("call_requested")
+  category         String?   @default("kids")
+  eventId          String?   @map("event_id") @db.Uuid
+  createdAt        DateTime? @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt        DateTime? @default(now()) @map("updated_at") @db.Timestamptz()
+
+  guardian Profile? @relation(fields: [guardianId], references: [userId], onDelete: Cascade)
+
+  @@map("kids_checkins")
+}
+
+model MemberGroup {
+  id       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId   String   @map("user_id") @db.Uuid
+  groupId  String   @map("group_id") @db.Uuid
+  role     String?  @default("member")
+  joinedAt DateTime @default(now()) @map("joined_at") @db.Timestamptz()
+
+  group Group @relation(fields: [groupId], references: [id])
+
+  @@unique([userId, groupId])
+  @@map("member_groups")
+}
+
+model VolunteerSchedule {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  scheduleDate DateTime @map("schedule_date") @db.Date
+  roleFunction String   @map("role_function")
+  volunteerId  String?  @map("volunteer_id") @db.Uuid
+  itemUserId   String?  @map("item_user_id") @db.Uuid
+  groupId      String?  @map("group_id") @db.Uuid
+  createdBy    String?  @map("created_by") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  group    Group?   @relation(fields: [groupId], references: [id])
+  itemUser Profile? @relation(fields: [itemUserId], references: [userId], onDelete: Cascade)
+
+  @@index([itemUserId], map: "idx_v_schedules_user_id")
+  @@map("volunteer_schedules")
+}
+
+model EventCheckin {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  eventId     String   @map("event_id") @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  checkedInAt DateTime @default(now()) @map("checked_in_at") @db.Timestamptz()
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId], map: "idx_event_checkins_event")
+  @@map("event_checkins")
+}
+
+model EventRegistration {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  eventId       String   @map("event_id") @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  paymentStatus String   @default("pending") @map("payment_status")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@map("event_registrations")
+}
+
+model EventRsvp {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  eventId   String   @map("event_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  status    String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@map("event_rsvps")
+}
+
+model CultoReport {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reportDate     DateTime @map("report_date") @db.Date
+  reportType     String   @default("culto") @map("report_type")
+  totalAttendees Int      @default(0) @map("total_attendees")
+  childrenCount  Int      @default(0) @map("children_count")
+  youthCount     Int      @default(0) @map("youth_count")
+  monitorsCount  Int      @default(0) @map("monitors_count")
+  publicCount    Int      @default(0) @map("public_count")
+  notes          String?
+  eventId        String?  @map("event_id") @db.Uuid
+  escalaData     Json?    @default("[]") @map("escala_data")
+  createdBy      String?  @map("created_by") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  event Event? @relation(fields: [eventId], references: [id], onDelete: SetNull)
+
+  @@index([eventId], map: "idx_culto_reports_event_id")
+  @@index([reportDate(sort: Desc)], map: "idx_culto_reports_report_date")
+  @@map("culto_reports")
+}
+
+model TreasuryEntry {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  memberName  String   @map("member_name")
+  amount      Decimal  @db.Decimal(10, 2)
+  paymentType String   @map("payment_type")
+  paymentDate DateTime @map("payment_date") @db.Date
+  notes       String?
+  createdBy   String?  @map("created_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@index([createdBy], map: "idx_treasury_entries_created_by")
+  @@index([paymentDate(sort: Desc)], map: "idx_treasury_entries_payment_date")
+  @@map("treasury_entries")
+}

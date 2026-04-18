@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import api from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,15 +20,10 @@ const HomePage = () => {
     queryKey: ["my-active-checkin", user?.id],
     queryFn: async () => {
       if (!user) return null;
-      const { data } = await (supabase as any)
-        .from("kids_checkins")
-        .select("*")
-        .eq("guardian_id", user.id)
-        .eq("status", "active")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      return data;
+      // Backend: we must get all and filter locally if the endpoint doesn't support complex params yet
+      const { data } = await api.get("/kids-checkins", { params: { status: "active" } });
+      const active = data?.find((c: any) => c.guardian_id === user.id);
+      return active || null;
     },
     enabled: !!user,
     refetchInterval: 15000,
@@ -37,8 +32,8 @@ const HomePage = () => {
   const { data: siteSettings } = useQuery({
     queryKey: ["site-settings"],
     queryFn: async () => {
-      const { data } = await supabase.from("site_settings").select("*");
-      return data?.reduce((acc, curr) => ({ ...acc, [curr.id]: curr.value }), {} as any) || {};
+      const { data } = await api.get("/site-settings");
+      return data?.reduce((acc: any, curr: any) => ({ ...acc, [curr.id]: curr.value }), {} as any) || {};
     },
   });
 
@@ -46,36 +41,13 @@ const HomePage = () => {
     queryKey: ["my-announcements", user?.id],
     queryFn: async () => {
       if (!user) return [];
-
-      const { data: memberGroups } = await (supabase as any)
-        .from("member_groups")
-        .select("group_id")
-        .eq("user_id", user.id);
-      const groupIds = memberGroups?.map((mg: any) => mg.group_id) || [];
-
-      // Primeiro buscamos os anúncios
-      const { data: annData, error: annError } = await (supabase as any)
-        .from("announcements")
-        .select("*")
-        .or(`type.eq.general,target_user_id.eq.${user.id}${groupIds.length > 0 ? `,and(type.eq.group,group_id.in.(${groupIds.join(",")}))` : ""}`)
-        .order("created_at", { ascending: false })
-        .limit(5);
-
-      if (annError) throw annError;
-      if (!annData || annData.length === 0) return [];
-
-      // Depois buscamos os perfis dos criadores para evitar erro de Join (400) se não houver FK formal
-      const creatorIds = [...new Set(annData.map((a: any) => a.created_by))];
-      const { data: profilesData } = await supabase
-        .from("profiles")
-        .select("user_id, full_name")
-        .in("user_id", creatorIds);
-
-      // Mapeamos os perfis de volta para os anúncios
-      return annData.map((ann: any) => ({
-        ...ann,
-        profiles: profilesData?.find((p: any) => p.user_id === ann.created_by) || null
-      }));
+      const { data: annData } = await api.get("/announcements");
+      // Filtros simplificados no frontend por enquanto
+      const filtered = annData?.filter((a: any) => 
+        a.type === 'general' || a.targetUserId === user.id || 
+        (a.type === 'group' && userGroupIds.includes(a.groupId))
+      ).slice(0, 5) || [];
+      return filtered;
     },
     enabled: !!user,
   });
@@ -83,35 +55,26 @@ const HomePage = () => {
   const { data: nextEvents } = useQuery({
     queryKey: ["next-events", userGroupIds, isAdmin],
     queryFn: async () => {
-      let query = supabase
-        .from("events")
-        .select("*")
-        .gte("event_date", new Date().toISOString())
-        .order("event_date", { ascending: true })
-        .limit(3);
+      const { data } = await api.get("/events");
+      // Filtro no front-end provisório
+      const futureEvents = (data || [])
+        .filter((e: any) => new Date(e.eventDate) >= new Date())
+        .sort((a: any, b: any) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime());
 
       if (!isAdmin) {
-        const groupFilter = userGroupIds?.length > 0 ? `group_id.in.(${userGroupIds.join(",")})` : "";
-        query = query.or(`is_general.eq.true${groupFilter ? `,${groupFilter}` : ""}`);
+        return futureEvents.filter((e: any) => e.isGeneral || userGroupIds.includes(e.groupId)).slice(0, 3);
       }
-
-      const { data } = await query;
-      return data || [];
+      return futureEvents.slice(0, 3);
     },
   });
 
   const { data: latestDevotional } = useQuery({
     queryKey: ["latest-devotional"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("devotionals")
-        .select("*")
-        .in("status", isAdmin ? ["published", "scheduled"] : ["published"])
-        .lte("publish_date", new Date().toISOString())
-        .order("publish_date", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      return data;
+      const statuses = isAdmin ? ["published", "scheduled"] : ["published"];
+      const { data } = await api.get("/devotionals", { params: { status: statuses.join(',') } });
+      const valid = (data || []).filter((d: any) => new Date(d.publishDate) <= new Date());
+      return valid[0] || null;
     },
   });
 

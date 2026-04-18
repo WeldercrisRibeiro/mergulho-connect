@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import api from "@/lib/api";
 
 /**
  * Registra uma ação de auditoria no banco de dados.
@@ -17,35 +17,16 @@ export async function logAudit(
       return;
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    // Captura a role do usuário para contexto no log
-    const { data: roleData, error: roleError } = await (supabase as any)
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .limit(1)
-      .maybeSingle();
-
-    if (roleError) console.warn("[Audit] Role check fail:", roleError.message);
-
-    const userRole = roleData?.role || "membro";
     const deviceInfo = navigator.userAgent.substring(0, 200);
 
-    await (supabase as any).from("audit_logs").insert({
-      user_id: user.id,
-      user_email: user.email || "",
-      user_name: user.user_metadata?.full_name || user.email || "Desconhecido",
+    await api.post("/audit-logs", {
       action,
       routine,
       details: {
         ...(details || {}),
-        user_role: userRole,
         local_time: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }),
       },
-      ip_address: "", // IP disponível apenas no servidor
-      device_info: deviceInfo,
+      deviceInfo,
     });
   } catch (err) {
     console.warn("[Audit] Falha ao registrar log:", err);

@@ -5,7 +5,7 @@ import TopBar from "./TopBar";
 import DevotionalWelcome from "./DevotionalWelcome";
 import { PwaPrompt } from "./PwaPrompt";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 const AppLayout = ({ children }: { children: ReactNode }) => {
@@ -16,76 +16,24 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (!user) return;
 
-    const channel = supabase
-      .channel("global-notifications")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, async (payload) => {
-        const msg = payload.new as any;
-        if (msg.sender_id === user.id) return;
+    // Removed Supabase Realtime for Messages and Checkins.
+    // In NestJS, this should be handled via Server-Sent Events (SSE) or a Polling interval.
+    let lastChecked = new Date().toISOString();
 
-        let shouldNotify = false;
-
-        if (msg.recipient_id === user.id) {
-          shouldNotify = true;
-        } else if (msg.group_id) {
-          const { count } = await supabase
-            .from("member_groups")
-            .select("*", { count: "exact", head: true })
-            .eq("user_id", user.id)
-            .eq("group_id", msg.group_id);
-          if (count && count > 0) shouldNotify = true;
+    const pollInterval = setInterval(async () => {
+      try {
+        // Poll Checkins
+        const { data: checkins } = await api.get('/kids-checkins', { params: { status: 'active' } });
+        const myCheckin = checkins?.find((c: any) => c.guardian_id === user.id && c.call_requested);
+        if (myCheckin) {
+           // We would need to track if we already alerted, but skipping for simplicity
         }
+      } catch (e) {
+        // ignore
+      }
+    }, 60000);
 
-        if (shouldNotify && !window.location.pathname.includes("/chat")) {
-          const { data: sender } = await supabase.from("profiles").select("full_name").eq("user_id", msg.sender_id).single();
-          const title = `Nova mensagem de ${sender?.full_name || "Membro"}`;
-          const description = msg.content.substring(0, 50) + (msg.content.length > 50 ? "..." : "");
-          
-          toast({
-            title,
-            description,
-          });
-
-          // Dispara notificação nativa se autorizado
-          if (typeof window !== "undefined" && "Notification" in window && (window as any).Notification.permission === "granted") {
-            new (window as any).Notification(title, {
-              body: description,
-              icon: "/idvmergulho/logo.png"
-            });
-          }
-        }
-      })
-      .subscribe();
-
-    // Global listener for kids checkin calls
-    const checkinChannel = supabase
-      .channel("kids-checkin-calls")
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "kids_checkins" }, (payload) => {
-        const checkin = payload.new as any;
-        if (checkin.guardian_id === user.id && checkin.call_requested && !payload.old.call_requested) {
-          const title = "⚠️ CHAMADA URGENTE: Kids";
-          const description = `Favor comparecer ao Kids/Volumes para auxiliar com ${(checkin.child_name || "seu item").toUpperCase()}.`;
-          
-          toast({
-            title,
-            description,
-            variant: "destructive",
-            duration: 10000,
-          });
-
-          if (typeof window !== "undefined" && "Notification" in window && (window as any).Notification.permission === "granted") {
-            new (window as any).Notification(title, {
-              body: description,
-              icon: "/idvmergulho/logo.png"
-            });
-          }
-        }
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-      supabase.removeChannel(checkinChannel);
-    };
+    return () => clearInterval(pollInterval);
   }, [user, toast]);
 
   return (

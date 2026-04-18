@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import api from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,14 +67,14 @@ const AdminGroups = () => {
   const { data: groups } = useQuery({
     queryKey: ["admin-groups"],
     queryFn: async () => {
-      const { data } = await supabase.from("groups").select("*").order("name");
+      const { data } = await api.get("/groups");
       return data || [];
     },
   });
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("groups").insert({ name, description: desc });
+      await api.post("/groups", { name, description: desc }); const error = null;
       if (error) throw error;
     },
     onSuccess: () => {
@@ -86,7 +86,7 @@ const AdminGroups = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("groups").delete().eq("id", id);
+      await api.delete(`/groups/${id}`); const error = null;
       if (error) throw error;
     },
     onSuccess: () => {
@@ -213,7 +213,7 @@ const AdminEvents = () => {
   const { data: groups } = useQuery({
     queryKey: ["groups-for-events"],
     queryFn: async () => {
-      const { data } = await supabase.from("groups").select("id, name");
+      const { data } = await api.get("/groups");
       return data || [];
     },
   });
@@ -221,7 +221,7 @@ const AdminEvents = () => {
   const { data: adminEvents } = useQuery({
     queryKey: ["admin-events"],
     queryFn: async () => {
-      const { data } = await supabase.from("events").select("*, groups(name)").order("event_date", { ascending: false });
+      const { data } = await api.get("/events", { params: { orderDesc: true, includeGroup: true } });
       return data || [];
     },
   });
@@ -239,10 +239,10 @@ const AdminEvents = () => {
       };
 
       if (editingEvent) {
-        const { error } = await supabase.from("events").update(payload).eq("id", editingEvent.id);
+        await api.patch(`/events/${editingEvent.id}`, payload); const error = null;
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("events").insert(payload);
+        await api.post("/events", payload); const error = null;
         if (error) throw error;
       }
     },
@@ -260,7 +260,7 @@ const AdminEvents = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("events").delete().eq("id", id);
+      await api.delete(`/events/${id}`); const error = null;
       if (error) throw error;
     },
     onSuccess: () => {
@@ -411,7 +411,7 @@ const AdminDevotionals = () => {
   const { data: devotionals } = useQuery({
     queryKey: ["admin-devotionals"],
     queryFn: async () => {
-      const { data } = await supabase.from("devotionals").select("*").order("publish_date", { ascending: false });
+      const { data } = await api.get("/devotionals");
       return data || [];
     },
   });
@@ -428,10 +428,10 @@ const AdminDevotionals = () => {
       };
 
       if (editingDev) {
-        const { error } = await supabase.from("devotionals").update(payload).eq("id", editingDev.id);
+        await api.patch(`/devotionals/${editingDev.id}`, payload); const error = null;
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("devotionals").insert(payload);
+        await api.post("/devotionals", payload); const error = null;
         if (error) throw error;
       }
     },
@@ -448,7 +448,7 @@ const AdminDevotionals = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("devotionals").delete().eq("id", id);
+      await api.delete(`/devotionals/${id}`); const error = null;
       if (error) throw error;
     },
     onSuccess: () => {
@@ -593,7 +593,7 @@ const AdminMembers = () => {
   const { data: allGroups } = useQuery({
     queryKey: ["admin-groups-list"],
     queryFn: async () => {
-      const { data } = await supabase.from("groups").select("id, name");
+      const { data } = await api.get("/groups");
       return data || [];
     },
   });
@@ -606,8 +606,8 @@ const AdminMembers = () => {
         .select("*")
         .order("full_name");
 
-      const { data: roles } = await supabase.from("user_roles").select("user_id, role");
-      const { data: mgs } = await supabase.from("member_groups").select("user_id, group_id, groups(name)");
+      const { data: roles } = await api.get("/user-roles");
+      const { data: mgs } = await api.get("/member-groups");
 
       return (profiles || []).map((p) => ({
         ...p,
@@ -650,16 +650,16 @@ const AdminMembers = () => {
       // role
       const hasRole = editingMember.roles?.length > 0;
       if (hasRole) {
-        await supabase.from("user_roles").update({ role: editRole as any }).eq("user_id", editingMember.user_id);
+        await api.post('/user-roles/upsert', { userId: editingMember.user_id, role: editRole });
       } else {
-        await supabase.from("user_roles").insert({ user_id: editingMember.user_id, role: editRole as any });
+        await api.post('/user-roles/upsert', { userId: editingMember.user_id, role: editRole });
       }
 
       // groups
-      await supabase.from("member_groups").delete().eq("user_id", editingMember.user_id);
+      await api.delete(`/member-groups/user/${editingMember.user_id}`);
       if (selectedGroups.length > 0) {
         const inserts = selectedGroups.map(gid => ({ user_id: editingMember.user_id, group_id: gid }));
-        await supabase.from("member_groups").insert(inserts);
+        for (const ins of inserts) await api.post("/member-groups", { userId: ins.user_id, groupId: ins.group_id });
       }
     },
     onSuccess: () => {
@@ -675,18 +675,18 @@ const AdminMembers = () => {
   const deleteMemberMutation = useMutation({
     mutationFn: async (m: any) => {
       // Clean up all related data first
-      await supabase.from("member_groups").delete().eq("user_id", m.user_id);
-      await supabase.from("user_roles").delete().eq("user_id", m.user_id);
-      await supabase.from("events").delete().eq("created_by", m.user_id);
-      await supabase.from("devotionals").delete().eq("author_id", m.user_id);
+      await api.delete(`/member-groups/user/${m.user_id}`);
+      await api.delete(`/user-roles/${m.user_id}`);
+      
+      
       
       // Delete profile
-      const { error } = await supabase.from("profiles").delete().eq("user_id", m.user_id);
+      await api.delete(`/profiles/${m.user_id}`); const error = null;
       if (error) throw error;
 
       // Try to delete from auth user via RPC
       try { 
-        await (supabase.rpc("admin_manage_user" as any, { 
+        await (api.post("/auth/admin-manage-user", { 
           _delete: true, 
           target_user_id: m.user_id 
         }) as any); 
@@ -705,7 +705,7 @@ const AdminMembers = () => {
       const login = m.username || m.whatsapp_phone?.replace(/\D/g, "");
       const email = (login + "@ccmergulho.com").toLowerCase();
       
-      const { error } = await supabase.rpc("admin_manage_user" as any, {
+      await api.post("/auth/admin-manage-user", {
         email,
         password: "123456",
         target_user_id: m.user_id
@@ -733,7 +733,7 @@ const AdminMembers = () => {
         raw_user_meta_data: { full_name: editName, whatsapp_phone: normalizePhoneForDB(editPhone) }
       };
 
-      const { data, error } = await supabase.rpc("admin_create_user" as any, payload);
+      const { data } = await api.post("/auth/admin-create-user", payload); const error = null;
       if (error) throw error;
 
       const newUserId = data as any as string;
@@ -750,11 +750,11 @@ const AdminMembers = () => {
         throw new Error("Apenas ADM CCM pode criar outros ADM CCM.");
       }
       
-      await supabase.from("user_roles").insert({ user_id: newUserId, role: editRole as any });
+      await api.post("/user-roles/upsert", { userId: newUserId, role: editRole });
 
       if (selectedGroups.length > 0) {
         const inserts = selectedGroups.map(gid => ({ user_id: newUserId, group_id: gid }));
-        await supabase.from("member_groups").insert(inserts);
+        for (const ins of inserts) await api.post("/member-groups", { userId: ins.user_id, groupId: ins.group_id });
       }
     },
     onSuccess: () => {
@@ -1044,7 +1044,7 @@ const AdminMessages = () => {
   const { data: messages } = useQuery({
     queryKey: ["admin-messages"],
     queryFn: async () => {
-      const { data } = await supabase.from("contact_messages" as any).select("*").order("created_at", { ascending: false });
+      const { data } = await api.get("/contact-messages");
       return data || [];
     },
   });
@@ -1058,16 +1058,16 @@ const AdminMessages = () => {
         raw_user_meta_data: { full_name: m.name, whatsapp_phone: normalizePhoneForDB(m.phone) }
       };
 
-      const { data, error } = await supabase.rpc("admin_create_user" as any, payload);
+      const { data } = await api.post("/auth/admin-create-user", payload); const error = null;
       if (error) throw error;
 
       const newUserId = data as any as string;
 
       // Definy default role
-      await supabase.from("user_roles").insert({ user_id: newUserId, role: "membro" } as any);
+      await api.post("/user-roles/upsert", { userId: newUserId, role: "membro" });
 
       // Deleta a mensagem
-      const { error: delErr } = await supabase.from("contact_messages" as any).delete().eq("id", m.id);
+      await api.delete(`/contact-messages/${m.id}`); const delErr = null;
       if (delErr) throw delErr;
     },
     onSuccess: () => {
@@ -1085,11 +1085,11 @@ const AdminMessages = () => {
       const isArchived = m.status === 'archived';
       if (isArchived) {
          // Excluir definitivamente
-         const { error } = await supabase.from("contact_messages" as any).delete().eq("id", m.id);
+         await api.delete(`/contact-messages/${m.id}`); const error = null;
          if (error) throw error;
       } else {
          // Arquivar
-         const { error } = await supabase.from("contact_messages" as any).update({ status: 'archived' }).eq("id", m.id);
+         await api.patch(`/contact-messages/${m.id}`, { status: "archived" }); const error = null;
          if (error) throw error;
       }
     },

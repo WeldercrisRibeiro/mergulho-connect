@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import api from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,31 +39,14 @@ const AuditLogs = () => {
     queryKey: ["audit-logs", filterUser, filterRoutine, filterAction],
     queryFn: async () => {
       try {
-        let query = (supabase as any)
-          .from("audit_logs")
-          .select("id, user_id, user_email, user_name, action, routine, details, device_info, created_at")
-          .order("created_at", { ascending: false })
-          .limit(100);
-
-        if (filterUser.trim()) {
-          query = query.or(`user_name.ilike.%${filterUser}%,user_email.ilike.%${filterUser}%`);
-        }
-        if (filterRoutine !== "all") {
-          query = query.eq("routine", filterRoutine);
-        }
-        if (filterAction !== "all") {
-          query = query.eq("action", filterAction);
-        }
-
-        const { data, error } = await query;
-        if (error) {
-          console.error("[AuditLogs] DB Error:", error);
-          throw error;
-        }
+        const params: any = { limit: 100 };
+        if (filterUser.trim()) params.search = filterUser;
+        if (filterRoutine !== "all") params.routine = filterRoutine;
+        if (filterAction !== "all") params.action = filterAction;
+        const { data } = await api.get('/audit-logs', { params });
         return data || [];
       } catch (err: any) {
         console.error("[AuditLogs] Query Exception:", err);
-        // Fallback para evitar 406 crash
         toast({ 
           title: "Aviso de Sincronização", 
           description: "Não foi possível carregar os logs mais recentes. Tente atualizar a página.",
@@ -72,25 +55,14 @@ const AuditLogs = () => {
         return [];
       }
     },
-    refetchInterval: 10000, // Refresh every 10s for real-time feel
+    refetchInterval: 10000,
   });
 
-  // Realtime subscription
-  useEffect(() => {
-    const channel = supabase
-      .channel("audit-realtime")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "audit_logs" }, () => {
-        refetch();
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [refetch]);
+  // Polling handles real-time updates via refetchInterval above
 
   const deleteLogMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from("audit_logs").delete().eq("id", id);
-      if (error) throw error;
+      await api.delete(`/audit-logs/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
@@ -102,8 +74,7 @@ const AuditLogs = () => {
 
   const clearAllMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await (supabase as any).from("audit_logs").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-      if (error) throw error;
+      await api.delete('/audit-logs');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["audit-logs"] });

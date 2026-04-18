@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/components/ThemeProvider";
-import { supabase } from "@/integrations/supabase/client";
+import api from "@/lib/api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,14 +32,15 @@ const Profile = () => {
 
   useEffect(() => {
     if (profile) {
-      setFullName(profile.full_name || "");
-      setWhatsapp(formatPhoneForDisplay(profile.whatsapp_phone || ""));
+      setFullName(profile.full_name || profile.fullName || "");
+      setWhatsapp(formatPhoneForDisplay(profile.whatsapp_phone || profile.whatsappPhone || ""));
       
-      const isPhoneLike = /^\d{8,}$/.test(profile.username || "");
+      const rawUsername = profile.username || "";
+      const isPhoneLike = /^\d{8,}$/.test(rawUsername);
       const emailPrefix = user?.email?.split('@')[0] || "";
-      setUsername(profile.username && !isPhoneLike ? profile.username : emailPrefix);
+      setUsername(rawUsername && !isPhoneLike ? rawUsername : emailPrefix);
       
-      setAvatarUrl(profile.avatar_url || null);
+      setAvatarUrl(profile.avatar_url || profile.avatarUrl || null);
     }
   }, [profile, user]);
 
@@ -55,11 +56,8 @@ const Profile = () => {
   const { data: myGroups } = useQuery({
     queryKey: ["my-profile-groups"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("member_groups")
-        .select("groups(name)")
-        .eq("user_id", user!.id);
-      return data?.map((mg) => (mg as any).groups?.name).filter(Boolean) || [];
+      const { data } = await api.get('/member-groups', { params: { userId: user!.id } });
+      return (data || []).map((mg: any) => mg.group?.name).filter(Boolean);
     },
     enabled: !!user,
   });
@@ -76,27 +74,14 @@ const Profile = () => {
 
     setUploadingPhoto(true);
     try {
-      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      const filePath = `avatars/${user.id}.${ext}`;
+      const formData = new FormData();
+      formData.append('file', file);
+      const { data: uploadData } = await api.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      const url = uploadData.url;
 
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(filePath, file, { upsert: true, contentType: file.type });
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(filePath);
-
-      // Add cache-busting timestamp
-      const url = `${publicUrl}?t=${Date.now()}`;
-
-      const { error: updateError } = await (supabase as any)
-        .from("profiles")
-        .update({ avatar_url: url })
-        .eq("user_id", user.id);
-
-      if (updateError) throw updateError;
-
+      await api.patch(`/profiles/${user.id}`, { avatarUrl: url });
       setAvatarUrl(url);
       await refreshProfile();
       toast({ title: "Foto atualizada com sucesso!" });
@@ -112,16 +97,11 @@ const Profile = () => {
     mutationFn: async () => {
       const phoneDigits = whatsapp.replace(/\D/g, "");
       const cleanUsername = (username || "").trim().toLowerCase().replace("@ccmergulho.com", "").replace(/\s+/g, ".") || phoneDigits;
-
-      const { error } = await (supabase as any)
-        .from("profiles")
-        .update({ 
-          full_name: fullName, 
-          whatsapp_phone: normalizePhoneForDB(whatsapp),
-          username: cleanUsername
-        })
-        .eq("user_id", user!.id);
-      if (error) throw error;
+      await api.patch(`/profiles/${user!.id}`, {
+        fullName: fullName,
+        whatsappPhone: normalizePhoneForDB(whatsapp),
+        username: cleanUsername
+      });
     },
     onSuccess: async () => {
       await refreshProfile();
@@ -135,8 +115,7 @@ const Profile = () => {
 
   const updatePasswordMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) throw error;
+      await api.patch('/auth/password', { password: newPassword });
     },
     onSuccess: () => {
       setNewPassword("");
@@ -191,8 +170,7 @@ const Profile = () => {
                   onClick={async () => {
                     if (window.confirm("Deseja remover sua foto?")) {
                       try {
-                        const { error } = await supabase.from("profiles").update({ avatar_url: null } as any).eq("user_id", user!.id);
-                        if (error) throw error;
+                        await api.patch(`/profiles/${user!.id}`, { avatarUrl: null });
                         setAvatarUrl(null);
                         await refreshProfile();
                         toast({ title: "Foto removida" });
@@ -216,7 +194,7 @@ const Profile = () => {
                   <p className="text-[11px] font-bold text-primary">
                     @{((profile?.username && !/^\d{8,}$/.test(profile.username)) 
                       ? profile.username 
-                      : (user?.email?.split('@')[0] || profile?.username)).toLowerCase()}
+                      : (user?.email?.split('@')[0] || profile?.username || "")).toLowerCase()}
                   </p>
                 )}
               </div>

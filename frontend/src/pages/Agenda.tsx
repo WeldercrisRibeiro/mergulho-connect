@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import api from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -95,21 +95,21 @@ const Agenda = () => {
     queryKey: ["user-groups", user?.id],
     enabled: !!user && !isAdmin,
     queryFn: async () => {
-      const { data } = await supabase.from("member_groups").select("group_id").eq("user_id", user?.id);
-      return data?.map(m => m.group_id) || [];
+      const { data } = await api.get('/member-groups');
+      return data?.map((m: any) => m.groupId) || [];
     },
   });
 
   const { data: groups } = useQuery({
     queryKey: ["groups", isAdmin, userGroups],
     queryFn: async () => {
-      const query = supabase.from("groups").select("*");
+      const { data } = await api.get('/groups');
+      let filtered = data || [];
       if (!isAdmin && userGroups) {
         if (userGroups.length === 0) return [];
-        query.in("id", userGroups);
+        filtered = filtered.filter(g => userGroups.includes(g.id));
       }
-      const { data } = await query;
-      return data || [];
+      return filtered || [];
     },
     enabled: !!user && (isAdmin || !!userGroups),
   });
@@ -117,21 +117,33 @@ const Agenda = () => {
   const { data: events } = useQuery({
     queryKey: ["events", filter, userGroupIds, isAdmin],
     queryFn: async () => {
-      let query = (supabase as any)
-        .from("events")
-        .select("*, event_rsvps(*), event_checkins(*), event_registrations(*), groups(name)")
-        .order("event_date", { ascending: true });
+      const { data } = await api.get('/events');
+      let filtered = data || [];
 
       if (filter !== "all") {
-        query = query.eq("group_id", filter);
+        filtered = filtered.filter((e: any) => e.groupId === filter);
       } else if (!isAdmin) {
-        const groupFilter = userGroupIds.length > 0 ? `group_id.in.(${userGroupIds.join(",")})` : "";
-        query = query.or(`is_general.eq.true${groupFilter ? `,${groupFilter}` : ""}`);
+        filtered = filtered.filter((e: any) => e.isGeneral || userGroupIds.includes(e.groupId));
       }
 
-      const { data, error } = await query;
-      if (error) throw error;
-      return data || [];
+      return filtered.map((e: any) => ({
+        ...e,
+        event_date: e.eventDate,
+        is_general: e.isGeneral,
+        group_id: e.groupId,
+        event_type: e.eventType,
+        banner_url: e.bannerUrl,
+        pix_key: e.pixKey,
+        pix_qrcode_url: e.pixQrcodeUrl,
+        map_url: e.mapUrl,
+        require_checkin: e.requireCheckin,
+        is_public: e.isPublic,
+        checkin_qr_secret: e.checkinQrSecret,
+        event_rsvps: (e.rsvps || []).map((r: any) => ({ ...r, user_id: r.userId })),
+        event_checkins: (e.checkins || []).map((c: any) => ({ ...c, user_id: c.userId })),
+        event_registrations: (e.registrations || []).map((c: any) => ({ ...c, user_id: c.userId, payment_status: c.paymentStatus })),
+        groups: e.group,
+      })).sort((a: any, b: any) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
     },
     refetchInterval: 15000,
   });
@@ -146,11 +158,7 @@ const Agenda = () => {
   // ─── Mutations ────────────────────────────────────────────────────────────
   const rsvpMutation = useMutation({
     mutationFn: async ({ eventId, status }: { eventId: string; status: string }) => {
-      const { error } = await supabase.from("event_rsvps").upsert(
-        { event_id: eventId, user_id: user!.id, status },
-        { onConflict: "event_id,user_id" }
-      );
-      if (error) throw error;
+      await api.post('/event-rsvps', { eventId, userId: user!.id, status });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["events"] });
@@ -160,11 +168,7 @@ const Agenda = () => {
 
   const registerMutation = useMutation({
     mutationFn: async (eventId: string) => {
-      const { error } = await (supabase as any).from("event_registrations").upsert(
-        { event_id: eventId, user_id: user?.id, payment_status: "pending" },
-        { onConflict: "event_id,user_id" }
-      );
-      if (error) throw error;
+      await api.post('/event-registrations', { eventId, userId: user?.id, paymentStatus: "pending" });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["events"] });
@@ -175,9 +179,8 @@ const Agenda = () => {
 
   const cancelRegistrationMutation = useMutation({
     mutationFn: async (eventId: string) => {
-      await (supabase as any).from("event_checkins").delete().eq("event_id", eventId).eq("user_id", user?.id);
-      const { error } = await (supabase as any).from("event_registrations").delete().eq("event_id", eventId).eq("user_id", user?.id);
-      if (error) throw error;
+      await api.delete('/event-registrations', { params: { eventId, userId: user?.id } });
+      await api.delete('/event-checkins', { params: { eventId, userId: user?.id } }).catch(()=>{});
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["events"] });
@@ -243,33 +246,29 @@ const Agenda = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const payload = {
+      const camelPayload = {
         title,
         description: desc,
-        event_date: date ? new Date(date).toISOString() : null,
+        eventDate: date ? new Date(date).toISOString() : null,
         location,
-        is_general: isGeneral === "true",
-        group_id: isGeneral === "false" && groupId ? groupId : null,
-        created_by: user?.id,
-        event_type: eventType,
-        banner_url: bannerUrl.trim() || null,
+        isGeneral: isGeneral === "true",
+        groupId: isGeneral === "false" && groupId ? groupId : null,
+        createdBy: user?.id,
+        eventType,
+        bannerUrl: bannerUrl.trim() || null,
         speakers: speakers.trim() || null,
         price: price || 0,
-        pix_key: pixKey.trim() || null,
-        pix_qrcode_url: pixQrcodeUrl.trim() || null,
-        map_url: mapUrl.trim() || null,
-        require_checkin: requireCheckin,
-        is_public: isPublic,
-        checkin_qr_secret: requireCheckin
-          ? (editingEvent?.checkin_qr_secret || generateSafeId())
-          : null,
+        pixKey: pixKey.trim() || null,
+        pixQrcodeUrl: pixQrcodeUrl.trim() || null,
+        mapUrl: mapUrl.trim() || null,
+        requireCheckin,
+        isPublic,
+        checkinQrSecret: requireCheckin ? (editingEvent?.checkinQrSecret || generateSafeId()) : null,
       };
       if (editingEvent) {
-        const { error } = await (supabase as any).from("events").update(payload).eq("id", editingEvent.id);
-        if (error) throw error;
+        await api.patch(`/events/${editingEvent.id}`, camelPayload);
       } else {
-        const { error } = await (supabase as any).from("events").insert(payload);
-        if (error) throw error;
+        await api.post('/events', camelPayload);
       }
     },
     onSuccess: () => {
@@ -285,8 +284,7 @@ const Agenda = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("events").delete().eq("id", id);
-      if (error) throw error;
+      await api.delete(`/events/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["events"] });
@@ -824,7 +822,7 @@ const Agenda = () => {
             setScanningEvent(null);
             if (decoded === scanningEvent.checkin_qr_secret) {
               try {
-                const { error } = await (supabase as any).from("event_checkins").insert(
+                await api.post("/event-checkins", 
                   { event_id: scanningEvent.id, user_id: user!.id }
                 );
                 if (error && error.code !== "23505") throw error;
@@ -854,8 +852,7 @@ const RsvpList = ({ event }: { event: any }) => {
       if (!event) return [];
 
       if (event.require_checkin) {
-        const { data: regs } = await (supabase as any)
-          .from("event_registrations").select("user_id").eq("event_id", event.id);
+        const { data: regs } = await api.get(`/event-registrations`, { params: { eventId: event.id } });
         const { data: checkins } = await supabase
           .from("event_checkins").select("user_id").eq("event_id", event.id);
         const checkinSet = new Set(checkins?.map((c: any) => c.user_id) || []);
@@ -873,7 +870,7 @@ const RsvpList = ({ event }: { event: any }) => {
 
       let relevantProfiles: any[] = [];
       if (event.is_general) {
-        const { data } = await supabase.from("profiles").select("user_id, full_name").order("full_name");
+        const { data } = await api.get('/profiles');
         relevantProfiles = data || [];
       } else if (event.group_id) {
         const { data: gm } = await supabase
@@ -1006,7 +1003,7 @@ const RegistrationList = ({ event }: { event: any }) => {
   });
 
   const updatePayment = async (id: string, status: string) => {
-    await (supabase as any).from("event_registrations").update({ payment_status: status }).eq("id", id);
+    await api.patch(`/event-registrations/${id}`, { paymentStatus: status });
     queryClient.invalidateQueries({ queryKey: ["event-registrations", event?.id] });
     toast({ title: `Status atualizado para ${status}` });
   };

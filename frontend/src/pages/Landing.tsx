@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Heart, MapPin, Phone, Instagram, Facebook, Youtube, ChevronLeft, ChevronRight, Moon, Sun, Star, Calendar } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTheme } from "@/components/ThemeProvider";
@@ -23,7 +23,7 @@ const Landing = () => {
   const { data: photos } = useQuery({
     queryKey: ["landing-photos-pub"],
     queryFn: async () => {
-      const { data } = await (supabase as any).from("landing_photos").select("*").order("created_at", { ascending: true });
+      const { data } = await api.get('/landing-photos');
       return data || [];
     },
   });
@@ -31,7 +31,7 @@ const Landing = () => {
   const { data: siteSettings } = useQuery({
     queryKey: ["site-settings-pub"],
     queryFn: async () => {
-      const { data } = await (supabase as any).from("site_settings").select("*");
+      const { data } = await api.get('/site-settings');
       const settings: Record<string, string> = {};
       (data || []).forEach((s: any) => { settings[s.id] = s.value; });
       return settings;
@@ -41,7 +41,7 @@ const Landing = () => {
   const { data: testimonials } = useQuery({
     queryKey: ["landing-testimonials-pub"],
     queryFn: async () => {
-      const { data } = await (supabase as any).from("landing_testimonials").select("*").order("created_at", { ascending: true });
+      const { data } = await api.get('/landing-testimonials');
       return data || [];
     },
   });
@@ -54,9 +54,9 @@ const Landing = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await supabase.from("contact_messages" as any).insert([
-        { name: formData.name, phone: formData.phone, subject: formData.subject, message: formData.message }
-      ] as any);
+      await api.post('/contact-messages', {
+        name: formData.name, phone: formData.phone, subject: formData.subject, message: formData.message
+      });
     } catch (err) {
       console.error("Erro ao salvar mensagem:", err);
     }

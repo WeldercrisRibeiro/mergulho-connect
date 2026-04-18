@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import api from "@/lib/api";
 import {
   Calendar, BookOpen, HandHeart, Users, BarChart3,
   MessageCircle, ShieldCheck, Megaphone, Shield,
@@ -35,26 +35,17 @@ const GroupPermissions = () => {
   const queryClient = useQueryClient();
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
 
-  // Fetch all permissions (we'll use role name as group_id concept - store as a convention)
   const { data: permissions, isLoading: loadingPerms } = useQuery({
     queryKey: ["all-role-routines"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).from("group_routines").select("*");
-      if (error) throw error;
+      const { data } = await api.get('/group-routines');
       return data || [];
     },
   });
 
   const toggleMutation = useMutation({
     mutationFn: async ({ roleId, routineKey, enabled }: { roleId: string, routineKey: string, enabled: boolean }) => {
-      // We use the role name as a pseudo group_id for role-based permissions
-      const { error } = await (supabase as any)
-        .from("group_routines")
-        .upsert(
-          { group_id: roleId, routine_key: routineKey, is_enabled: enabled },
-          { onConflict: "group_id,routine_key" }
-        );
-      if (error) throw error;
+      await api.post('/group-routines/upsert', { groupId: roleId, routineKey, isEnabled: enabled });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["all-role-routines"] });
