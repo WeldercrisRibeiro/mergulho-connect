@@ -5,6 +5,7 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Phone, QrCode, PowerOff, RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import api from "@/lib/api";
 
 type ConnectionStatus = "disconnected" | "connecting" | "qrcode" | "connected";
 
@@ -24,18 +25,12 @@ const AdminWhatsApp = () => {
 
   if (!isAdmin) return <Navigate to="/home" replace />;
 
-  // URL base do backend: vazia em localhost (Vite proxy), host do Render em produção
-  const getBackendUrl = () =>
-    window.location.hostname === "localhost"
-      ? ""
-      : "https://mergulho-connect.onrender.com";
-
   // Conecta ao SSE para receber status em tempo real
   useEffect(() => {
-    const backendUrl = getBackendUrl();
-    console.log(`[WA] Conectando ao fluxo de eventos em: ${backendUrl || "local proxy"}/api/whatsapp/events`);
+    const ssePath = `${api.defaults.baseURL}/whatsapp/sse`;
+    console.log(`[WA] Conectando ao fluxo de eventos em: ${ssePath}`);
     
-    const es = new EventSource(`${backendUrl}/api/whatsapp/events`);
+    const es = new EventSource(ssePath);
     eventSourceRef.current = es;
     
     es.onopen = () => {
@@ -47,13 +42,8 @@ const AdminWhatsApp = () => {
         const data: WzStatusEvent = JSON.parse(e.data);
         console.log("[WA] Evento recebido:", data.type, data.status);
         
-        if (data.type === "status") {
-          setStatus(data.status);
-          setQrCode(data.qrCode ?? null);
-          if (data.status === "connected") {
-            toast({ title: "WhatsApp Conectado!", description: "O bot está pronto para enviar mensagens." });
-          }
-        }
+        setStatus(data.status);
+        setQrCode(data.qrCode ?? null);
       } catch (err) {
         console.error("[WA] Erro ao processar mensagem SSE:", err);
       }
@@ -73,13 +63,9 @@ const AdminWhatsApp = () => {
   const handleConnect = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${getBackendUrl()}/api/whatsapp/connect`, { method: "POST" });
-      if (!res.ok) {
-        const data = await res.json();
-        toast({ title: "Erro", description: data.error || "Falha ao iniciar conexão.", variant: "destructive" });
-      }
-    } catch {
-      toast({ title: "Erro de Rede", description: "Não foi possível contatar o servidor.", variant: "destructive" });
+      await api.post("/whatsapp/connect");
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message || "Falha ao iniciar conexão.", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -88,15 +74,10 @@ const AdminWhatsApp = () => {
   const handleDisconnect = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${getBackendUrl()}/api/whatsapp/disconnect`, { method: "POST" });
-      if (res.ok) {
-        toast({ title: "Desconectado", description: "O WhatsApp foi desconectado com sucesso." });
-      } else {
-        const data = await res.json();
-        toast({ title: "Erro", description: data.error, variant: "destructive" });
-      }
-    } catch {
-      toast({ title: "Erro de Rede", description: "Não foi possível contatar o servidor.", variant: "destructive" });
+      await api.delete("/whatsapp/disconnect");
+      toast({ title: "Desconectado", description: "O WhatsApp foi desconectado com sucesso." });
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message || "Falha ao desconectar.", variant: "destructive" });
     } finally {
       setLoading(false);
     }

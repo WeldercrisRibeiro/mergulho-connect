@@ -15,10 +15,13 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 import { Settings, ImagePlus, MessageSquareQuote, Trash2, Plus, Edit2, ChevronLeft, ChevronRight, Upload, Mail, CheckCircle, Archive, Video, Youtube, Shield, Users, Calendar, BookOpen, HandHeart, BarChart3, MessageCircle, ShieldCheck, Megaphone, Lock, ChevronRight as ChevronRightIcon, Bell, ArrowRight, Wallet, FileSearch } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import VideoPlayer from "@/components/VideoPlayer";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { normalizePhoneForDB } from "@/lib/phoneUtils";
 import { Switch } from "@/components/ui/switch";
+import { MapPin, ExternalLink } from "lucide-react";
  
 const SettingsPage = () => {
   const { user, profile, isAdmin, isGerente, isAdminCCM, refreshProfile } = useAuth();
@@ -131,6 +134,7 @@ const SettingsPage = () => {
   const [editInstagram, setEditInstagram] = useState("");
   const [editFacebook, setEditFacebook] = useState("");
   const [editPixKey, setEditPixKey] = useState("");
+  const [editMapsUrl, setEditMapsUrl] = useState("");
  
   useEffect(() => {
     if (siteSettings) {
@@ -138,6 +142,7 @@ const SettingsPage = () => {
       setEditInstagram(siteSettings.instagram_url || "");
       setEditFacebook(siteSettings.facebook_url || "");
       setEditPixKey(siteSettings.pix_key || "");
+      setEditMapsUrl(siteSettings.maps_embed_url || "");
       setTempVideoUrl(siteSettings.about_us_video_url || "");
       setTempIsVideoUpload(siteSettings.about_us_video_is_upload === "true");
     }
@@ -152,6 +157,7 @@ const SettingsPage = () => {
         { id: "instagram_url", value: editInstagram },
         { id: "facebook_url", value: editFacebook },
         { id: "pix_key", value: editPixKey },
+        { id: "maps_embed_url", value: editMapsUrl },
       ];
       for (const u of updates) {
         await api.post('/site-settings/upsert', u);
@@ -183,7 +189,15 @@ const SettingsPage = () => {
  
   const toggleRoutineMutation = useMutation({
     mutationFn: async ({ roleId, routineKey, enabled }: { roleId: string, routineKey: string, enabled: boolean }) => {
-      await api.post('/group-routines/upsert', { groupId: roleId, routineKey, isEnabled: enabled });
+      const existing = permissions?.find((p: any) =>
+        (p.groupId ?? p.group_id) === roleId &&
+        (p.routineKey ?? p.routine_key) === routineKey
+      );
+      if (existing) {
+        await api.patch(`/group-routines/${existing.id}`, { isEnabled: enabled });
+      } else {
+        await api.post('/group-routines', { groupId: roleId, routineKey, isEnabled: enabled });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["all-role-routines"] });
@@ -192,9 +206,13 @@ const SettingsPage = () => {
     onError: (err: any) => toast({ title: "Erro ao salvar", description: getErrorMessage(err), variant: "destructive" }),
   });
  
-  const getPermStatus = (roleId: string, routineKey: string) => {
-    const perm = permissions?.find((p: any) => p.group_id === roleId && p.routine_key === routineKey);
-    return perm ? perm.is_enabled : true;
+  const getPermStatus = (roleId: string, routineKey: string): boolean => {
+    const perm = permissions?.find((p: any) =>
+      (p.groupId ?? p.group_id) === roleId &&
+      (p.routineKey ?? p.routine_key) === routineKey
+    );
+    if (!perm) return true;
+    return (p => p.isEnabled ?? p.is_enabled ?? true)(perm);
   };
  
  
@@ -213,9 +231,7 @@ const SettingsPage = () => {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const { data: uploadData } = await api.post('/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const { data: uploadData } = await api.post('/upload', formData);
       const publicUrl = uploadData.url;
  
       if (editingPhoto) {
@@ -242,9 +258,7 @@ const SettingsPage = () => {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const { data: uploadData } = await api.post('/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const { data: uploadData } = await api.post('/upload', formData);
       setTempVideoUrl(uploadData.url);
       setTempIsVideoUpload(true);
       toast({ title: "Vídeo carregado!", description: "Clique em salvar para aplicar." });
@@ -262,9 +276,7 @@ const SettingsPage = () => {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const { data: uploadData } = await api.post('/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const { data: uploadData } = await api.post('/upload', formData);
       await api.post('/site-settings/upsert', { id: settingKey, value: uploadData.url });
       queryClient.invalidateQueries({ queryKey: ["site-settings"] });
       toast({ title: "Imagem da Home atualizada!" });
@@ -370,83 +382,41 @@ const SettingsPage = () => {
     }
   };
  
-  const handleToggleNotifications = async (checked: boolean) => {
-    try {
-      const permission = await Notification.requestPermission();
-      if (permission === 'granted') {
-        localStorage.setItem("notify_enabled", checked.toString());
-        setNativeNotifications(checked);
-        toast({ title: checked ? "Notificações Ativadas" : "Notificações Desativadas" });
-      } else {
-        if (checked) {
-          toast({ title: "Permissão Negada", description: "Ative as notificações do navegador para este site.", variant: "destructive" });
-        }
-      }
-    } catch (e) {
-      console.warn("Navegador não suporta notificações", e);
-    }
-  };
  
   return (
-    <div className="space-y-6 animate-in fade-in max-w-7xl mx-auto pb-12">
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary/10 rounded-xl">
-            <Settings className="h-6 w-6 text-primary" />
+    <div className="space-y-6 animate-in fade-in max-w-5xl mx-auto pb-24 px-4">
+      {/* Header premium */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary/80 to-primary/60 p-6 sm:p-8 text-white shadow-lg mb-2">
+        <div className="absolute inset-0 opacity-10" style={{backgroundImage:'radial-gradient(circle at 80% 20%, white 0%, transparent 60%)'}} />
+        <div className="relative flex items-center gap-4">
+          <div className="p-3 bg-white/20 rounded-2xl backdrop-blur shrink-0">
+            <Settings className="h-7 w-7 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight">Definições da Conta</h1>
-            <p className="text-muted-foreground mt-1">Gerencie seu aplicativo e landing page.</p>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Configurações</h1>
+            <p className="text-white/70 mt-0.5 text-sm sm:text-base">Gerencie o site público, redes sociais e aparência do app.</p>
           </div>
         </div>
-        <Link to="/admin">
-          <Button variant="outline" className="gap-2">
-            Ver Membros <ChevronRight className="h-4 w-4" />
-          </Button>
-        </Link>
       </div>
- 
-      {isAdminCCM && (
-        <Card className="border-0 shadow-md bg-gradient-to-r from-rose-500/10 to-transparent border-l-4 border-l-rose-500 mb-6">
-          <CardHeader className="py-4">
-            <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-rose-500" />
-              <CardTitle className="text-lg">Acesso Master (ADM CCM)</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="py-0 pb-4">
-            <p className="text-sm text-muted-foreground mb-4">
-              Você tem permissões de gerenciamento de logs globais e configurações de sistema.
-            </p>
-            <div className="flex gap-3">
-              <Link to="/admin">
-                <Button size="sm" variant="outline" className="gap-2 border-rose-200">
-                  <Users className="h-4 w-4" /> Gestão de Administradores
-                </Button>
-              </Link>
-              <Link to="/admin/logs">
-                <Button size="sm" variant="outline" className="gap-2 border-rose-200">
-                  <FileSearch className="h-4 w-4" /> Ver Audit Logs
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-      )}
- 
+
       <Tabs defaultValue="landing">
-        <TabsList className="mb-4 bg-muted/50 p-1 rounded-xl flex-wrap h-auto gap-1">
-          <TabsTrigger value="landing" className="rounded-lg">Site Público</TabsTrigger>
-          {isAdminCCM && <TabsTrigger value="permissions" className="rounded-lg">Privilégios</TabsTrigger>}
-          <TabsTrigger value="social" className="rounded-lg">Redes Sócias</TabsTrigger>
-          <TabsTrigger value="sys" className="rounded-lg">Sistema</TabsTrigger>
+        <TabsList className="mb-6 bg-muted/60 border border-border/40 p-1 rounded-2xl flex-wrap h-auto gap-1 w-full sm:w-auto">
+          <TabsTrigger value="landing" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all px-4">🌐 Site Público</TabsTrigger>
+          <TabsTrigger value="social" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all px-4">📱 Redes Sociais</TabsTrigger>
+          <TabsTrigger value="inbox" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all px-4">✉️ Inbox</TabsTrigger>
         </TabsList>
  
+        <TabsContent value="inbox" className="space-y-6">
+          <InboxMessages />
+        </TabsContent>
+ 
         <TabsContent value="landing" className="space-y-6">
-          <Card className="border-0 neo-shadow mb-6">
-            <CardHeader className="bg-primary/5 border-b py-4">
+          <Card className="border-0 shadow-lg overflow-hidden ring-1 ring-border/30">
+            <CardHeader className="bg-gradient-to-r from-violet-500/10 to-primary/5 border-b py-5">
               <CardTitle className="text-lg flex items-center gap-2">
-                <Video className="h-5 w-5 text-primary" />
+                <div className="p-1.5 bg-violet-500/15 rounded-lg">
+                  <Video className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                </div>
                 Vídeo Institucional
               </CardTitle>
             </CardHeader>
@@ -513,9 +483,64 @@ const SettingsPage = () => {
             </CardContent>
           </Card>
  
-          <Card className="border-0 shadow-md">
-            <CardHeader className="bg-secondary/40 border-b pb-4">
-              <CardTitle className="text-lg">Banners Carrossel da Home</CardTitle>
+          <Card className="border-0 shadow-lg overflow-hidden ring-1 ring-border/30">
+            <CardHeader className="bg-gradient-to-r from-blue-500/10 to-sky-500/5 border-b py-5">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <div className="p-1.5 bg-sky-500/15 rounded-lg">
+                  <ImagePlus className="h-4 w-4 text-sky-600 dark:text-sky-400" />
+                </div>
+                Banners da Tela Inicial
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-1 gap-6">
+                {[
+                  { key: 'homepage_banner', label: 'Monitor Desktop / PC', description: '1200x400 - horizontal' },
+                  { key: 'homepage_banner_mobile', label: 'Smartphone / Celular', description: '800x800 ou 600x800 - quadrado/vertical' },
+                ].map((banner) => (
+                  <div key={banner.key} className="space-y-3">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <Label className="font-semibold">{banner.label}</Label>
+                        <p className="text-xs text-muted-foreground">{banner.description}</p>
+                      </div>
+                    </div>
+                    <div className="aspect-[16/9] w-full rounded-xl overflow-hidden border-2 border-dashed relative bg-muted/30 group">
+                      {siteSettings?.[banner.key] ? (
+                        <>
+                          <img src={siteSettings[banner.key]} alt={banner.label} className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                            <Label className="cursor-pointer bg-primary text-white p-2 rounded-full hover:scale-105 transition-transform" title="Trocar imagem">
+                              <ImagePlus className="h-5 w-5" />
+                              <input type="file" className="hidden" accept="image/*" onChange={(e) => handleSiteSettingUpload(e, banner.key)} disabled={uploading} />
+                            </Label>
+                            <Button size="icon" variant="destructive" className="rounded-full h-9 w-9" onClick={() => handleRemoveSiteSetting(banner.key)} title="Remover banner">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </>
+                      ) : (
+                        <Label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors text-muted-foreground">
+                          <ImagePlus className="h-8 w-8 mb-2 opacity-50" />
+                          <span className="text-sm font-medium">Adicionar Imagem</span>
+                          <input type="file" className="hidden" accept="image/*" onChange={(e) => handleSiteSettingUpload(e, banner.key)} disabled={uploading} />
+                        </Label>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg overflow-hidden ring-1 ring-border/30">
+            <CardHeader className="bg-gradient-to-r from-amber-500/10 to-orange-500/5 border-b py-5">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <div className="p-1.5 bg-amber-500/15 rounded-lg">
+                  <ImagePlus className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                </div>
+                Banners Carrossel da Home
+              </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -554,10 +579,15 @@ const SettingsPage = () => {
             </CardContent>
           </Card>
  
-          <Card className="border-0 shadow-md">
-            <CardHeader className="flex flex-row items-center justify-between bg-primary/5 border-b pb-4">
+          <Card className="border-0 shadow-lg overflow-hidden ring-1 ring-border/30">
+            <CardHeader className="flex flex-row items-center justify-between bg-gradient-to-r from-emerald-500/10 to-teal-500/5 border-b py-5">
               <div>
-                <CardTitle className="text-lg flex items-center gap-2"><ImagePlus className="h-5 w-5" /> Fotos da Galeria</CardTitle>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <div className="p-1.5 bg-emerald-500/15 rounded-lg inline-flex">
+                    <ImagePlus className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  Fotos da Galeria
+                </CardTitle>
                 <p className="text-sm text-muted-foreground mt-1">Imagens que aparecem na página de login e na landing page principal.</p>
               </div>
               <Button onClick={() => {
@@ -613,10 +643,15 @@ const SettingsPage = () => {
             </CardContent>
           </Card>
  
-          <Card className="border-0 shadow-md">
-            <CardHeader className="flex flex-row items-center justify-between bg-primary/5 border-b pb-4">
+          <Card className="border-0 shadow-lg overflow-hidden ring-1 ring-border/30">
+            <CardHeader className="flex flex-row items-center justify-between bg-gradient-to-r from-rose-500/10 to-pink-500/5 border-b py-5">
               <div>
-                <CardTitle className="text-lg flex items-center gap-2"><MessageSquareQuote className="h-5 w-5" /> Depoimentos</CardTitle>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <div className="p-1.5 bg-rose-500/15 rounded-lg inline-flex">
+                    <MessageSquareQuote className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+                  </div>
+                  Depoimentos
+                </CardTitle>
                 <p className="text-sm text-muted-foreground mt-1">Opiniões de membros exibidas na página inicial.</p>
               </div>
               <Button onClick={() => {
@@ -651,132 +686,18 @@ const SettingsPage = () => {
           </Card>
         </TabsContent>
  
-        <TabsContent value="permissions" className="space-y-6">
-           <Card className="border-0 shadow-md">
-             <CardHeader className="bg-primary/5 border-b pb-6">
-                <div className="flex items-center gap-3">
-                   <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center">
-                     <Shield className="h-5 w-5 text-white" />
-                   </div>
-                   <div>
-                     <CardTitle className="text-xl">Gestão de Privilégios</CardTitle>
-                     <p className="text-sm text-muted-foreground mt-1">Configure o acesso aos módulos do sistema por tipo de usuário.</p>
-                   </div>
-                </div>
-             </CardHeader>
-             <CardContent className="pt-6 px-4 md:px-6">
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                  {ROLE_TYPES.map(role => (
-                     <button
-                       key={role.id}
-                       onClick={() => setSelectedRole(role.id)}
-                       className={cn(
-                          "flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all relative overflow-hidden",
-                          selectedRole === role.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
-                       )}
-                     >
-                        <div className={cn("h-12 w-12 rounded-full flex items-center justify-center mb-3 text-white shadow-sm", role.color)}>
-                           <Users className="h-6 w-6" />
-                        </div>
-                        <h3 className="font-bold text-lg">{role.label}</h3>
-                        <p className="text-xs text-muted-foreground text-center mt-1">{role.description}</p>
-                        
-                        {selectedRole === role.id && (
-                           <div className="absolute top-3 right-3 h-2 w-2 rounded-full bg-primary animate-pulse" />
-                        )}
-                     </button>
-                  ))}
-                </div>
- 
-                {selectedRole ? (
-                  <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-                     <div className="flex items-center justify-between pb-2 border-b">
-                        <h4 className="font-bold text-lg flex items-center gap-2">
-                          Configurando acessos para: 
-                          <Badge variant="outline" className="text-primary border-primary/30 uppercase">{ROLE_TYPES.find(r => r.id === selectedRole)?.label}</Badge>
-                        </h4>
-                     </div>
-                     
-                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {ROUTINES.map(routine => {
-                          const isEnabled = getPermStatus(selectedRole, routine.id);
-                          return (
-                             <div key={routine.id} className={cn(
-                                "flex items-center justify-between p-4 rounded-xl border transition-all",
-                                isEnabled ? "bg-card border-border" : "bg-muted/30 border-dashed"
-                             )}>
-                               <div className="flex gap-3 items-center">
-                                  <div className={cn(
-                                     "h-10 w-10 rounded-lg flex items-center justify-center",
-                                     isEnabled ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
-                                  )}>
-                                     <routine.icon className="h-5 w-5" />
-                                  </div>
-                                  <div>
-                                     <p className={cn("font-medium text-sm", !isEnabled && "text-muted-foreground")}>{routine.label}</p>
-                                     <p className="text-[10px] text-muted-foreground leading-tight">{routine.description}</p>
-                                  </div>
-                               </div>
-                               <Switch 
-                                 checked={isEnabled}
-                                 onCheckedChange={(checked) => toggleRoutineMutation.mutate({ roleId: selectedRole, routineKey: routine.id, enabled: checked })}
-                               />
-                             </div>
-                          )
-                        })}
-                     </div>
- 
-                     {selectedRole !== 'membro' && selectedRole !== 'gerente' && (
-                       <div className="mt-8">
-                         <div className="flex items-center gap-2 mb-4 text-rose-500 bg-rose-50 p-3 rounded-lg border border-rose-100">
-                            <Lock className="h-5 w-5" />
-                            <h4 className="font-bold text-sm">Privilégios Restritos (Acesso Master)</h4>
-                         </div>
-                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {CCM_ONLY_ROUTINES.map(routine => {
-                              // Force enable for admin_ccm logic is handled in API/UI, but we display the state here.
-                              // Admin normal can't change these usually, but for visual we show them disabled unless you actually query them.
-                              // Assuming getPermStatus works for them if we seeded them.
-                              const isEnabled = getPermStatus(selectedRole, routine.id);
-                              return (
-                                 <div key={routine.id} className="flex items-center justify-between p-4 rounded-xl border bg-rose-500/5 transition-all">
-                                   <div className="flex gap-3 items-center opacity-80">
-                                      <div className="h-10 w-10 bg-rose-500/10 text-rose-500 rounded-lg flex items-center justify-center">
-                                         <routine.icon className="h-5 w-5" />
-                                      </div>
-                                      <div>
-                                         <p className="font-medium text-sm text-foreground">{routine.label}</p>
-                                      </div>
-                                   </div>
-                                   <Switch 
-                                     checked={isEnabled}
-                                     onCheckedChange={(checked) => toggleRoutineMutation.mutate({ roleId: selectedRole, routineKey: routine.id, enabled: checked })}
-                                   />
-                                 </div>
-                              )
-                            })}
-                         </div>
-                       </div>
-                     )}
-                  </div>
-                ) : (
-                  <div className="py-12 flex flex-col items-center justify-center text-center bg-muted/20 rounded-2xl border-2 border-dashed">
-                     <Shield className="h-12 w-12 text-muted-foreground/30 mb-4" />
-                     <h3 className="font-semibold text-lg">Selecione um tipo de conta</h3>
-                     <p className="text-muted-foreground text-sm max-w-sm mt-1">Para visualizar ou alterar as permissões de acesso às rotinas da plataforma, escolha um dos cards acima.</p>
-                  </div>
-                )}
-             </CardContent>
-           </Card>
-        </TabsContent>
- 
+
         <TabsContent value="social" className="space-y-6">
-          <Card className="border-0 shadow-md">
-            <CardHeader className="bg-primary/5 border-b pb-4">
-              <CardTitle className="text-lg">Redes e Contatos</CardTitle>
+          <Card className="border-0 shadow-lg overflow-hidden ring-1 ring-border/30">
+            <CardHeader className="bg-gradient-to-r from-sky-500/10 to-blue-500/5 border-b py-5">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <div className="p-1.5 bg-sky-500/15 rounded-lg">
+                  <Mail className="h-4 w-4 text-sky-600 dark:text-sky-400" />
+                </div>
+                Redes e Contatos
+              </CardTitle>
             </CardHeader>
-            <CardContent className="pt-6 space-y-4">
+            <CardContent className="p-6 sm:p-8 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>WhatsApp (Apenas números)</Label>
@@ -795,26 +716,50 @@ const SettingsPage = () => {
                   <Input value={editFacebook} onChange={(e) => setEditFacebook(e.target.value)} placeholder="https://facebook.com/..." />
                 </div>
               </div>
+
+              {/* Google Maps Embed */}
+              <div className="border-t pt-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="p-1.5 bg-emerald-500/15 rounded-lg">
+                    <MapPin className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">Google Maps — Link de Incorporação</p>
+                    <p className="text-xs text-muted-foreground">Cole a URL do iframe do Google Maps para exibir o mapa da igreja na Landing Page.</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase">URL do Embed (src do iframe)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={editMapsUrl}
+                      onChange={(e) => {
+                        let val = e.target.value;
+                        // Se o usuário colar o iframe inteiro, extrair apenas o src
+                        const srcMatch = val.match(/src="([^"]+)"/);
+                        if (srcMatch && srcMatch[1]) {
+                          val = srcMatch[1];
+                        }
+                        setEditMapsUrl(val);
+                      }}
+                      placeholder="https://www.google.com/maps/embed?pb=... (ou cole o <iframe> inteiro)"
+                      className="flex-1"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    💡 No Google Maps, clique em <strong>Compartilhar &rarr; Incorporar um mapa</strong> e cole o código <code className="bg-muted px-1 rounded">&lt;iframe&gt;</code> aqui. Nós extraímos o link para você!
+                  </p>
+                </div>
+                {editMapsUrl && (
+                  <div className="mt-3 rounded-xl overflow-hidden border h-[200px]">
+                    <iframe src={editMapsUrl} width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
+                  </div>
+                )}
+              </div>
+
               <Button onClick={() => saveSettingsMutation.mutate()} disabled={saveSettingsMutation.isPending} className="mt-4"><Edit2 className="h-4 w-4 mr-2" /> Salvar Links</Button>
             </CardContent>
           </Card>
-        </TabsContent>
-        
-        <TabsContent value="sys" className="space-y-6">
-           <Card className="border-0 shadow-md overflow-hidden">
-             <CardHeader className="bg-primary/5 border-b pb-4">
-                <CardTitle className="text-lg flex items-center gap-2"><Bell className="h-5 w-5 text-primary"/> Notificações Push</CardTitle>
-             </CardHeader>
-             <CardContent className="pt-6">
-                <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl border max-w-2xl">
-                   <div>
-                      <p className="font-semibold">Notificações no Dispositivo</p>
-                      <p className="text-sm text-muted-foreground mt-1 block">Receba alertas locais quando novos itens forem criados.</p>
-                   </div>
-                   <Switch checked={nativeNotifications} onCheckedChange={handleToggleNotifications} />
-                </div>
-             </CardContent>
-           </Card>
         </TabsContent>
       </Tabs>
  
@@ -882,6 +827,120 @@ const SettingsPage = () => {
   );
 };
  
+/** Componente inline — exibe APENAS as mensagens de contato (inbox/arquivadas) */
+function InboxMessages() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState("inbox");
+
+  const { data: messages } = useQuery({
+    queryKey: ["contact-messages-inbox"],
+    queryFn: async () => {
+      const { data } = await api.get('/contact-messages');
+      return data || [];
+    },
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: async (m: any) => {
+      const phoneDigits = (m.phone || "").replace(/\D/g, "");
+      const email = phoneDigits + "@ccmergulho.com";
+      await api.post("/admin/users", {
+        email,
+        password: "123456",
+        fullName: m.name,
+        whatsappPhone: phoneDigits,
+        username: phoneDigits,
+        role: "membro",
+        groups: []
+      });
+      await api.delete(`/contact-messages/${m.id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contact-messages-inbox"] });
+      toast({ title: "Membro Aprovado!", description: "Conta criada e mensagem arquivada." });
+    },
+    onError: (err: any) => toast({ title: "Erro", description: getErrorMessage(err), variant: "destructive" }),
+  });
+
+  const deleteMsgMutation = useMutation({
+    mutationFn: async (m: any) => {
+      if (m.status === "archived") {
+        await api.delete(`/contact-messages/${m.id}`);
+      } else {
+        await api.patch(`/contact-messages/${m.id}`, { status: "archived" });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contact-messages-inbox"] });
+      toast({ title: "Ação concluída com sucesso!" });
+    },
+  });
+
+  const filtered = messages?.filter((m: any) =>
+    activeTab === "archived" ? m.status === "archived" : m.status !== "archived"
+  ) || [];
+
+  return (
+    <Card className="border-0 shadow-lg overflow-hidden ring-1 ring-border/30">
+      <CardHeader className="bg-gradient-to-r from-blue-500/10 to-indigo-500/5 border-b py-5">
+        <CardTitle className="text-lg flex items-center gap-2">
+          <div className="p-1.5 bg-blue-500/15 rounded-lg">
+            <Mail className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          </div>
+          Mensagens de Contato
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-5">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid grid-cols-2 bg-muted/50 p-1 rounded-xl mb-4">
+            <TabsTrigger value="inbox" className="rounded-lg">Caixa de Entrada</TabsTrigger>
+            <TabsTrigger value="archived" className="rounded-lg flex gap-2">
+              <Archive className="h-4 w-4" /> Arquivados
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value={activeTab} className="space-y-4">
+            {filtered.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                Nenhuma mensagem {activeTab === "archived" ? "arquivada" : "na caixa de entrada"}.
+              </div>
+            )}
+            {filtered.map((m: any) => (
+              <div key={m.id} className="p-4 rounded-2xl border bg-muted/30 space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-semibold">{m.name}</p>
+                    <p className="text-sm font-medium text-primary mt-1">WhatsApp: {m.phone}</p>
+                  </div>
+                  {m.createdAt && (
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(m.createdAt).toLocaleDateString("pt-BR")}
+                    </span>
+                  )}
+                </div>
+                <div className="bg-background rounded-xl p-3 text-sm border space-y-1">
+                  <p className="font-medium border-b pb-1">Assunto: {m.subject}</p>
+                  <p className="text-muted-foreground whitespace-pre-wrap">{m.message}</p>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" size="sm" onClick={() => deleteMsgMutation.mutate(m)} disabled={deleteMsgMutation.isPending}>
+                    {m.status === "archived" ? "Excluir Definitivamente" : "Arquivar"}
+                  </Button>
+                  {m.status !== "archived" && (m.subject === "Quero me tornar Membro" || m.subject === "Contribuir/Servir") && (
+                    <Button size="sm" onClick={() => approveMutation.mutate(m)} disabled={approveMutation.isPending} className="bg-emerald-500 hover:bg-emerald-600">
+                      Aprovar Acesso
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
+  );
+}
+
 function QuoteIcon(props: any) {
   return (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">

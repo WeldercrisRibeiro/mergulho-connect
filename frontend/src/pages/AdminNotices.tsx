@@ -27,9 +27,9 @@ type LocalAttachment = { id: string; file?: File; existingApiId?: string; type: 
 type ApiAttachment = { id: string; type: AttachmentType; filename: string; filepath: string; mimetype: string; };
 type Dispatch = {
   id: string; title: string; content: string | null; type: string; priority: string;
-  target_group_id: string | null; target_user_id: string | null;
+  targetGroupId: string | null; targetUserId: string | null;
   status: "pending" | "sending" | "sent" | "error";
-  scheduled_at: string; sent_at: string | null; error_message: string | null; created_at: string;
+  scheduledAt: string; sentAt: string | null; errorMessage: string | null; createdAt: string;
   attachments: ApiAttachment[];
   logs: { id: string; recipient: string; status: string; error: string | null }[];
 };
@@ -49,9 +49,16 @@ function WaBubble({ children, time }: { children: React.ReactNode; time: string 
   );
 }
 
-async function apiGet(url: string) { const res = await fetch(url); if (!res.ok) throw new Error("Erro."); return res.json(); }
-async function apiPost(url: string, body?: object) { const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined }); if (!res.ok) throw new Error("Erro."); return res.json(); }
-async function apiDelete(url: string) { const res = await fetch(url, { method: "DELETE" }); if (!res.ok) throw new Error("Erro."); return res.json(); }
+async function apiGet(url: string) { const { data } = await api.get(url); return data; }
+async function apiPost(url: string, body?: any) {
+  const { data } = await api.post(url, body);
+  return data;
+}
+async function apiDelete(url: string) { const { data } = await api.delete(url); return data; }
+async function apiPatch(url: string, body?: any) {
+  const { data } = await api.patch(url, body);
+  return data;
+}
 
 function AudioBubblePlayer({ src }: { src: string }) {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -98,7 +105,7 @@ const AdminNotices = () => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const cursorPositionRef = useRef<number>(0);
   const [signEnabled, setSignEnabled] = useState(false);
-  const signatureName = useMemo(() => profile?.full_name || profile?.fullName || user?.user_metadata?.full_name || "", [profile, user]);
+  const signatureName = useMemo(() => profile?.fullName || profile?.full_name || user?.user_metadata?.full_name || "", [profile, user]);
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -127,13 +134,13 @@ const AdminNotices = () => {
 
   const { data: dispatches, isLoading } = useQuery<Dispatch[]>({
     queryKey: ["wz-dispatches"],
-    queryFn: () => apiGet("/api/dispatches"),
+    queryFn: () => apiGet("/dispatches"),
     refetchInterval: (query) => {
       const data = query.state.data as Dispatch[] | undefined;
       if (!data) return 5000;
       const hasActive = data.some((d) => {
         if (d.status === "sending") return true;
-        if (d.status === "pending" && new Date(d.scheduled_at) <= new Date()) return true;
+        if (d.status === "pending" && new Date(d.scheduledAt) <= new Date()) return true;
         return false;
       });
       return hasActive ? 3000 : 10000;
@@ -164,10 +171,10 @@ const AdminNotices = () => {
       formData.append("content", finalContent);
       formData.append("type", type);
       formData.append("priority", priority);
-      formData.append("scheduled_at", new Date(scheduledAt).toISOString());
-      if (user?.id) formData.append("created_by", user.id);
-      if (type === "group" && groupId) formData.append("target_group_id", groupId);
-      if (type === "individual" && targetUserId) formData.append("target_user_id", targetUserId);
+      formData.append("scheduledAt", new Date(scheduledAt).toISOString());
+      if (user?.id) formData.append("createdBy", user.id);
+      if (type === "group" && groupId) formData.append("targetGroupId", groupId);
+      if (type === "individual" && targetUserId) formData.append("targetUserId", targetUserId);
 
       // Tratamento de anexos antigos vs novos
       const keptIds = attachments.map(a => a.existingApiId).filter(Boolean);
@@ -179,15 +186,12 @@ const AdminNotices = () => {
         if (att.file) formData.append("files", att.file);
       });
 
-      const url = editId ? `/api/dispatches/${editId}` : "/api/dispatches";
-      const method = editId ? "PUT" : "POST";
-      
-      const res = await fetch(url, { method, body: formData });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Falha ao gravar envio.");
+      const url = editId ? `/dispatches/${editId}` : "/dispatches";
+      if (editId) {
+        return await apiPatch(url, formData);
+      } else {
+        return await apiPost(url, formData);
       }
-      return res.json();
     },
     onSuccess: () => {
       resetForm();
@@ -199,7 +203,7 @@ const AdminNotices = () => {
   });
 
   const retryMutation = useMutation({
-    mutationFn: (id: string) => apiPost(`/api/dispatches/${id}/retry`),
+    mutationFn: (id: string) => apiPost(`/dispatches/${id}/retry`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["wz-dispatches"] });
       toast({ title: "Recolocado na fila", description: "O disparo será tentado novamente." });
@@ -208,7 +212,7 @@ const AdminNotices = () => {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => apiDelete(`/api/dispatches/${id}`),
+    mutationFn: (id: string) => apiDelete(`/dispatches/${id}`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["wz-dispatches"] }),
     onError: (err: any) => toast({ title: "Erro", description: getErrorMessage(err), variant: "destructive" }),
   });
@@ -219,11 +223,11 @@ const AdminNotices = () => {
     setContent(dispatch.content || "");
     setType(dispatch.type);
     setPriority(dispatch.priority);
-    setGroupId(dispatch.target_group_id || "");
-    setTargetUserId(dispatch.target_user_id || "");
+    setGroupId(dispatch.targetGroupId || "");
+    setTargetUserId(dispatch.targetUserId || "");
 
-    if (dispatch.scheduled_at) {
-      const dateStr = new Date(dispatch.scheduled_at);
+    if (dispatch.scheduledAt) {
+      const dateStr = new Date(dispatch.scheduledAt);
       // Converter para timezone local compatível com YYYY-MM-DDThh:mm (datetime-local)
       const localIso = new Date(dateStr.getTime() - dateStr.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
       setScheduledAt(localIso);
@@ -419,7 +423,7 @@ const AdminNotices = () => {
                           <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Membro Relacionado</Label>
                           <Select value={targetUserId} onValueChange={setTargetUserId}>
                             <SelectTrigger className={cn("rounded-xl h-10 bg-muted/30", !targetUserId && !!editId && "border-rose-300 ring-rose-200")}><SelectValue placeholder="Busque..." /></SelectTrigger>
-                            <SelectContent>{members?.map((m) => <SelectItem key={m.user_id} value={m.user_id}>{m.full_name}</SelectItem>)}</SelectContent>
+                            <SelectContent>{members?.map((m) => <SelectItem key={m.userId} value={m.userId}>{m.fullName}</SelectItem>)}</SelectContent>
                           </Select>
                         </div>
                       )}
@@ -633,16 +637,16 @@ const AdminNotices = () => {
                           {dispatch.priority === "urgent" && <Badge className="bg-rose-500 text-white text-[10px]">Urgente 🚨</Badge>}
                         </div>
                         <span className="text-xs font-bold text-muted-foreground flex items-center gap-1.5 bg-muted/40 px-2 py-1 rounded">
-                          <CalendarClock className="h-3.5 w-3.5" /> Disparo: {safeFormat(dispatch.scheduled_at, "PPp")}
+                          <CalendarClock className="h-3.5 w-3.5" /> Disparo: {safeFormat(dispatch.scheduledAt, "PPp")}
                         </span>
                       </div>
 
                       <h4 className="font-bold text-lg text-foreground">{dispatch.title}</h4>
 
-                      {dispatch.error_message && (
+                      {dispatch.errorMessage && (
                         <div className="mt-2 flex items-start gap-2 text-rose-600 text-xs bg-rose-50 p-2 rounded-lg border border-rose-100">
                           <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                          <span>{dispatch.error_message}</span>
+                          <span>{dispatch.errorMessage}</span>
                         </div>
                       )}
 
@@ -680,8 +684,8 @@ const AdminNotices = () => {
                         const targetLabel = dispatch.type === "general"
                           ? "Geral"
                           : dispatch.type === "group"
-                            ? (groups?.find(g => g.id === dispatch.target_group_id)?.name || "Departamento")
-                            : (members?.find(m => m.user_id === dispatch.target_user_id)?.full_name || "Membro");
+                            ? (groups?.find(g => g.id === dispatch.targetGroupId)?.name || "Departamento")
+                            : (members?.find(m => m.userId === dispatch.targetUserId)?.fullName || "Membro");
 
                         return (
                           <div className="mt-3 space-y-1.5">
@@ -722,7 +726,7 @@ const AdminNotices = () => {
                       <div className="mt-5 flex justify-end gap-3 w-full">
                         {/* Editar só disponível para pending cujo horário ainda não chegou, ou erros */}
                         {(() => {
-                          const isOverdue = dispatch.status === "pending" && new Date(dispatch.scheduled_at) <= new Date();
+                          const isOverdue = dispatch.status === "pending" && new Date(dispatch.scheduledAt) <= new Date();
                           const canEdit = (dispatch.status === "pending" && !isOverdue) || dispatch.status === "error";
                           return canEdit ? (
                             <Button variant="outline" size="sm" onClick={() => handleEdit(dispatch)} className="text-blue-700 bg-blue-50 hover:bg-blue-100 border-blue-200">

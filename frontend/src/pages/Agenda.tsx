@@ -89,6 +89,7 @@ const Agenda = () => {
   const [pixQrcodeUrl, setPixQrcodeUrl] = useState("");
   const [mapUrl, setMapUrl] = useState("");
   const [requireCheckin, setRequireCheckin] = useState(false);
+  const [pendingRsvp, setPendingRsvp] = useState<{ eventId: string; status: string } | null>(null);
   const [isPublic, setIsPublic] = useState(false);
 
   const { data: userGroups } = useQuery({
@@ -128,22 +129,22 @@ const Agenda = () => {
 
       return filtered.map((e: any) => ({
         ...e,
-        event_date: e.eventDate,
-        is_general: e.isGeneral,
-        group_id: e.groupId,
-        event_type: e.eventType,
-        banner_url: e.bannerUrl,
-        pix_key: e.pixKey,
-        pix_qrcode_url: e.pixQrcodeUrl,
-        map_url: e.mapUrl,
-        require_checkin: e.requireCheckin,
-        is_public: e.isPublic,
-        checkin_qr_secret: e.checkinQrSecret,
-        event_rsvps: (e.rsvps || []).map((r: any) => ({ ...r, user_id: r.userId })),
-        event_checkins: (e.checkins || []).map((c: any) => ({ ...c, user_id: c.userId })),
-        event_registrations: (e.registrations || []).map((c: any) => ({ ...c, user_id: c.userId, payment_status: c.paymentStatus })),
+        eventDate: e.eventDate,
+        isGeneral: e.isGeneral,
+        groupId: e.groupId,
+        eventType: e.eventType,
+        bannerUrl: e.bannerUrl,
+        pixKey: e.pixKey,
+        pixQrcodeUrl: e.pixQrcodeUrl,
+        mapUrl: e.mapUrl,
+        requireCheckin: e.requireCheckin,
+        isPublic: e.isPublic,
+        checkinQrSecret: e.checkinQrSecret,
+        rsvps: e.rsvps || [],
+        checkins: e.checkins || [],
+        registrations: e.registrations || [],
         groups: e.group,
-      })).sort((a: any, b: any) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
+      })).sort((a: any, b: any) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime());
     },
     refetchInterval: 15000,
   });
@@ -160,9 +161,19 @@ const Agenda = () => {
     mutationFn: async ({ eventId, status }: { eventId: string; status: string }) => {
       await api.post('/event-rsvps', { eventId, userId: user!.id, status });
     },
+    onMutate: async ({ eventId, status }) => {
+      setPendingRsvp({ eventId, status });
+    },
+    onSettled: () => {
+      setPendingRsvp(null);
+      queryClient.invalidateQueries({ queryKey: ["events"], exact: false });
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["events"] });
       toast({ title: "Presença atualizada!" });
+    },
+    onError: (err: any) => {
+      setPendingRsvp(null);
+      toast({ title: "Falha ao atualizar presença", description: getErrorMessage(err), variant: "destructive" });
     },
   });
 
@@ -205,14 +216,10 @@ const Agenda = () => {
     if (!file) return;
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop();
-      const fileName = `event-${Date.now()}.${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from("event-banners")
-        .upload(fileName, file, { upsert: true });
-      if (uploadError) throw uploadError;
-      const { data: urlData } = supabase.storage.from("event-banners").getPublicUrl(fileName);
-      setBannerUrl(urlData.publicUrl);
+      const formData = new FormData();
+      formData.append('file', file);
+      const { data: uploadData } = await api.post('/upload', formData);
+      setBannerUrl(uploadData.url);
       toast({ title: "Banner carregado com sucesso!" });
     } catch (err: any) {
       toast({ title: "Erro no upload", description: getErrorMessage(err), variant: "destructive" });
@@ -226,19 +233,19 @@ const Agenda = () => {
     setTitle(ev.title || "");
     setDesc(ev.description || "");
     setLocation(ev.location || "");
-    setIsGeneral(ev.is_general ? "true" : "false");
-    setGroupId(ev.group_id || "");
-    setEventType(ev.event_type || "simple");
-    setBannerUrl(ev.banner_url || "");
+    setIsGeneral(ev.isGeneral ? "true" : "false");
+    setGroupId(ev.groupId || "");
+    setEventType(ev.eventType || "simple");
+    setBannerUrl(ev.bannerUrl || "");
     setSpeakers(ev.speakers || "");
     setPrice(ev.price || 0);
-    setPixKey(ev.pix_key || "");
-    setPixQrcodeUrl(ev.pix_qrcode_url || "");
-    setMapUrl(ev.map_url || "");
-    setRequireCheckin(ev.require_checkin || false);
-    setIsPublic(ev.is_public || false);
-    if (ev.event_date) {
-      const d = new Date(ev.event_date);
+    setPixKey(ev.pixKey || "");
+    setPixQrcodeUrl(ev.pixQrcodeUrl || "");
+    setMapUrl(ev.mapUrl || "");
+    setRequireCheckin(ev.requireCheckin || false);
+    setIsPublic(ev.isPublic || false);
+    if (ev.eventDate) {
+      const d = new Date(ev.eventDate);
       d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
       setDate(d.toISOString().slice(0, 16));
     }
@@ -331,33 +338,33 @@ const Agenda = () => {
           </Card>
         )}
         {events?.map((event: any) => {
-          const userRsvp = event.event_rsvps?.find((r: any) => r.user_id === user?.id);
-          const confirmed = event.event_rsvps?.filter((r: any) => r.status === "confirmed").length || 0;
-          const declined = event.event_rsvps?.filter((r: any) => r.status === "declined").length || 0;
-          const checkedInCount = event.event_checkins?.length || 0;
-          const isComplex = event.event_type === "course" || event.event_type === "conference";
+          const userRsvp = event.rsvps?.find((r: any) => r.userId === user?.id);
+          const confirmed = event.rsvps?.filter((r: any) => r.status === "confirmed").length || 0;
+          const declined = event.rsvps?.filter((r: any) => r.status === "declined").length || 0;
+          const checkedInCount = event.checkins?.length || 0;
+          const isComplex = event.eventType === "course" || event.eventType === "conference";
           const isPaid = event.price > 0;
-          const isRegistered = event.event_registrations?.some((r: any) => r.user_id === user?.id);
-          const hasCheckedIn = event.event_checkins?.some((c: any) => c.user_id === user?.id);
-          const canManageEvent = isAdmin || (isGerente && event.group_id && managedGroupIds.includes(event.group_id));
+          const isRegistered = event.registrations?.some((r: any) => r.userId === user?.id);
+          const hasCheckedIn = event.checkins?.some((c: any) => c.userId === user?.id);
+          const canManageEvent = isAdmin || (isGerente && event.groupId && managedGroupIds.includes(event.groupId));
           const isSendingNotify = notifyingEvent?.id === event.id;
 
           return (
             <Card key={event.id} className={`neo-shadow-sm border-0 overflow-hidden ${isComplex ? "ring-1 ring-primary/20" : ""}`}>
-              {event.banner_url && (
+              {event.bannerUrl && (
                 <div className="w-full h-40 overflow-hidden">
-                  <img src={event.banner_url} alt={event.title} className="w-full h-full object-cover" />
+                  <img src={event.bannerUrl} alt={event.title} className="w-full h-full object-cover" />
                 </div>
               )}
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <Badge className={`text-[10px] ${EVENT_TYPE_COLORS[event.event_type] || EVENT_TYPE_COLORS.simple}`}>
-                        {EVENT_TYPE_LABELS[event.event_type] || "Compromisso"}
+                      <Badge className={`text-[10px] ${EVENT_TYPE_COLORS[event.eventType] || EVENT_TYPE_COLORS.simple}`}>
+                        {EVENT_TYPE_LABELS[event.eventType] || "Compromisso"}
                       </Badge>
-                      <Badge variant={event.is_general ? "default" : "secondary"} className="text-[10px]">
-                        {event.is_general ? "Geral" : (event.groups?.name || "Grupo")}
+                      <Badge variant={event.isGeneral ? "default" : "secondary"} className="text-[10px]">
+                        {event.isGeneral ? "Geral" : (event.groups?.name || "Grupo")}
                       </Badge>
                       {isPaid && (
                         <Badge variant="outline" className="text-[10px] border-emerald-300 text-emerald-600">
@@ -368,14 +375,14 @@ const Agenda = () => {
                     <CardTitle className="text-lg">{event.title}</CardTitle>
                     <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                       <Calendar className="h-3.5 w-3.5" />
-                      {safeFormat(event.event_date, "dd/MM/yyyy 'às' HH:mm")}
+                      {safeFormat(event.eventDate, "dd/MM/yyyy 'às' HH:mm")}
                     </div>
                     {event.location && (
                       <div className="flex items-center gap-2 mt-0.5 text-sm text-muted-foreground">
                         <MapPin className="h-3.5 w-3.5" />
                         <span>{event.location}</span>
-                        {event.map_url && (
-                          <a href={event.map_url} target="_blank" rel="noopener noreferrer" className="text-primary text-xs underline ml-1">
+                        {event.mapUrl && (
+                          <a href={event.mapUrl} target="_blank" rel="noopener noreferrer" className="text-primary text-xs underline ml-1">
                             Ver mapa
                           </a>
                         )}
@@ -404,7 +411,7 @@ const Agenda = () => {
                 {event.description && <p className="text-sm text-muted-foreground mb-3">{event.description}</p>}
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-3 text-[10px] sm:text-xs">
-                    {!event.require_checkin && (
+                    {!event.requireCheckin && (
                       <>
                         <div className="flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full font-semibold border border-emerald-100 dark:border-emerald-900/50">
                           <Check className="h-3 w-3" /> {confirmed}
@@ -414,7 +421,7 @@ const Agenda = () => {
                         </div>
                       </>
                     )}
-                    {event.require_checkin && (
+                    {event.requireCheckin && (
                       <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-full font-semibold border border-blue-100 dark:border-blue-900/50">
                         <ScanLine className="h-3 w-3" /> {checkedInCount}
                       </div>
@@ -426,28 +433,44 @@ const Agenda = () => {
                     )}
                   </div>
                   <div className="flex gap-2 flex-wrap">
-                    {event.event_type !== "conference" && !event.require_checkin && (
+                    {event.eventType !== "conference" && !event.requireCheckin && (
                       <>
                         <Button
                           size="sm"
                           variant={userRsvp?.status === "confirmed" ? "default" : "outline"}
-                          disabled={userRsvp?.status === "confirmed"}
+                          disabled={userRsvp?.status === "confirmed" || (pendingRsvp?.eventId === event.id && pendingRsvp.status === "confirmed")}
                           onClick={() => rsvpMutation.mutate({ eventId: event.id, status: "confirmed" })}
                         >
-                          <Check className="h-4 w-4 mr-1" />
-                          {userRsvp?.status === "confirmed" ? "Confirmado" : "Vou"}
+                          {pendingRsvp?.eventId === event.id && pendingRsvp.status === "confirmed" ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-1 animate-spin" /> Confirmando...
+                            </>
+                          ) : (
+                            <>
+                              <Check className="h-4 w-4 mr-1" />
+                              {userRsvp?.status === "confirmed" ? "Confirmado" : "Vou"}
+                            </>
+                          )}
                         </Button>
                         <Button
                           size="sm"
                           variant={userRsvp?.status === "declined" ? "destructive" : "outline"}
-                          disabled={userRsvp?.status === "declined"}
+                          disabled={userRsvp?.status === "declined" || (pendingRsvp?.eventId === event.id && pendingRsvp.status === "declined")}
                           onClick={() => rsvpMutation.mutate({ eventId: event.id, status: "declined" })}
                         >
-                          <X className="h-4 w-4 mr-1" /> Não vou
+                          {pendingRsvp?.eventId === event.id && pendingRsvp.status === "declined" ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-1 animate-spin" /> Cancelando...
+                            </>
+                          ) : (
+                            <>
+                              <X className="h-4 w-4 mr-1" /> Não vou
+                            </>
+                          )}
                         </Button>
                       </>
                     )}
-                    {isPaid && event.pix_key && (
+                    {isPaid && event.pixKey && (
                       <Button size="sm" variant="outline" onClick={() => setPixDialogEvent(event)}>
                         <QrCode className="h-4 w-4 mr-1" /> PIX
                       </Button>
@@ -472,7 +495,7 @@ const Agenda = () => {
                         disabled={isSendingNotify}
                         onClick={() => handleNotifyWhatsApp(event)}
                         className="gap-1.5 border-green-400 text-green-600 hover:bg-green-50 dark:hover:bg-green-950/30 hover:border-green-500"
-                        title={`Avisar via WhatsApp (${event.is_general ? "Geral" : event.groups?.name || "Grupo"})`}
+                        title={`Avisar via WhatsApp (${event.isGeneral ? "Geral" : event.groups?.name || "Grupo"})`}
                       >
                         {isSendingNotify ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -486,7 +509,7 @@ const Agenda = () => {
                     <Button size="sm" variant="outline" onClick={() => setSharingEvent(event)} className="gap-1">
                       <Share2 className="h-4 w-4" /> Compartilhar
                     </Button>
-                    {event.require_checkin && isRegistered && (
+                    {event.requireCheckin && isRegistered && (
                       <Button
                         size="sm"
                         variant={hasCheckedIn ? "default" : "secondary"}
@@ -506,7 +529,7 @@ const Agenda = () => {
                     <Ticket className="h-3 w-3 mr-1" /> Ver Inscritos
                   </Button>
                 )}
-                {isAdmin && event.require_checkin && event.checkin_qr_secret && (
+                {isAdmin && event.requireCheckin && event.checkinQrSecret && (
                   <Button variant="ghost" size="sm" className="mt-2 text-xs gap-1" onClick={() => setQrProjectEvent(event)}>
                     <QrCode className="h-3 w-3" /> Projetar QR Code
                   </Button>
@@ -737,15 +760,15 @@ const Agenda = () => {
           <DialogHeader><DialogTitle>Pagamento PIX</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
             <p className="text-lg font-bold text-primary">R$ {Number(pixDialogEvent?.price || 0).toFixed(2)}</p>
-            {pixDialogEvent?.pix_qrcode_url && (
-              <img src={pixDialogEvent.pix_qrcode_url} alt="QR Code PIX" className="mx-auto w-48 h-48 rounded-lg border" />
+            {pixDialogEvent?.pixQrcodeUrl && (
+              <img src={pixDialogEvent.pixQrcodeUrl} alt="QR Code PIX" className="mx-auto w-48 h-48 rounded-lg border" />
             )}
-            {pixDialogEvent?.pix_key && (
+            {pixDialogEvent?.pixKey && (
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">Chave PIX:</p>
                 <div className="flex items-center gap-2 justify-center">
-                  <code className="bg-muted px-3 py-1.5 rounded text-sm break-all">{pixDialogEvent.pix_key}</code>
-                  <Button variant="outline" size="icon" onClick={() => copyPix(pixDialogEvent.pix_key)}>
+                  <code className="bg-muted px-3 py-1.5 rounded text-sm break-all">{pixDialogEvent.pixKey}</code>
+                  <Button variant="outline" size="icon" onClick={() => copyPix(pixDialogEvent.pixKey)}>
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
@@ -809,7 +832,7 @@ const Agenda = () => {
           </DialogHeader>
           <div className="flex flex-col items-center gap-6 py-6">
             <div className="bg-white p-6 rounded-3xl shadow-2xl">
-              <QRCodeSVG value={qrProjectEvent?.checkin_qr_secret || ""} size={280} level="H" />
+              <QRCodeSVG value={qrProjectEvent?.checkinQrSecret || ""} size={280} level="H" />
             </div>
             <p className="text-sm text-muted-foreground">Projete este QR Code no telão para os membros escanearem</p>
           </div>
@@ -820,10 +843,10 @@ const Agenda = () => {
         <QRScanner
           onScan={async (decoded) => {
             setScanningEvent(null);
-            if (decoded === scanningEvent.checkin_qr_secret) {
+            if (decoded === scanningEvent.checkinQrSecret) {
               try {
                 await api.post("/event-checkins", 
-                  { event_id: scanningEvent.id, user_id: user!.id }
+                  { eventId: scanningEvent.id, userId: user!.id }
                 );
                 if (error && error.code !== "23505") throw error;
                 toast({ title: "✅ Presença confirmada!", description: `Check-in registrado para "${scanningEvent.title}".` });
@@ -851,44 +874,42 @@ const RsvpList = ({ event }: { event: any }) => {
     queryFn: async () => {
       if (!event) return [];
 
-      if (event.require_checkin) {
+      if (event.requireCheckin) {
         const { data: regs } = await api.get(`/event-registrations`, { params: { eventId: event.id } });
-        const { data: checkins } = await supabase
-          .from("event_checkins").select("user_id").eq("event_id", event.id);
-        const checkinSet = new Set(checkins?.map((c: any) => c.user_id) || []);
-        const userIds = regs?.map((r: any) => r.user_id) || [];
+        const { data: checkins } = await api.get('/event-checkins', { params: { eventId: event.id } });
+        const checkinSet = new Set(checkins?.map((c: any) => c.userId) || []);
+        const userIds = regs?.map((r: any) => r.userId) || [];
         if (userIds.length === 0) return [];
-        const { data: profiles } = await supabase
-          .from("profiles").select("user_id, full_name").in("user_id", userIds);
-        const nameMap = new Map(profiles?.map(p => [p.user_id, p.full_name]));
+        const { data: profiles } = await api.get('/profiles');
+        const nameMap = new Map(profiles?.map((p: any) => [p.userId, p.fullName]));
         return userIds.map((uid: string) => ({
-          user_id: uid,
+          userId: uid,
           name: nameMap.get(uid) || "Membro",
-          status: checkinSet.has(uid) ? "checked_in" : "pending",
+          status: checkinSet.has(uid) ? "checkedIn" : "pending",
         }));
       }
 
       let relevantProfiles: any[] = [];
-      if (event.is_general) {
+      if (event.isGeneral) {
         const { data } = await api.get('/profiles');
         relevantProfiles = data || [];
-      } else if (event.group_id) {
-        const { data: gm } = await supabase
-          .from("member_groups").select("user_id, profiles(full_name)").eq("group_id", event.group_id);
-        relevantProfiles = gm?.map(m => ({
-          user_id: m.user_id,
-          full_name: (m.profiles as any)?.full_name || "Membro",
+      } else if (event.groupId) {
+        const { data: gm } = await api.get('/member-groups', { params: { groupId: event.groupId } });
+        const { data: profiles } = await api.get('/profiles');
+        const nameMap = new Map(profiles?.map((p: any) => [p.userId, p.fullName]));
+        relevantProfiles = gm?.map((m: any) => ({
+          userId: m.userId,
+          fullName: nameMap.get(m.userId) || "Membro",
         })) || [];
       }
 
-      const { data: rsvps } = await supabase
-        .from("event_rsvps").select("user_id, status").eq("event_id", event.id);
-      const rsvpMap = new Map(rsvps?.map(r => [r.user_id, r.status]));
+      const { data: rsvps } = await api.get('/event-rsvps', { params: { eventId: event.id } });
+      const rsvpMap = new Map(rsvps?.map((r: any) => [r.userId, r.status]));
 
       return relevantProfiles.map(p => ({
-        user_id: p.user_id,
-        name: p.full_name,
-        status: rsvpMap.get(p.user_id) || "pending",
+        userId: p.userId,
+        name: p.fullName,
+        status: rsvpMap.get(p.userId) || "pending",
       }));
     },
     enabled: !!event,
@@ -902,8 +923,8 @@ const RsvpList = ({ event }: { event: any }) => {
 
   if (!event) return null;
 
-  if (event.require_checkin) {
-    const checked = usersData?.filter(u => u.status === "checked_in") || [];
+  if (event.requireCheckin) {
+    const checked = usersData?.filter(u => u.status === "checkedIn") || [];
     const pending = usersData?.filter(u => u.status === "pending") || [];
     return (
       <div className="space-y-4">
@@ -962,7 +983,7 @@ const RsvpSection = ({ label, items, color, icon }: { label: string; items: any[
       {items.length === 0
         ? <p className="text-xs text-muted-foreground italic px-2">Nenhum</p>
         : items.map(u => (
-            <div key={u.user_id} className="text-[13px] px-3 py-2 bg-muted/50 rounded-lg font-medium">{u.name}</div>
+            <div key={u.userId} className="text-[13px] px-3 py-2 bg-muted/50 rounded-lg font-medium">{u.name}</div>
           ))
       }
     </div>
@@ -977,26 +998,23 @@ const RegistrationList = ({ event }: { event: any }) => {
     queryKey: ["event-registrations", event?.id],
     queryFn: async () => {
       if (!event) return [];
-      const { data } = await (supabase as any)
-        .from("event_registrations").select("*").eq("event_id", event.id);
+      const { data } = await api.get('/event-registrations', { params: { eventId: event.id } });
       if (!data) return [];
 
       let checkinSet = new Set<string>();
-      if (event.require_checkin) {
-        const { data: checkins } = await supabase
-          .from("event_checkins").select("user_id").eq("event_id", event.id);
-        checkinSet = new Set(checkins?.map((c: any) => c.user_id) || []);
+      if (event.requireCheckin) {
+        const { data: checkins } = await api.get('/event-checkins', { params: { eventId: event.id } });
+        checkinSet = new Set(checkins?.map((c: any) => c.userId) || []);
       }
 
-      const userIds = data.map((r: any) => r.user_id);
-      const { data: profiles } = await supabase
-        .from("profiles").select("user_id, full_name").in("user_id", userIds);
-      const nameMap = new Map(profiles?.map(p => [p.user_id, p.full_name]));
+      const userIds = data.map((r: any) => r.userId);
+      const { data: profiles } = await api.get('/profiles');
+      const nameMap = new Map(profiles?.map((p: any) => [p.userId, p.fullName]));
 
       return data.map((r: any) => ({
         ...r,
-        name: nameMap.get(r.user_id) || "Membro",
-        checked_in: checkinSet.has(r.user_id),
+        name: nameMap.get(r.userId) || "Membro",
+        checkedIn: checkinSet.has(r.userId),
       }));
     },
     enabled: !!event,
@@ -1014,13 +1032,15 @@ const RegistrationList = ({ event }: { event: any }) => {
     </div>
   );
 
-  const checkedInCount = registrations?.filter(r => r.checked_in).length || 0;
+  if (!event) return null;
+
+  const checkedInCount = registrations?.filter(r => r.checkedIn).length || 0;
 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-3 mb-3">
         <p className="text-sm text-muted-foreground">{registrations?.length || 0} inscrito(s)</p>
-        {event.require_checkin && (
+        {event.requireCheckin && (
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-full font-semibold border border-blue-100 dark:border-blue-900/50 text-xs">
               <ScanLine className="h-3 w-3" /> {checkedInCount} check-in{checkedInCount !== 1 ? "s" : ""}
@@ -1032,14 +1052,14 @@ const RegistrationList = ({ event }: { event: any }) => {
         <div key={r.id} className="flex flex-wrap items-center justify-between gap-2 bg-muted/50 rounded-lg px-3 py-2">
           <div className="flex flex-col">
             <span className="text-sm font-medium">{r.name}</span>
-            {event.require_checkin && (
-              <span className={`text-[10px] font-semibold ${r.checked_in ? "text-blue-600" : "text-amber-600"}`}>
-                {r.checked_in ? "✓ Check-in feito" : "Pendente"}
+            {event.requireCheckin && (
+              <span className={`text-[10px] font-semibold ${r.checkedIn ? "text-blue-600" : "text-amber-600"}`}>
+                {r.checkedIn ? "✓ Check-in feito" : "Pendente"}
               </span>
             )}
           </div>
           {event.price > 0 ? (
-            <Select value={r.payment_status} onValueChange={v => updatePayment(r.id, v)}>
+            <Select value={r.paymentStatus} onValueChange={v => updatePayment(r.id, v)}>
               <SelectTrigger className="w-32 h-7 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="pending">Pendente</SelectItem>

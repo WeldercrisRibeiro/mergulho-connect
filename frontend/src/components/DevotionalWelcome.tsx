@@ -18,7 +18,7 @@ const DevotionalWelcome = () => {
   const { data: devotional } = useQuery({
     queryKey: ["latest-devotional"],
     queryFn: async () => {
-      const { data } = await api.get("/devotionals", { params: { status: 'published' } });
+      const { data } = await api.get("/devotionals", { params: { status: 'publicado' } });
       const valid = (data || []).filter((d: any) => new Date(d.publishDate) <= new Date());
       // Sort by publishDate desc
       valid.sort((a: any, b: any) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime());
@@ -28,10 +28,13 @@ const DevotionalWelcome = () => {
   });
 
   const { data: myLike } = useQuery({
-    queryKey: ["my-like", devotional?.id],
+    queryKey: ["my-like", devotional?.id, user?.id],
     queryFn: async () => {
-      const { data } = await api.get(`/devotional-likes`, { params: { devotionalId: devotional!.id, userId: user!.id } });
-      return data?.[0] || null;
+      const { data } = await api.get(`/devotional-likes`, {
+        params: { devotionalId: devotional!.id, userId: user!.id },
+      });
+      // Retorna o primeiro like do user para este devocional (ou null)
+      return (data && data.length > 0) ? data[0] : null;
     },
     enabled: !!devotional && !!user,
   });
@@ -39,7 +42,6 @@ const DevotionalWelcome = () => {
   const { data: likeCount } = useQuery({
     queryKey: ["like-count", devotional?.id],
     queryFn: async () => {
-      // In a real API we might have a /count endpoint, getting all and getting length for now
       const { data } = await api.get(`/devotional-likes`, { params: { devotionalId: devotional!.id } });
       return data?.length || 0;
     },
@@ -48,18 +50,16 @@ const DevotionalWelcome = () => {
 
   const likeMutation = useMutation({
     mutationFn: async () => {
-      if (myLike) {
-        await api.delete(`/devotional-likes/${myLike.id}`);
-      } else {
-        await api.post(`/devotional-likes`, { devotionalId: devotional!.id, userId: user!.id });
-      }
+      // POST /devotional-likes sempre — o servidor faz toggle (cria ou remove)
+      await api.post(`/devotional-likes`, { devotionalId: devotional!.id, userId: user!.id });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["my-like", devotional?.id] });
+      queryClient.invalidateQueries({ queryKey: ["my-like", devotional?.id, user?.id] });
       queryClient.invalidateQueries({ queryKey: ["like-count", devotional?.id] });
       queryClient.invalidateQueries({ queryKey: ["devotionals"] });
     },
   });
+
 
   // Show once per session
   useEffect(() => {
@@ -105,14 +105,27 @@ const DevotionalWelcome = () => {
             </p>
           </div>
 
-          {((devotional as any).videoUrl || devotional.mediaUrl) && (
-            <div className="rounded-xl overflow-hidden mb-4 shadow-md">
-              <VideoPlayer 
-                url={(devotional as any).videoUrl || devotional.mediaUrl || ""} 
-                isUpload={(devotional as any).isVideoUpload}
-              />
-            </div>
-          )}
+          {((devotional as any).videoUrl || devotional.mediaUrl) && (() => {
+            const url = (devotional as any).videoUrl || devotional.mediaUrl || "";
+            const isYoutube = url.includes("youtube") || url.includes("youtu.be");
+            const isVideoFile = (devotional as any).isVideoUpload || url.match(/\.(mp4|webm|mov)(\?.*)?$/i);
+            return (
+              <div className="rounded-xl overflow-hidden mb-4 shadow-md bg-muted/10">
+                {isYoutube ? (
+                  <VideoPlayer url={url} isUpload={false} />
+                ) : isVideoFile ? (
+                  <VideoPlayer url={url} isUpload={true} />
+                ) : (
+                  <img
+                    src={url}
+                    alt={devotional.title}
+                    className="w-full max-h-56 object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                )}
+              </div>
+            );
+          })()}
 
           {/* Footer */}
           <div className="flex items-center justify-between border-t pt-4 mt-2">

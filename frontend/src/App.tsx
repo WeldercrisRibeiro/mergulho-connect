@@ -9,7 +9,6 @@ import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import AppLayout from "@/components/AppLayout";
 import Index from "./pages/Index";
-import Admin from "./pages/Admin";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import HomePage from "./pages/HomePage";
@@ -25,8 +24,8 @@ import Reports from "./pages/Reports";
 import ArchivedChats from "./pages/ArchivedChats";
 import KidsCheckin from "./pages/KidsCheckin";
 import AdminNotices from "./pages/AdminNotices";
+import Admin from "./pages/Admin";
 import GroupPermissions from "./pages/GroupPermissions";
-import AuditLogs from "./pages/AuditLogs";
 import NotFound from "./pages/NotFound";
 import AdminWhatsApp from "./pages/AdminWhatsApp";
 import Tesouraria from "./pages/Tesouraria";
@@ -102,7 +101,6 @@ const App = () => (
 
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
               <Route path="/landing" element={<Landing />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
@@ -118,10 +116,10 @@ const App = () => (
               <Route path="/arquivos" element={<ProtectedRoute><ArchivedChats /></ProtectedRoute>} />
               <Route path="/checkin-kids" element={<ProtectedRoute><KidsCheckin /></ProtectedRoute>} />
               <Route path="/Disparos" element={<ProtectedRoute><AdminNotices /></ProtectedRoute>} />
+
               <Route path="/whatsapp" element={<ProtectedRoute><AdminWhatsApp /></ProtectedRoute>} />
               <Route path="/gestao-rotinas" element={<ProtectedRoute><GroupPermissions /></ProtectedRoute>} />
               <Route path="/tesouraria" element={<ProtectedRoute><Tesouraria /></ProtectedRoute>} />
-              <Route path="/auditoria" element={<ProtectedRoute><AuditLogs /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>

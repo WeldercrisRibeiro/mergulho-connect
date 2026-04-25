@@ -83,7 +83,7 @@ function GroupIcon({ icon, name, size = "md" }: { icon?: string | null; name?: s
   const dimension = size === "sm" ? "h-8 w-8" : "h-10 w-10";
   const iconSize = size === "sm" ? "h-4 w-4" : "h-5 w-5";
 
-  if (icon && icon.startsWith("http")) {
+  if (icon && (icon.startsWith("http") || icon.startsWith("/api/uploads") || icon.startsWith("/uploads"))) {
     return (
       <div className={cn(dimension, "rounded-full overflow-hidden shrink-0")}>
         <img
@@ -104,6 +104,9 @@ function GroupIcon({ icon, name, size = "md" }: { icon?: string | null; name?: s
 
 // ─── Unread tracking (session-based) ────────────────────────────────────────
 const unreadMap: Record<string, number> = {};
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const isValidUuid = (v?: string | null) => !!v && UUID_RE.test(v);
 
 const Chat = () => {
   const { user, isAdmin } = useAuth();
@@ -138,7 +141,14 @@ const Chat = () => {
     queryKey: ["my-groups"],
     queryFn: async () => {
       const { data } = await api.get('/member-groups');
-      return data?.map((mg: any) => mg.group).filter(Boolean) || [];
+      const groups = (data || []).map((mg: any) => mg.group).filter(Boolean);
+      const uniqueGroups = new Map<string, any>();
+      groups.forEach((group: any) => {
+        if (group?.id && !uniqueGroups.has(group.id)) {
+          uniqueGroups.set(group.id, group);
+        }
+      });
+      return Array.from(uniqueGroups.values());
     },
     enabled: !!user,
   });
@@ -147,7 +157,7 @@ const Chat = () => {
     queryKey: ["members-for-dm"],
     queryFn: async () => {
       const { data } = await api.get('/profiles');
-      return (data || []).map((m: any) => ({ user_id: m.userId, full_name: m.fullName })).filter((m: any) => m.user_id !== user!.id);
+      return (data || []).map((m: any) => ({ userId: m.userId, fullName: m.fullName })).filter((m: any) => m.userId !== user!.id);
     },
     enabled: !!user,
   });
@@ -172,7 +182,7 @@ const { data: conversations } = useQuery({
       });
       return Array.from(convMap.values());
     },
-    enabled: !!user,
+    enabled: !!user && isValidUuid(user?.id),
     refetchInterval: 5000,
   });
 
@@ -228,12 +238,6 @@ const { data: conversations } = useQuery({
       
       return (data || []).map((m: any) => ({
         ...m,
-        id: m.id,
-        content: m.content,
-        created_at: m.createdAt,
-        sender_id: m.senderId,
-        recipient_id: m.recipientId,
-        group_id: m.groupId,
         senderName: m.sender?.profile?.fullName || "Membro"
       }));
     },
@@ -252,22 +256,22 @@ const { data: conversations } = useQuery({
   const handleNewMessage = useCallback(
     (payload: any) => {
       const msg = payload.new;
-      if (!msg || msg.sender_id === user?.id) return;
+      if (!msg || msg.senderId === user?.id) return;
 
       let convId: string | null = null;
       let convName = "Nova mensagem";
       let targetView: ChatView | null = null;
 
-      if (msg.group_id) {
-        convId = msg.group_id;
-        const grp = (groups as any[])?.find((g: any) => g?.id === msg.group_id);
+      if (msg.groupId) {
+        convId = msg.groupId;
+        const grp = (groups as any[])?.find((g: any) => g?.id === msg.groupId);
         convName = grp?.name || "Grupo";
-        targetView = { type: "group", groupId: msg.group_id, groupName: convName };
-      } else if (msg.recipient_id === user?.id) {
-        convId = msg.sender_id;
-        const prof = allMembers?.find((m) => m.user_id === msg.sender_id);
-        convName = prof?.full_name || "Membro";
-        targetView = { type: "direct", userId: msg.sender_id, userName: convName };
+        targetView = { type: "group", groupId: msg.groupId, groupName: convName };
+      } else if (msg.recipientId === user?.id) {
+        convId = msg.senderId;
+        const prof = allMembers?.find((m) => m.userId === msg.senderId);
+        convName = prof?.fullName || "Membro";
+        targetView = { type: "direct", userId: msg.senderId, userName: convName };
       }
 
       if (!convId) return;
@@ -328,20 +332,13 @@ const { data: conversations } = useQuery({
 
   useEffect(() => {
     if (!user) return;
-    const WS_URL = import.meta.env.VITE_API_URL?.replace('http', 'ws') || "ws://localhost:3001";
+    const WS_URL = import.meta.env.VITE_API_URL?.replace('http', 'ws') || `ws://${window.location.hostname}:3001`;
     const socket = io(WS_URL + "/chat");
     socket.on("new_message", (payload: any) => {
       // payload structure emitted from Nest is { new: message_obj_in_camelCase }
       const newMsg = payload.new;
       handleNewMessage({
-        new: {
-          id: newMsg.id,
-          content: newMsg.content,
-          created_at: newMsg.createdAt,
-          sender_id: newMsg.senderId,
-          recipient_id: newMsg.recipientId,
-          group_id: newMsg.groupId
-        }
+        new: newMsg
       });
     });
     return () => { socket.disconnect(); };
@@ -416,7 +413,7 @@ const { data: conversations } = useQuery({
   };
 
   const filteredMembers = allMembers?.filter((m) =>
-    (m.full_name || "").toLowerCase().includes(memberSearch.toLowerCase())
+    (m.fullName || "").toLowerCase().includes(memberSearch.toLowerCase())
   );
 
   const openConv = (id: string, target: ChatView) => {
@@ -558,17 +555,17 @@ const { data: conversations } = useQuery({
               <div className="max-h-[300px] overflow-y-auto space-y-1">
                 {filteredMembers?.map((m) => (
                   <button
-                    key={m.user_id}
+                    key={m.userId}
                     className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted/70 text-left transition-colors"
                     onClick={() => {
                       setNewChatOpen(false);
-                      setView({ type: "direct", userId: m.user_id, userName: m.full_name || "Membro" });
+                      setView({ type: "direct", userId: m.userId, userName: m.fullName || "Membro" });
                     }}
                   >
                     <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <span className="text-primary font-bold text-sm">{(m.full_name || "M").charAt(0)}</span>
+                      <span className="text-primary font-bold text-sm">{(m.fullName || "M").charAt(0)}</span>
                     </div>
-                    <span className="text-sm font-medium">{m.full_name || "Membro"}</span>
+                    <span className="text-sm font-medium">{m.fullName || "Membro"}</span>
                   </button>
                 ))}
                 {filteredMembers?.length === 0 && (
@@ -631,12 +628,12 @@ const { data: conversations } = useQuery({
           <p className="text-center text-sm text-muted-foreground py-8">Nenhuma mensagem ainda. Diga olá! 👋</p>
         )}
         {messages?.map((msg: any, index: number) => {
-          const isMe = msg.sender_id === user?.id;
-          const msgDate = new Date(msg.created_at);
+          const isMe = msg.senderId === user?.id;
+          const msgDate = new Date(msg.createdAt);
           const prevMsg = index > 0 ? messages[index - 1] : null;
           const showDateSeparator =
             !prevMsg ||
-            safeFormat(prevMsg.created_at, "yyyy-MM-dd") !== safeFormat(msg.created_at, "yyyy-MM-dd");
+            safeFormat(prevMsg.createdAt, "yyyy-MM-dd") !== safeFormat(msg.createdAt, "yyyy-MM-dd");
 
           return (
             <div key={msg.id} className="space-y-3">
@@ -662,7 +659,7 @@ const { data: conversations } = useQuery({
                       isMe ? "text-primary-foreground/60" : "text-muted-foreground/60"
                     )}
                   >
-                    {safeFormatTime(msg.created_at)}
+                    {safeFormatTime(msg.createdAt)}
                   </p>
                 </div>
               </div>

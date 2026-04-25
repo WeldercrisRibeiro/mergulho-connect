@@ -32,15 +32,15 @@ const Profile = () => {
 
   useEffect(() => {
     if (profile) {
-      setFullName(profile.full_name || profile.fullName || "");
-      setWhatsapp(formatPhoneForDisplay(profile.whatsapp_phone || profile.whatsappPhone || ""));
+      setFullName(profile.fullName || "");
+      setWhatsapp(formatPhoneForDisplay(profile.whatsappPhone || ""));
       
       const rawUsername = profile.username || "";
       const isPhoneLike = /^\d{8,}$/.test(rawUsername);
       const emailPrefix = user?.email?.split('@')[0] || "";
       setUsername(rawUsername && !isPhoneLike ? rawUsername : emailPrefix);
       
-      setAvatarUrl(profile.avatar_url || profile.avatarUrl || null);
+      setAvatarUrl(profile.avatarUrl || null);
     }
   }, [profile, user]);
 
@@ -81,7 +81,7 @@ const Profile = () => {
       });
       const url = uploadData.url;
 
-      await api.patch(`/profiles/${user.id}`, { avatarUrl: url });
+      await api.patch(`/profiles/user/${user.id}`, { avatarUrl: url });
       setAvatarUrl(url);
       await refreshProfile();
       toast({ title: "Foto atualizada com sucesso!" });
@@ -97,7 +97,7 @@ const Profile = () => {
     mutationFn: async () => {
       const phoneDigits = whatsapp.replace(/\D/g, "");
       const cleanUsername = (username || "").trim().toLowerCase().replace("@ccmergulho.com", "").replace(/\s+/g, ".") || phoneDigits;
-      await api.patch(`/profiles/${user!.id}`, {
+      await api.patch(`/profiles/user/${user!.id}`, {
         fullName: fullName,
         whatsappPhone: normalizePhoneForDB(whatsapp),
         username: cleanUsername
@@ -170,7 +170,7 @@ const Profile = () => {
                   onClick={async () => {
                     if (window.confirm("Deseja remover sua foto?")) {
                       try {
-                        await api.patch(`/profiles/${user!.id}`, { avatarUrl: null });
+                        await api.patch(`/profiles/user/${user!.id}`, { avatarUrl: null });
                         setAvatarUrl(null);
                         await refreshProfile();
                         toast({ title: "Foto removida" });
@@ -195,6 +195,7 @@ const Profile = () => {
                     @{((profile?.username && !/^\d{8,}$/.test(profile.username)) 
                       ? profile.username 
                       : (user?.email?.split('@')[0] || profile?.username || "")).toLowerCase()}
+                      {/* Altera configurações em Perfil */}
                   </p>
                 )}
               </div>
@@ -253,51 +254,6 @@ const Profile = () => {
               </Button>
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Notificações Nativas</Label>
-                <p className="text-xs text-muted-foreground">Alertas no seu dispositivo</p>
-              </div>
-              <Button
-                variant={isNotifGranted ? "secondary" : "outline"}
-                size="sm"
-                onClick={async () => {
-                  const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
-                  const isStandalone = window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone === true;
-
-                  if (typeof window === "undefined" || !("Notification" in window)) {
-                    if (isIos && !isStandalone) {
-                      toast({ 
-                        title: "Habilite as Notificações", 
-                        description: "Para receber alertas no iPhone, clique em 'Compartilhar' e 'Adicionar à Tela de Início' primeiro.", 
-                        variant: "destructive" 
-                      });
-                    } else {
-                      toast({ 
-                        title: "Não suportado", 
-                        description: "Este navegador não suporta notificações nativas no momento.", 
-                        variant: "destructive" 
-                      });
-                    }
-                    return;
-                  }
-
-                  if (isNotifGranted) {
-                    toast({ title: "Notificações já estão ativas!" });
-                  } else {
-                    const perm = await (window as any).Notification.requestPermission();
-                    if (perm === "granted") {
-                      setIsNotifGranted(true);
-                      toast({ title: "Notificações ativadas!" });
-                    } else {
-                      toast({ title: "Permissão negada", description: "Habilite nas configurações do navegador.", variant: "destructive" });
-                    }
-                  }
-                }}
-              >
-                {isNotifGranted ? "✓ Ativado" : "Ativar"}
-              </Button>
-            </div>
           </div>
 
           {/* Password */}

@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+const apiBaseUrl = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3001/api`;
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001/api',
+  baseURL: apiBaseUrl,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -10,8 +12,13 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('mergulho_auth_token');
-    if (token && config.headers) {
+    // Não envia o token fake de emergência para o backend
+    if (token && token !== 'FAKE_EMERGENCY_TOKEN' && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    // Remove Content-Type se for FormData para o browser setar o boundary correto
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
     }
     return config;
   },
@@ -21,10 +28,13 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Se quiser forçar logout em unauthorized:
-      // localStorage.removeItem('mergulho_auth_token');
-      // window.location.href = '/auth';
+    // Extrai a mensagem de erro do corpo da resposta do backend (NestJS)
+    // e substitui error.message para que getErrorMessage() funcione corretamente
+    if (error.response?.data?.message) {
+      const msg = Array.isArray(error.response.data.message)
+        ? error.response.data.message.join('; ')
+        : error.response.data.message;
+      error.message = msg;
     }
     return Promise.reject(error);
   }

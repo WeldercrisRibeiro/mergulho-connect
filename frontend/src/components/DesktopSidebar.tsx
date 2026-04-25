@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Home, Calendar, BookOpen, MessageCircle, User, Users, LogOut, Shield, ShieldCheck, Settings, HandHeart, BarChart3, Megaphone, Smartphone, FileSearch, Wallet } from "lucide-react";
+import { Home, Calendar, BookOpen, MessageCircle, User, Users, LogOut, Shield, ShieldCheck, Settings, HandHeart, BarChart3, Megaphone, Smartphone, FileSearch, Wallet, Inbox } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,6 +38,7 @@ const navGroups: {
     {
       label: "Comunicação",
       items: [
+
         { path: "/chat", icon: MessageCircle, label: "Chat", routine: "chat" },
         { path: "/Disparos", icon: Megaphone, label: "Disparos", routine: "Disparos" },
       ]
@@ -49,13 +50,10 @@ const navGroups: {
         { path: "/departamentos", icon: Shield, label: "Departamentos", adminOnly: true },
         { path: "/relatorios", icon: BarChart3, label: "Relatórios", adminOnly: true, routine: "relatorios" },
         { path: "/whatsapp", icon: Smartphone, label: "WhatsApp", adminOnly: true },
-        { path: "/auditoria", icon: FileSearch, label: "Auditoria", adminOnly: true },
         { path: "/configuracoes", icon: Settings, label: "Ajustes", adminOnly: true },
       ]
     }
   ];
-
-
 
 interface DesktopSidebarProps {
   collapsed?: boolean;
@@ -64,7 +62,7 @@ interface DesktopSidebarProps {
 
 const DesktopSidebar = ({ collapsed = false, onToggle }: DesktopSidebarProps) => {
   const location = useLocation();
-  const { isAdmin, isGerente, isVisitor, signOut, profile, user, routinePermissions, unreadAnnouncements } = useAuth();
+  const { isAdmin, isAdminCCM, isGerente, isVisitor, signOut, profile, user, routinePermissions, unreadAnnouncements } = useAuth();
   const { theme } = useTheme();
   const [totalUnread, setTotalUnread] = useState(0);
 
@@ -76,8 +74,12 @@ const DesktopSidebar = ({ collapsed = false, onToggle }: DesktopSidebarProps) =>
         const LS_READ_KEY = "chat_read_timestamps";
         const readTs: Record<string, string> = JSON.parse(localStorage.getItem(LS_READ_KEY) || "{}");
 
+        // Only fetch if user.id is a real UUID
+        const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!user.id || !UUID_RE.test(user.id)) return;
+
         // Check direct messages & group messages locally using API
-        const { data: allMsgs } = await api.get('/messages');
+        const { data: allMsgs } = await api.get(`/messages/user/${user.id}`);
         const msgs = allMsgs || [];
 
         const directUnread = new Set<string>();

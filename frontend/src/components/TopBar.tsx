@@ -14,8 +14,22 @@ const TopBar = ({ onToggleSidebar }: TopBarProps) => {
   const { isAdmin, isAdminCCM, isGerente, isVisitor, profile, unreadAnnouncements } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [notifEnabled, setNotifEnabled] = useState(
-    typeof window !== "undefined" && "Notification" in window && (window as any).Notification.permission === "granted"
+    typeof window !== "undefined" && "Notification" in window && (window as any).Notification.permission === "granted" && localStorage.getItem("notify_enabled") === "true"
   );
+
+  const handleNotifToggle = async () => {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    if (!notifEnabled) {
+      const perm = await (window as any).Notification.requestPermission();
+      if (perm === "granted") {
+        setNotifEnabled(true);
+        localStorage.setItem("notify_enabled", "true");
+      }
+    } else {
+      setNotifEnabled(false);
+      localStorage.setItem("notify_enabled", "false");
+    }
+  };
 
   const roleLabel = isAdminCCM
     ? "ADM CCM"
@@ -37,18 +51,8 @@ const TopBar = ({ onToggleSidebar }: TopBarProps) => {
     ? "bg-orange-500/10 text-orange-600 border-orange-300/30"
     : "bg-muted text-muted-foreground border-border";
 
-  const handleNotifToggle = async () => {
-    if (typeof window === "undefined" || !("Notification" in window)) return;
-    if (!notifEnabled) {
-      const perm = await (window as any).Notification.requestPermission();
-      if (perm === "granted") setNotifEnabled(true);
-    } else {
-      setNotifEnabled(false);
-    }
-  };
-
-  const avatarUrl = profile?.avatar_url;
-  const initials = (profile?.full_name || "M").charAt(0).toUpperCase();
+  const avatarUrl = profile?.avatarUrl;
+  const initials = (profile?.fullName || "M").charAt(0).toUpperCase();
 
   return (
     <header className="sticky top-0 z-40 h-14 border-b bg-sidebar/95 backdrop-blur-sm flex items-center px-3 gap-2 shadow-sm">
@@ -124,7 +128,7 @@ const TopBar = ({ onToggleSidebar }: TopBarProps) => {
             {avatarUrl ? (
               <img
                 src={avatarUrl}
-                alt={profile?.full_name || "Avatar"}
+                alt={profile?.fullName || "Avatar"}
                 className="h-full w-full object-cover"
               />
             ) : (
@@ -133,7 +137,7 @@ const TopBar = ({ onToggleSidebar }: TopBarProps) => {
           </div>
           <div className="flex flex-col items-start leading-none gap-0.5 max-w-[120px]">
             <span className="hidden sm:block text-xs font-bold text-sidebar-foreground truncate w-full">
-              {profile?.full_name || "Membro"}
+              {profile?.fullName}
             </span>
             {profile?.username && (
               <span className="hidden sm:block text-[9px] text-muted-foreground truncate w-full font-medium">

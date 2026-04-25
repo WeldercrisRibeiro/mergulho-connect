@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { safeFormatMonth, safeFormatDay, safeFormatTime } from "@/lib/dateUtils";
 
 const HomePage = () => {
-  const { profile, user, isVisitor, isAdmin, userGroupIds, routinePermissions } = useAuth();
+  const { profile, user, isVisitor, isAdmin, isAdminCCM, userGroupIds, routinePermissions } = useAuth();
   const { skin } = useTheme();
 
   const { data: myActiveCheckin } = useQuery({
@@ -22,7 +22,7 @@ const HomePage = () => {
       if (!user) return null;
       // Backend: we must get all and filter locally if the endpoint doesn't support complex params yet
       const { data } = await api.get("/kids-checkins", { params: { status: "active" } });
-      const active = data?.find((c: any) => c.guardian_id === user.id);
+      const active = data?.find((c: any) => c.guardianId === user.id || c.guardian_id === user.id);
       return active || null;
     },
     enabled: !!user,
@@ -71,7 +71,7 @@ const HomePage = () => {
   const { data: latestDevotional } = useQuery({
     queryKey: ["latest-devotional"],
     queryFn: async () => {
-      const statuses = isAdmin ? ["published", "scheduled"] : ["published"];
+      const statuses = isAdmin ? ["publicado", "agendado"] : ["publicado"];
       const { data } = await api.get("/devotionals", { params: { status: statuses.join(',') } });
       const valid = (data || []).filter((d: any) => new Date(d.publishDate) <= new Date());
       return valid[0] || null;
@@ -91,7 +91,7 @@ const HomePage = () => {
                 BEM-VINDO AO MERGULHO CONNECT
               </p>
               <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight z-20 relative">
-                Olá, {profile?.full_name?.split(' ')[0] || "Querido Membro"}! 👋
+                Olá, {profile?.fullName?.split(' ')[0] || "Membro"}! 👋
               </h1>
               <p className="text-blue-100/80 mt-3 text-lg font-medium relative z-20">
                 Sua vida cristã em um só lugar.
@@ -143,12 +143,12 @@ const HomePage = () => {
                 <div className="flex-1 text-center md:text-left">
                   <Badge className="bg-emerald-500 hover:bg-emerald-600 border-0 mb-3 uppercase tracking-tighter">Check-in Ativo</Badge>
                   <h3 className="text-2xl font-black text-emerald-900 dark:text-emerald-300 leading-none mb-2">
-                    {myActiveCheckin.child_name?.toUpperCase()}
+                    {(myActiveCheckin.childName || myActiveCheckin.child_name || "").toUpperCase()}
                   </h3>
                   <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-emerald-700 dark:text-emerald-400 font-black text-lg">
-                    TOKEN: {myActiveCheckin.validation_token}
+                    TOKEN: {myActiveCheckin.validationToken || myActiveCheckin.validation_token}
                   </div>
-                  {myActiveCheckin.call_requested && (
+                  {(myActiveCheckin.callRequested || myActiveCheckin.call_requested) && (
                     <div className="mt-4 p-3 bg-rose-500 text-white rounded-xl flex items-center gap-2 animate-bounce shadow-lg">
                       <Phone className="h-5 w-5 fill-white" />
                       <span className="font-bold text-sm text-center">ATENÇÃO: Favor comparecer ao Kids!</span>
@@ -169,10 +169,11 @@ const HomePage = () => {
             { icon: MessageCircle, label: "Chat", path: "/chat", color: skin !== "default" ? "bg-primary text-white" : "bg-brand-navy text-white", routine: "chat" },
             { icon: Users, label: "Membros", path: "/membros", color: skin !== "default" ? "bg-primary text-white" : "bg-brand-cyan text-white", adminOnly: true, routine: "membros" },
             { icon: ShieldCheck, label: "Check-in", path: "/checkin-kids", color: skin !== "default" ? "bg-primary text-white" : "bg-brand-navy text-white", adminOnly: true, routine: "kids" },
-            { icon: Megaphone, label: "Avisos", path: "/Disparos", color: skin !== "default" ? "bg-primary text-white" : "bg-brand-charcoal text-white", routine: "Disparos" },
+            { icon: Megaphone, label: "Avisos", path: "/Disparos", color: skin !== "default" ? "bg-primary text-white" : "bg-brand-charcoal text-white", routine: "Disparos" ,adminOnly: true},
             { icon: BarChart3, label: "Relatórios", path: "/relatorios", color: skin !== "default" ? "bg-primary text-white" : "bg-brand-cyan text-white", adminOnly: true, routine: "relatorios" },
-          ].filter(item => {
+          ].filter((item: any) => {
             if (isVisitor) return ["/agenda", "/devocionais"].includes(item.path);
+            if (item.path === "/membros" && isAdminCCM) return false;
             if (item.adminOnly && !isAdmin) return false;
             if (item.routine && !isAdmin && routinePermissions[item.routine] === false) return false;
             return true;
@@ -211,7 +212,7 @@ const HomePage = () => {
                     </div>
                     <p className="text-sm text-muted-foreground italic">"{notice.content}"</p>
                     <p className="text-[10px] text-muted-foreground font-medium">
-                      Por {notice.profiles?.full_name} • {safeFormatTime(notice.created_at)}
+                      Por {notice.author?.profile?.fullName || notice.profiles?.fullName || notice.profiles?.full_name} • {safeFormatTime(notice.createdAt || notice.created_at)}
                     </p>
                   </CardContent>
                 </Card>
@@ -231,13 +232,13 @@ const HomePage = () => {
                 nextEvents.map((event) => (
                   <Card key={event.id} className="border-0 shadow-lg flex items-stretch overflow-hidden group">
                     <div className="bg-primary/5 w-16 md:w-20 flex flex-col items-center justify-center border-r font-bold">
-                      <span className="text-xs text-muted-foreground uppercase">{safeFormatMonth(event.event_date)}</span>
-                      <span className="text-2xl text-primary">{safeFormatDay(event.event_date)}</span>
+                      <span className="text-xs text-muted-foreground uppercase">{safeFormatMonth(event.eventDate || event.event_date)}</span>
+                      <span className="text-2xl text-primary">{safeFormatDay(event.eventDate || event.event_date)}</span>
                     </div>
                     <div className="p-4 flex-1">
                       <h4 className="font-bold text-base group-hover:text-primary transition-colors">{event.title}</h4>
                       <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1 font-bold">{safeFormatTime(event.event_date)}</span>
+                        <span className="flex items-center gap-1 font-bold">{safeFormatTime(event.eventDate || event.event_date)}</span>
                         {event.location && <span>• {event.location}</span>}
                       </div>
                     </div>

@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import ErrorBoundary from "./components/ErrorBoundary.tsx";
 import "./index.css";
+import "./styles/leaflet-custom.css";
 
 // ── Segurança: suprime console em produção ───────────────────────────────────
 // O esbuild.drop já remove console.* do bundle, mas esta camada extra garante

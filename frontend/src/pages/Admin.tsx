@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -101,24 +101,13 @@ const AdminGroups = () => {
 
     setUploadingId(activeGroupForUpload);
     try {
-      const ext = file.name.split(".").pop();
-      const fileName = `group_${activeGroupForUpload}_${Date.now()}.${ext}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from("group-icons")
-        .upload(fileName, file, { upsert: true });
+      const formData = new FormData();
+      formData.append("file", file);
 
-      if (uploadError) throw uploadError;
+      const { data: uploadRes } = await api.post("/upload", formData);
+      const publicUrl = uploadRes.url;
 
-      const { data: urlData } = supabase.storage.from("group-icons").getPublicUrl(fileName);
-      const publicUrl = urlData.publicUrl;
-
-      const { error: updateError } = await supabase
-        .from("groups")
-        .update({ icon: publicUrl })
-        .eq("id", activeGroupForUpload);
-
-      if (updateError) throw updateError;
+      await api.patch(`/groups/${activeGroupForUpload}`, { icon: publicUrl });
 
       queryClient.invalidateQueries({ queryKey: ["admin-groups"] });
       toast({ title: "Ícone atualizado!" });
@@ -231,11 +220,11 @@ const AdminEvents = () => {
       const payload = {
         title,
         description: desc || null,
-        event_date: new Date(date).toISOString(),
+        eventDate: new Date(date).toISOString(),
         location: location || null,
-        is_general: isGeneral === "true",
-        group_id: isGeneral === "true" ? null : groupId || null,
-        created_by: user!.id,
+        isGeneral: isGeneral === "true",
+        groupId: isGeneral === "true" ? null : groupId || null,
+        createdBy: user!.id,
       };
 
       if (editingEvent) {
@@ -276,11 +265,11 @@ const AdminEvents = () => {
     setTitle(ev.title);
     setDesc(ev.description || "");
     setLocation(ev.location || "");
-    setIsGeneral(ev.is_general ? "true" : "false");
-    setGroupId(ev.group_id || "");
+    setIsGeneral(ev.isGeneral ? "true" : "false");
+    setGroupId(ev.groupId || "");
 
-    if (ev.event_date) {
-      const d = new Date(ev.event_date);
+    if (ev.eventDate) {
+      const d = new Date(ev.eventDate);
       d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
       setDate(d.toISOString().slice(0, 16));
     }
@@ -349,16 +338,16 @@ const AdminEvents = () => {
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <p className="font-semibold">{ev.title}</p>
-                  <Badge variant={ev.is_general ? "default" : "secondary"} className="text-[10px]">
-                    {ev.is_general ? "Geral" : ((ev.groups as any)?.name || "Grupo")}
+                  <Badge variant={ev.isGeneral ? "default" : "secondary"} className="text-[10px]">
+                    {ev.isGeneral ? "Geral" : ((ev.groups as any)?.name || "Grupo")}
                   </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1 truncate max-w-sm">
                   {ev.description}
                 </p>
-                {ev.event_date && (
+                {ev.eventDate && (
                   <p className="text-xs font-mono text-muted-foreground/60 mt-1">
-                    {new Date(ev.event_date).toLocaleString("pt-BR")}
+                    {new Date(ev.eventDate).toLocaleString("pt-BR")}
                   </p>
                 )}
               </div>
@@ -405,7 +394,7 @@ const AdminDevotionals = () => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [mediaUrl, setMediaUrl] = useState("");
-  const [status, setStatus] = useState("published");
+  const [status, setStatus] = useState("publicado");
   const [publishDate, setPublishDate] = useState("");
 
   const { data: devotionals } = useQuery({
@@ -421,10 +410,10 @@ const AdminDevotionals = () => {
       const payload = {
         title,
         content,
-        media_url: mediaUrl || null,
+        mediaUrl: mediaUrl || null,
         status,
-        publish_date: publishDate ? new Date(publishDate).toISOString() : new Date().toISOString(),
-        author_id: user!.id,
+        publishDate: publishDate ? new Date(publishDate).toISOString() : new Date().toISOString(),
+        authorId: user!.id,
       };
 
       if (editingDev) {
@@ -462,12 +451,12 @@ const AdminDevotionals = () => {
     setEditingDev(dev);
     setTitle(dev.title);
     setContent(dev.content);
-    setMediaUrl(dev.media_url || "");
+    setMediaUrl(dev.mediaUrl || "");
     setStatus(dev.status);
 
     // adjust date for local input
-    if (dev.publish_date) {
-      const d = new Date(dev.publish_date);
+    if (dev.publishDate) {
+      const d = new Date(dev.publishDate);
       d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
       setPublishDate(d.toISOString().slice(0, 16));
     }
@@ -492,13 +481,13 @@ const AdminDevotionals = () => {
         <Select value={status} onValueChange={setStatus}>
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="published">Publicar agora</SelectItem>
-            <SelectItem value="scheduled">Agendar</SelectItem>
-            <SelectItem value="draft">Rascunho</SelectItem>
+            <SelectItem value="publicado">Publicar agora</SelectItem>
+            <SelectItem value="agendado">Agendar</SelectItem>
+            <SelectItem value="rascunho">Rascunho</SelectItem>
           </SelectContent>
         </Select>
       </div>
-      {status === "scheduled" && (
+      {status === "agendado" && (
         <div className="space-y-2">
           <Label>Data de Publicação</Label>
           <Input type="datetime-local" value={publishDate} onChange={(e) => setPublishDate(e.target.value)} />
@@ -528,16 +517,16 @@ const AdminDevotionals = () => {
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <p className="font-semibold">{dev.title}</p>
-                  <Badge variant={dev.status === "published" ? "default" : "secondary"} className="text-[10px]">
+                  <Badge variant={dev.status === "publicado" ? "default" : "secondary"} className="text-[10px]">
                     {dev.status}
                   </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1 truncate max-w-sm">
                   {dev.content}
                 </p>
-                {dev.publish_date && (
+                {dev.publishDate && (
                   <p className="text-xs font-mono text-muted-foreground/60 mt-1">
-                    Publica em: {new Date(dev.publish_date).toLocaleString("pt-BR")}
+                    Publica em: {new Date(dev.publishDate).toLocaleString("pt-BR")}
                   </p>
                 )}
               </div>
@@ -557,7 +546,7 @@ const AdminDevotionals = () => {
       <Dialog open={!!editingDev} onOpenChange={(val) => {
         if (!val) {
           setEditingDev(null);
-          setTitle(""); setContent(""); setMediaUrl(""); setPublishDate(""); setStatus("published");
+          setTitle(""); setContent(""); setMediaUrl(""); setPublishDate(""); setStatus("publicado");
         }
       }}>
         <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
@@ -601,66 +590,44 @@ const AdminMembers = () => {
   const { data: members } = useQuery({
     queryKey: ["admin-members"],
     queryFn: async () => {
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("*")
-        .order("full_name");
+      const { data: profiles } = await api.get("/profiles");
 
       const { data: roles } = await api.get("/user-roles");
       const { data: mgs } = await api.get("/member-groups");
 
       return (profiles || []).map((p) => ({
         ...p,
-        roles: (roles || []).filter((r) => r.user_id === p.user_id),
-        groups: (mgs || []).filter((mg) => mg.user_id === p.user_id).map((mg) => (mg.groups as any)?.name).filter(Boolean),
-        group_ids: (mgs || []).filter((mg) => mg.user_id === p.user_id).map((mg) => mg.group_id),
+        roles: (roles || []).filter((r) => r.userId === p.userId),
+        groups: (mgs || []).filter((mg) => mg.userId === p.userId).map((mg) => (mg.groups as any)?.name).filter(Boolean),
+        groupIds: (mgs || []).filter((mg) => mg.userId === p.userId).map((mg) => mg.groupId),
       }));
     },
   });
 
   const handleEdit = (m: any) => {
     setEditingMember(m);
-    setEditName(m.full_name || "");
-    setEditPhone(formatPhoneForDisplay(m.whatsapp_phone || ""));
+    setEditName(m.fullName || "");
+    setEditPhone(formatPhoneForDisplay(m.whatsappPhone || ""));
     
     // Suggest name slug if current username is empty or just a phone number
     const isPhoneLike = /^\d{8,}$/.test(m.username || "");
-    const nameSlug = (m.full_name || "").trim().toLowerCase().replace(/\s+/g, ".");
+    const nameSlug = (m.fullName || "").trim().toLowerCase().replace(/\s+/g, ".");
     setEditUsername(m.username && !isPhoneLike ? m.username : (nameSlug || m.username || ""));
     
     setEditRole(m.roles?.[0]?.role || "membro");
-    setSelectedGroups(m.group_ids || []);
+    setSelectedGroups(m.groupIds || []);
     setRemovePhoto(false);
   };
 
   const updateMutation = useMutation({
     mutationFn: async () => {
-      if (!editingMember) return;
-      const phoneDigits = editPhone.replace(/\D/g, "");
-      const cleanUsername = (editUsername || "").trim().toLowerCase().replace("@ccmergulho.com", "").replace(/\s+/g, ".") || phoneDigits;
-
-      const { error: pErr } = await supabase.from("profiles").update({ 
-        full_name: editName, 
-        whatsapp_phone: normalizePhoneForDB(editPhone),
+      await api.patch(`/admin/users/${editingMember.userId}`, {
+        fullName: editName,
+        whatsappPhone: normalizePhoneForDB(editPhone),
         username: cleanUsername,
-        ... (removePhoto ? { avatar_url: null } : {})
-      } as any).eq("id", editingMember.id);
-      if (pErr) throw pErr;
-
-      // role
-      const hasRole = editingMember.roles?.length > 0;
-      if (hasRole) {
-        await api.post('/user-roles/upsert', { userId: editingMember.user_id, role: editRole });
-      } else {
-        await api.post('/user-roles/upsert', { userId: editingMember.user_id, role: editRole });
-      }
-
-      // groups
-      await api.delete(`/member-groups/user/${editingMember.user_id}`);
-      if (selectedGroups.length > 0) {
-        const inserts = selectedGroups.map(gid => ({ user_id: editingMember.user_id, group_id: gid }));
-        for (const ins of inserts) await api.post("/member-groups", { userId: ins.user_id, groupId: ins.group_id });
-      }
+        role: editRole,
+        groups: selectedGroups.map(gid => ({ id: gid, role: "member" }))
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-members"] });
@@ -674,25 +641,7 @@ const AdminMembers = () => {
 
   const deleteMemberMutation = useMutation({
     mutationFn: async (m: any) => {
-      // Clean up all related data first
-      await api.delete(`/member-groups/user/${m.user_id}`);
-      await api.delete(`/user-roles/${m.user_id}`);
-      
-      
-      
-      // Delete profile
-      await api.delete(`/profiles/${m.user_id}`); const error = null;
-      if (error) throw error;
-
-      // Try to delete from auth user via RPC
-      try { 
-        await (api.post("/auth/admin-manage-user", { 
-          _delete: true, 
-          target_user_id: m.user_id 
-        }) as any); 
-      } catch (err) {
-        console.warn("Auth user deletion skipped or failed:", err);
-      }
+      await api.delete(`/admin/users/${m.userId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-members"] });
@@ -702,15 +651,7 @@ const AdminMembers = () => {
 
   const resetPasswordMutation = useMutation({
     mutationFn: async (m: any) => {
-      const login = m.username || m.whatsapp_phone?.replace(/\D/g, "");
-      const email = (login + "@ccmergulho.com").toLowerCase();
-      
-      await api.post("/auth/admin-manage-user", {
-        email,
-        password: "123456",
-        target_user_id: m.user_id
-      });
-      if (error) throw error;
+      await api.post(`/admin/users/${m.userId}/reset-password`, { password: "123456" });
     },
     onSuccess: () => {
       setResettingPasswordMember(null);
@@ -726,36 +667,19 @@ const AdminMembers = () => {
 
   const createMemberMutation = useMutation({
     mutationFn: async () => {
-      const email = editPhone.replace(/\D/g, "") + "@ccmergulho.com";
-      const payload = {
+      const phoneDigits = editPhone.replace(/\D/g, "");
+      const cleanUsername = (editUsername || "").trim().toLowerCase().replace(/\s+/g, ".") || phoneDigits;
+      const email = cleanUsername + "@ccmergulho.com";
+      
+      await api.post("/admin/users", {
         email,
         password: "123456",
-        raw_user_meta_data: { full_name: editName, whatsapp_phone: normalizePhoneForDB(editPhone) }
-      };
-
-      const { data } = await api.post("/auth/admin-create-user", payload); const error = null;
-      if (error) throw error;
-
-      const newUserId = data as any as string;
-      const username = editPhone.replace(/\D/g, "");
-
-      // Force update profiles to ensure username and phone are stored
-      await supabase.from("profiles").update({ 
-        full_name: editName, 
-        whatsapp_phone: normalizePhoneForDB(editPhone), 
-        username 
-      } as any).eq("user_id", newUserId);
-
-      if (editRole === "admin_ccm" && !isAdminCCM) {
-        throw new Error("Apenas ADM CCM pode criar outros ADM CCM.");
-      }
-      
-      await api.post("/user-roles/upsert", { userId: newUserId, role: editRole });
-
-      if (selectedGroups.length > 0) {
-        const inserts = selectedGroups.map(gid => ({ user_id: newUserId, group_id: gid }));
-        for (const ins of inserts) await api.post("/member-groups", { userId: ins.user_id, groupId: ins.group_id });
-      }
+        fullName: editName,
+        whatsappPhone: normalizePhoneForDB(editPhone),
+        username: cleanUsername,
+        role: editRole,
+        groups: selectedGroups.map(gid => ({ id: gid, role: "member" }))
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-members"] });
@@ -788,7 +712,7 @@ const AdminMembers = () => {
                 {/* Full Name specialized row to prevent truncation */}
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="font-black text-base text-foreground uppercase tracking-tight truncate">
-                    {m.full_name || "Sem nome"}
+                    {m.fullName || "Sem nome"}
                   </h3>
                 </div>
                 
@@ -796,7 +720,7 @@ const AdminMembers = () => {
                 <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
                   <div className="flex items-center gap-1 bg-background/50 px-2 py-0.5 rounded-lg border border-border/10">
                     <Phone className="h-3 w-3" />
-                    <span>{formatPhoneForDisplay(m.whatsapp_phone || "")}</span>
+                    <span>{formatPhoneForDisplay(m.whatsappPhone || "")}</span>
                   </div>
                   
                   {/* Smart Display Username */}
@@ -848,7 +772,7 @@ const AdminMembers = () => {
                   size="icon"
                   className="hover:bg-destructive/10"
                   onClick={() => {
-                    if (window.confirm(`Tem certeza que deseja excluir ${m.full_name || 'este membro'}?`)) {
+                    if (window.confirm(`Tem certeza que deseja excluir ${m.fullName || 'este membro'}?`)) {
                       deleteMemberMutation.mutate(m);
                     }
                   }}
@@ -927,7 +851,7 @@ const AdminMembers = () => {
               </div>
             </div>
 
-            {isAdminCCM && editingMember?.avatar_url && !removePhoto && (
+            {isAdminCCM && editingMember?.avatarUrl && !removePhoto && (
                <div className="pt-2">
                  <Button 
                    variant="outline" 
@@ -1027,7 +951,7 @@ const AdminMembers = () => {
       <ConfirmDialog
         open={!!resettingPasswordMember}
         title="Resetar Senha"
-        description={`Deseja resetar a senha de ${resettingPasswordMember?.full_name}? A senha voltará para o padrão: 123456`}
+        description={`Deseja resetar a senha de ${resettingPasswordMember?.fullName}? A senha voltará para o padrão: 123456`}
         confirmLabel="Resetar"
         variant="default"
         onConfirm={() => resetPasswordMutation.mutate(resettingPasswordMember)}
@@ -1051,24 +975,21 @@ const AdminMessages = () => {
 
   const approveMutation = useMutation({
     mutationFn: async (m: any) => {
-      const email = m.phone.replace(/\D/g, "") + "@ccmergulho.com";
-      const payload = {
+      const phoneDigits = m.phone.replace(/\D/g, "");
+      const email = phoneDigits + "@ccmergulho.com";
+      
+      await api.post("/admin/users", {
         email,
         password: "123456",
-        raw_user_meta_data: { full_name: m.name, whatsapp_phone: normalizePhoneForDB(m.phone) }
-      };
-
-      const { data } = await api.post("/auth/admin-create-user", payload); const error = null;
-      if (error) throw error;
-
-      const newUserId = data as any as string;
-
-      // Definy default role
-      await api.post("/user-roles/upsert", { userId: newUserId, role: "membro" });
+        fullName: m.name,
+        whatsappPhone: normalizePhoneForDB(m.phone),
+        username: phoneDigits,
+        role: "membro",
+        groups: []
+      });
 
       // Deleta a mensagem
-      await api.delete(`/contact-messages/${m.id}`); const delErr = null;
-      if (delErr) throw delErr;
+      await api.delete(`/contact-messages/${m.id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-messages"] });
@@ -1129,9 +1050,9 @@ const AdminMessages = () => {
                   <p className="font-semibold">{m.name}</p>
                   <p className="text-sm font-medium text-primary mt-1">Whatsapp: {m.phone}</p>
                 </div>
-                {m.created_at && (
+                {m.createdAt && (
                   <span className="text-xs text-muted-foreground">
-                    {new Date(m.created_at).toLocaleDateString("pt-BR")}
+                    {new Date(m.createdAt).toLocaleDateString("pt-BR")}
                   </span>
                 )}
               </div>

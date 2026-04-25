@@ -72,14 +72,14 @@ const Volunteers = () => {
 
       return data.map((s: any) => ({
         ...s,
-        item_user_id: s.itemUserId || s.item_user_id,
-        volunteer_id: s.volunteerId || s.volunteer_id,
-        group_id: s.groupId || s.group_id,
-        schedule_date: s.scheduleDate || s.schedule_date,
-        role_function: s.roleFunction || s.role_function,
-        created_by: s.createdBy || s.created_by,
-        profiles: { full_name: s.user?.profile?.fullName || s.profiles?.full_name || '—' },
-        groups: { name: s.group?.name || s.groups?.name || 'Geral' },
+        itemUserId: s.itemUserId,
+        volunteerId: s.volunteerId,
+        groupId: s.groupId,
+        scheduleDate: s.scheduleDate,
+        roleFunction: s.roleFunction,
+        createdBy: s.createdBy,
+        profiles: { fullName: s.user?.profile?.fullName || '—' },
+        groups: { name: s.group?.name || 'Geral' },
       }));
     },
   });
@@ -113,25 +113,25 @@ const Volunteers = () => {
       if (scheduleGroupId === "general") {
         const { data } = await api.get('/profiles');
         return (data || []).map((p: any) => ({
-          user_id: p.userId || p.user_id,
-          profiles: { full_name: p.fullName || p.full_name }
+          userId: p.userId,
+          profiles: { fullName: p.fullName }
         }));
       }
       const { data: memberGroups } = await api.get('/member-groups', { params: { groupId: scheduleGroupId } });
       if (!memberGroups || memberGroups.length === 0) return [];
-      const userIds = memberGroups.map((m: any) => m.userId || m.user_id);
+      const userIds = memberGroups.map((m: any) => m.userId);
       const { data: allProfiles } = await api.get('/profiles');
       return (allProfiles || [])
-        .filter((p: any) => userIds.includes(p.userId || p.user_id))
+        .filter((p: any) => userIds.includes(p.userId))
         .map((p: any) => ({
-          user_id: p.userId || p.user_id,
-          profiles: { full_name: p.fullName || p.full_name }
+          userId: p.userId,
+          profiles: { fullName: p.fullName }
         }));
     },
     enabled: !!scheduleGroupId,
   });
 
-  const myVolunteer = volunteers?.find((v: any) => (v.userId || v.user_id) === user?.id);
+  const myVolunteer = volunteers?.find((v: any) => v.userId === user?.id);
   const isVolunteer = !!myVolunteer;
   const volunteerStatus = myVolunteer?.status || "pending";
   const isActive = volunteerStatus === "completed" || volunteerStatus === "in_progress";
@@ -183,7 +183,7 @@ const Volunteers = () => {
     mutationFn: async () => {
       const finalGroupId = scheduleGroupId === "general" || !scheduleGroupId ? null : scheduleGroupId;
       const volRecord = volunteers?.find((v: any) =>
-        (v.userId || v.user_id) === scheduleVolunteerId
+        v.userId === scheduleVolunteerId
       );
 
       const payload = {
@@ -224,10 +224,10 @@ const Volunteers = () => {
   const handleOpenSchedule = (s: any = null) => {
     if (s) {
       setEditingSchedule(s);
-      setScheduleDate(s.schedule_date || s.scheduleDate);
-      setScheduleRole(s.role_function || s.roleFunction);
-      setScheduleVolunteerId(s.item_user_id || s.itemUserId);
-      setScheduleGroupId(s.group_id || s.groupId || "");
+      setScheduleDate(s.scheduleDate);
+      setScheduleRole(s.roleFunction);
+      setScheduleVolunteerId(s.itemUserId);
+      setScheduleGroupId(s.groupId || "");
       setCreatingSchedule(true);
     } else {
       setEditingSchedule(null);
@@ -240,8 +240,8 @@ const Volunteers = () => {
   };
 
   const handleOpen = () => {
-    setFullName(profile?.full_name || profile?.fullName || "");
-    setPhone(profile?.whatsapp_phone || profile?.whatsappPhone || "");
+    setFullName(profile?.fullName || "");
+    setPhone(profile?.whatsappPhone || "");
     setAvailability("");
     setInterestAreas([]);
     setCreating(true);
@@ -249,13 +249,13 @@ const Volunteers = () => {
 
   // Matrix Grouping
   const groupedSchedules = schedules?.reduce((acc: any, s: any) => {
-    const key = `${s.schedule_date}_${s.group_id}`;
+    const key = `${s.scheduleDate}_${s.groupId}`;
     if (!acc[key]) {
       acc[key] = {
         id: key,
-        date: s.schedule_date,
-        group_id: s.group_id,
-        group_name: s.groups?.name || "Geral",
+        date: s.scheduleDate,
+        groupId: s.groupId,
+        groupName: s.groups?.name || "Geral",
         assignments: []
       };
     }
@@ -405,19 +405,19 @@ const Volunteers = () => {
                         {format(new Date(group.date + "T12:00:00"), "dd/MM (EEEE)", { locale: ptBR })}
                       </span>
                     </div>
-                    <Badge variant="secondary" className="text-[9px] uppercase tracking-tighter">{group.group_name}</Badge>
+                    <Badge variant="secondary" className="text-[9px] uppercase tracking-tighter">{group.groupName}</Badge>
                   </div>
                   <CardContent className="p-0">
                     <div className="grid grid-cols-1 divide-y divide-dashed">
                       {group.assignments.map((s: any) => (
                         <div key={s.id} className="flex items-center justify-between p-4 bg-card/40">
                           <div className="flex-1">
-                            <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{s.role_function}</p>
+                            <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{s.roleFunction}</p>
                             <p className="font-bold text-base text-primary mr-2">
-                              {s.profiles?.full_name || "—"}
+                              {s.profiles?.fullName || "—"}
                             </p>
                           </div>
-                          {s.volunteer_id && (
+                          {s.volunteerId && (
                             <Badge className="bg-emerald-500 font-bold text-[9px] h-5">VOLUNTÁRIO</Badge>
                           )}
                         </div>
@@ -472,20 +472,20 @@ const Volunteers = () => {
                   <CardContent className="p-4 flex items-start justify-between">
                     <div className="flex-1 min-w-0 mr-4 space-y-1">
                       <p className="font-bold text-sm text-foreground truncate flex items-center gap-2">
-                        <User className="h-4 w-4 text-primary shrink-0" /> {v.fullName || v.full_name}
+                        <User className="h-4 w-4 text-primary shrink-0" /> {v.fullName}
                       </p>
                       {v.phone && <p className="text-[11px] text-muted-foreground font-medium">📱 {v.phone}</p>}
                       <div className="flex flex-wrap gap-1 mt-1">
                         <Badge className={cn("text-[9px] px-2 py-0.5 uppercase tracking-tighter shadow-sm font-black", sc.color)}>
                           <StatusIcon className="h-2.5 w-2.5 mr-1" /> {sc.label}
                         </Badge>
-                        {(v.interestAreas || v.interest_areas)?.map((area: string) => (
+                        {(v.interestAreas)?.map((area: string) => (
                           <Badge key={area} variant="secondary" className="text-[9px] px-2 py-0.5 uppercase font-black tracking-tighter bg-muted/50 border-0">{area}</Badge>
                         ))}
                       </div>
                       {v.availability && <p className="text-[10px] text-muted-foreground mt-1 truncate">📅 {v.availability}</p>}
                       <p className="text-[9px] font-medium text-muted-foreground/60">
-                        Inscrito em {format(new Date(v.createdAt || v.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                        Inscrito em {format(new Date(v.createdAt), "dd/MM/yyyy", { locale: ptBR })}
                       </p>
                     </div>
                     <div className="flex gap-1">
@@ -526,14 +526,14 @@ const Volunteers = () => {
                       {format(new Date(group.date + "T12:00:00"), "dd/MM (EEEE)", { locale: ptBR })}
                     </span>
                   </div>
-                  <Badge variant="outline" className="text-[9px] uppercase tracking-tighter bg-background">{group.group_name}</Badge>
+                  <Badge variant="outline" className="text-[9px] uppercase tracking-tighter bg-background">{group.groupName}</Badge>
                 </div>
                 <div className="divide-y divide-dashed">
                   {group.assignments.map((s: any) => (
                     <div key={s.id} className="flex items-center justify-between p-3 px-4 hover:bg-muted/20 transition-colors">
                       <div className="space-y-1">
-                        <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-wider leading-none mb-1">{s.role_function}</p>
-                        <p className="font-bold text-sm">{s.profiles?.full_name || "—"}</p>
+                        <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-wider leading-none mb-1">{s.roleFunction}</p>
+                        <p className="font-bold text-sm">{s.profiles?.fullName || "—"}</p>
                       </div>
                       <div className="flex gap-1">
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenSchedule(s)}>
@@ -566,7 +566,7 @@ const Volunteers = () => {
       {/* Edit Status Dialog */}
       <Dialog open={!!editingStatus} onOpenChange={v => !v && setEditingStatus(null)}>
         <DialogContent className="sm:max-w-md rounded-3xl border-0 shadow-2xl">
-          <DialogHeader><DialogTitle className="text-xl font-bold">Alterar Status: {editingStatus?.fullName || editingStatus?.full_name}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="text-xl font-bold">Alterar Status: {editingStatus?.fullName}</DialogTitle></DialogHeader>
           <div className="py-6 space-y-4 text-center">
             <div className={cn("h-16 w-16 mx-auto rounded-full flex items-center justify-center mb-2", STATUS_CONFIG[editingStatus?.status || "pending"]?.color)}>
               <User className="h-8 w-8" />
@@ -625,8 +625,8 @@ const Volunteers = () => {
                 </SelectTrigger>
                 <SelectContent>
                   {departmentMembers?.map((m: any) => (
-                    <SelectItem key={m.user_id} value={m.user_id}>
-                      {m.profiles?.full_name}
+                    <SelectItem key={m.userId} value={m.userId}>
+                      {m.profiles?.fullName}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -659,7 +659,7 @@ const Volunteers = () => {
       <ConfirmDialog
         open={!!deleting}
         title="Remover Voluntário"
-        description={`Remover "${deleting?.fullName || deleting?.full_name}" da lista?`}
+        description={`Remover "${deleting?.fullName}" da lista?`}
         confirmLabel="Remover"
         variant="danger"
         onConfirm={() => deleteMutation.mutate(deleting?.id)}

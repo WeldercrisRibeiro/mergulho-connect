@@ -1,0 +1,72 @@
+/* Customização do Leaflet */
+.leaflet-container {
+  font-family: inherit;
+}
+
+.leaflet-control-zoom {
+  border: none !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+  background-color: hsl(var(--background)) !important;
+  color: hsl(var(--primary)) !important;
+  border-radius: 0.5rem !important;
+  border: 1px solid hsl(var(--border)) !important;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.leaflet-control-zoom-in:hover,
+.leaflet-control-zoom-out:hover {
+  background-color: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+}
+
+.leaflet-control-zoom-in {
+  border-bottom: none !important;
+  border-radius: 0.5rem 0.5rem 0 0 !important;
+}
+
+.leaflet-control-zoom-out {
+  border-radius: 0 0 0.5rem 0.5rem !important;
+}
+
+.leaflet-popup-content-wrapper {
+  background-color: hsl(var(--background)) !important;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  line-height: 1.4;
+}
+
+.leaflet-popup-tip {
+  background-color: hsl(var(--background)) !important;
+}
+
+.leaflet-marker-icon {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* Scrollbar customizado */
+.leaflet-container::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.leaflet-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.leaflet-container::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 4px;
+}
+
+.leaflet-container::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--border) / 0.8);
+}

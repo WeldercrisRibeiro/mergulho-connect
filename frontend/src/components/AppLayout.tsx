@@ -3,7 +3,6 @@ import BottomNav from "./BottomNav";
 import DesktopSidebar from "./DesktopSidebar";
 import TopBar from "./TopBar";
 import DevotionalWelcome from "./DevotionalWelcome";
-import { PwaPrompt } from "./PwaPrompt";
 import { useAuth } from "@/contexts/AuthContext";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -43,7 +42,6 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
         <TopBar onToggleSidebar={() => setSidebarCollapsed(c => !c)} />
         <main className="flex-1 pb-20 md:pb-0 relative overflow-auto">
           {children}
-          <PwaPrompt />
         </main>
       </div>
       <BottomNav />

@@ -59,8 +59,8 @@ export const PublicAgenda = () => {
     <div className="space-y-4">
       {events.map((event: any) => {
         const isPaid = event.price > 0;
-        const isComplex = event.event_type === "course" || event.event_type === "conference";
-        const emoji = EVENT_TYPE_EMOJI[event.event_type] || "📌";
+        const isComplex = event.eventType === "course" || event.eventType === "conference";
+        const emoji = EVENT_TYPE_EMOJI[event.eventType] || "📌";
 
         return (
           <Link key={event.id} to="/auth?request=true" className="block focus:outline-none">
@@ -69,13 +69,13 @@ export const PublicAgenda = () => {
             >
               <div className="flex">
                 {/* Color accent bar */}
-                <div className={`w-1.5 shrink-0 ${event.event_type === "conference" ? "bg-purple-500" : event.event_type === "course" ? "bg-blue-500" : "bg-primary"}`} />
+                <div className={`w-1.5 shrink-0 ${event.eventType === "conference" ? "bg-purple-500" : event.eventType === "course" ? "bg-blue-500" : "bg-primary"}`} />
 
                 {/* Banner thumbnail (if exists) */}
-                {event.banner_url && (
+                {event.bannerUrl && (
                   <div className="w-24 h-24 shrink-0 overflow-hidden">
                     <img
-                      src={event.banner_url}
+                      src={event.bannerUrl}
                       alt={event.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
@@ -87,11 +87,11 @@ export const PublicAgenda = () => {
                     <div className="flex-1 min-w-0">
                       {/* Type + Price badges */}
                       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${EVENT_TYPE_COLORS[event.event_type] || EVENT_TYPE_COLORS.simple}`}>
-                          {emoji} {EVENT_TYPE_LABELS[event.event_type] || "Compromisso"}
+                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${EVENT_TYPE_COLORS[event.eventType] || EVENT_TYPE_COLORS.simple}`}>
+                          {emoji} {EVENT_TYPE_LABELS[event.eventType] || "Compromisso"}
                         </span>
                         {/* Badge de departamento para eventos não-gerais que foram tornados públicos */}
-                        {!event.is_general && event.is_public && event.groups?.name && (
+                        {!event.isGeneral && event.isPublic && event.groups?.name && (
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">
                             🏷️ {event.groups.name}
                           </span>
@@ -115,7 +115,7 @@ export const PublicAgenda = () => {
                       <div className="flex items-center gap-1.5 mt-1.5 text-xs text-muted-foreground">
                         <Calendar className="h-3 w-3 shrink-0 text-primary" />
                         <span className="font-medium text-foreground/80">
-                          {safeFormat(event.event_date, "dd/MM/yyyy 'às' HH:mm")}
+                          {safeFormat(event.eventDate, "dd/MM/yyyy 'às' HH:mm")}
                         </span>
                       </div>
 

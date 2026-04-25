@@ -130,7 +130,7 @@ const AuditLogs = () => {
         <Card className="border-0 shadow-lg">
           <CardContent className="p-4 text-center">
             <User className="h-5 w-5 mx-auto text-blue-500 mb-1" />
-            <p className="text-2xl font-bold">{new Set((logs || []).map((l: any) => l.user_id)).size}</p>
+            <p className="text-2xl font-bold">{new Set((logs || []).map((l: any) => l.userId)).size}</p>
             <p className="text-[10px] text-muted-foreground uppercase">Usuários</p>
           </CardContent>
         </Card>
@@ -213,7 +213,7 @@ const AuditLogs = () => {
                             {actionInfo.label}
                           </Badge>
                           <Badge variant="outline" className="text-[10px]">{log.routine}</Badge>
-                          <span className="text-xs font-bold truncate">{log.user_name || log.user_email}</span>
+                          <span className="text-xs font-bold truncate">{log.userName || log.userEmail}</span>
                         </div>
                         {log.details && Object.keys(log.details).length > 0 && (
                           <p className="text-[11px] text-muted-foreground mt-1 font-mono bg-muted/40 rounded px-2 py-1 truncate max-w-md">
@@ -229,12 +229,12 @@ const AuditLogs = () => {
                       <div className="text-right">
                         <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                           <Clock className="h-3 w-3" />
-                          {formatDate(log.created_at)}
+                          {formatDate(log.createdAt || log.created_at || new Date().toISOString())}
                         </div>
-                        {log.device_info && (
+                        {log.deviceInfo && (
                           <div className="flex items-center gap-1 text-[9px] text-muted-foreground mt-0.5">
                             <Monitor className="h-2.5 w-2.5" />
-                            {log.device_info.substring(0, 30)}...
+                            {log.deviceInfo.substring(0, 30)}...
                           </div>
                         )}
                       </div>

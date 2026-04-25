@@ -29,7 +29,8 @@ export function EventNotifyDialog({ event, open, onClose }: EventNotifyDialogPro
 
   useEffect(() => {
     if (event && open) {
-      const date = new Date(event.event_date);
+      const dateStr = event.eventDate || event.event_date;
+      const date = dateStr ? new Date(dateStr) : new Date();
       const formattedDate = date.toLocaleString("pt-BR", {
         day: "2-digit",
         month: "2-digit",
@@ -44,21 +45,24 @@ export function EventNotifyDialog({ event, open, onClose }: EventNotifyDialogPro
         course: "📚",
         conference: "🎤",
       };
-      const emoji = typeEmoji[event.event_type] || "📅";
-      const scope = event.is_general ? "Geral" : (event.groups?.name || "Departamento");
+      const eventType = event.eventType || event.event_type;
+      const emoji = typeEmoji[eventType] || "📅";
+      const isGeneral = event.isGeneral !== undefined ? event.isGeneral : event.is_general;
+      const scope = isGeneral ? "Todos os membros" : (event.groups?.name || event.group?.name || "Departamento");
 
-      let msg = `${emoji} *AVISO: ${event.title}*\n\n`;
-      msg += `🗓 *Data:* ${formattedDate}\n`;
-      if (event.location) msg += `📍 *Local:* ${event.location}\n`;
-      if (event.speakers) msg += `🎙 *Palestrante:* ${event.speakers}\n`;
-      if (event.price > 0) msg += `💰 *Valor:* R$ ${Number(event.price).toFixed(2)}\n`;
-      
+      let msg = `${emoji} *Lembrete : ${event.title}*\n\n`;
+      msg += `🗓 O evento acontece no dia *${formattedDate}*\n`;
+
+      if (event.location) msg += `📍 Será realizado aqui na *${event.location}*\n`;
+      if (event.speakers) msg += `🎙 Quem vai ministrar é *${event.speakers}*\n`;
+      if (event.price > 0) msg += `💰 O valor para participar é *R$ ${Number(event.price).toFixed(2)}*\n`;
+
       if (event.description) {
         msg += `\n📝 ${event.description}\n`;
       }
 
-      msg += `\nQuerido membro, sua presença é muito importante! Não falte! 🙌\n`;
-      msg += `\n_Aviso enviado por: ${user?.full_name || "Mergulho Connect"}_`;
+      msg += `\nQuerido membro, a sua presença faz toda a diferença! 🙌\n`;
+      msg += `\n_Mensagem enviada por: ${user?.full_name || "Mergulho Connect - o nosso App Mergulho"}_`;
       
       setMessage(msg);
     }
@@ -71,24 +75,26 @@ export function EventNotifyDialog({ event, open, onClose }: EventNotifyDialogPro
       formData.append("title", `Aviso: ${event.title}`);
       formData.append("content", message);
       
+      const isGeneral = event.isGeneral !== undefined ? event.isGeneral : event.is_general;
       // Define alvo baseado no evento
-      if (event.is_general) {
+      if (isGeneral) {
         formData.append("type", "general");
       } else {
         formData.append("type", "group");
-        formData.append("target_group_id", event.group_id);
+        formData.append("targetGroupId", event.groupId || event.group_id);
       }
       
       formData.append("priority", "high");
-      formData.append("scheduled_at", scheduledAt);
-      if (user?.id) formData.append("created_by", user.id);
+      formData.append("scheduledAt", scheduledAt);
+      if (user?.id) formData.append("createdBy", user.id);
 
       // Se o evento tem banner, tentamos anexar
-      if (event.banner_url) {
+      const bannerUrl = event.bannerUrl || event.banner_url;
+      if (bannerUrl) {
         try {
-          const response = await fetch(event.banner_url);
+          const response = await fetch(bannerUrl);
           const blob = await response.blob();
-          const ext = event.banner_url.split('.').pop()?.split('?')[0] || 'jpg';
+          const ext = bannerUrl.split('.').pop()?.split('?')[0] || 'jpg';
           const file = new File([blob], `banner.${ext}`, { type: blob.type });
           formData.append("files", file);
         } catch (e) {
@@ -98,8 +104,14 @@ export function EventNotifyDialog({ event, open, onClose }: EventNotifyDialogPro
 
       const res = await fetch("/api/dispatches", { method: "POST", body: formData });
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Falha ao agendar aviso.");
+        let err;
+        try {
+          err = await res.json();
+        } catch (e) {
+          throw new Error("Falha ao agendar aviso.");
+        }
+        const errorMsg = Array.isArray(err.message) ? err.message.join(', ') : err.message;
+        throw new Error(errorMsg || err.error || "Falha ao agendar aviso.");
       }
       return res.json();
     },
@@ -130,7 +142,7 @@ export function EventNotifyDialog({ event, open, onClose }: EventNotifyDialogPro
           <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-2xl border border-blue-100 dark:border-blue-900/50">
             <Info className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
             <p className="text-xs text-blue-700 dark:text-blue-300">
-              O aviso será enviado para <strong>{event?.is_general ? "Todos os Membros" : `Membros do grupo ${event?.groups?.name}`}</strong>. 
+              O aviso será enviado para <strong>{(event?.isGeneral || event?.is_general) ? "Todos os membros" : `Membros do grupo ${event?.groups?.name || event?.group?.name || "sem nome"}`}</strong>.
               Você pode ajustar a mensagem abaixo antes de enviar.
             </p>
           </div>
@@ -145,7 +157,7 @@ export function EventNotifyDialog({ event, open, onClose }: EventNotifyDialogPro
             />
           </div>
           
-          {event?.banner_url && (
+          {((event?.bannerUrl || event?.banner_url)) && (
             <p className="text-[10px] text-muted-foreground flex items-center gap-1">
               🖼️ O banner do evento será anexado automaticamente à mensagem.
             </p>

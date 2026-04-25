@@ -48,7 +48,7 @@ const Groups = () => {
     queryKey: ["all-profiles-groups"],
     queryFn: async () => {
       const { data } = await api.get('/profiles');
-      return (data || []).map((p: any) => ({ user_id: p.userId, full_name: p.fullName }));
+      return (data || []).map((p: any) => ({ userId: p.userId, fullName: p.fullName }));
     },
   });
 
@@ -250,20 +250,20 @@ const Groups = () => {
           </DialogHeader>
           <div className="overflow-y-auto max-h-[50vh] py-4 pr-2 space-y-2 custom-scrollbar">
             {allMembers?.map(m => (
-              <div key={m.user_id} className="flex items-center space-x-3 p-3 rounded-xl hover:bg-muted/50 border border-transparent hover:border-border transition-all group">
+              <div key={m.userId} className="flex items-center space-x-3 p-3 rounded-xl hover:bg-muted/50 border border-transparent hover:border-border transition-all group">
                 <Checkbox
-                  id={`gm-${m.user_id}`}
-                  checked={selectedMembers.includes(m.user_id)}
+                  id={`gm-${m.userId}`}
+                  checked={selectedMembers.includes(m.userId)}
                   onCheckedChange={checked => {
-                    if (checked) setSelectedMembers([...selectedMembers, m.user_id]);
-                    else setSelectedMembers(selectedMembers.filter(id => id !== m.user_id));
+                    if (checked) setSelectedMembers([...selectedMembers, m.userId]);
+                    else setSelectedMembers(selectedMembers.filter(id => id !== m.userId));
                   }}
                   className="rounded-md"
                 />
-                <label htmlFor={`gm-${m.user_id}`} className="text-sm font-semibold cursor-pointer flex-1 group-hover:text-primary transition-colors">
-                  {m.full_name || "Sem nome"}
+                <label htmlFor={`gm-${m.userId}`} className="text-sm font-semibold cursor-pointer flex-1 group-hover:text-primary transition-colors">
+                  {m.fullName || "Sem nome"}
                 </label>
-                {selectedMembers.includes(m.user_id) && (
+                {selectedMembers.includes(m.userId) && (
                   <Badge variant="secondary" className="text-[10px] bg-primary/10 text-primary border-0">membro ativo</Badge>
                 )}
               </div>

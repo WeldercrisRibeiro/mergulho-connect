@@ -25,15 +25,17 @@ const ROUTINES = [
   { id: "Disparos", label: "Disparos", icon: Megaphone, description: "Mural de avisos e notificações" },
 ];
 
-const ROLE_TYPES = [
-  { id: "gerente", label: "Gerente", description: "Líderes de departamento com acesso ampliado", color: "bg-emerald-500" },
-  { id: "pastor", label: "Pastor", description: "Apoio pastoral e gestão de membros", color: "bg-blue-500" },
-  { id: "membro", label: "Membro", description: "Acesso básico às rotinas habilitadas", color: "bg-slate-500" },
-];
-
 const GroupPermissions = () => {
   const queryClient = useQueryClient();
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
+
+  const { data: groups } = useQuery({
+    queryKey: ["all-groups"],
+    queryFn: async () => {
+      const { data } = await api.get('/groups');
+      return data || [];
+    },
+  });
 
   const { data: permissions, isLoading: loadingPerms } = useQuery({
     queryKey: ["all-role-routines"],
@@ -45,7 +47,16 @@ const GroupPermissions = () => {
 
   const toggleMutation = useMutation({
     mutationFn: async ({ roleId, routineKey, enabled }: { roleId: string, routineKey: string, enabled: boolean }) => {
-      await api.post('/group-routines/upsert', { groupId: roleId, routineKey, isEnabled: enabled });
+      // Tenta encontrar registro existente para fazer update, senão cria
+      const existing = permissions?.find((p: any) =>
+        (p.groupId ?? p.group_id) === roleId &&
+        (p.routineKey ?? p.routine_key) === routineKey
+      );
+      if (existing) {
+        await api.patch(`/group-routines/${existing.id}`, { isEnabled: enabled });
+      } else {
+        await api.post('/group-routines', { groupId: roleId, routineKey, isEnabled: enabled });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["all-role-routines"] });
@@ -54,11 +65,16 @@ const GroupPermissions = () => {
     onError: (err: any) => toast({ title: "Erro ao salvar", description: getErrorMessage(err), variant: "destructive" }),
   });
 
-  const selectedRoleConfig = ROLE_TYPES.find(r => r.id === selectedRole);
+  const selectedGroupObj = groups?.find((g: any) => g.id === selectedRole);
 
-  const getPermStatus = (roleId: string, routineKey: string) => {
-    const perm = permissions?.find((p: any) => p.group_id === roleId && p.routine_key === routineKey);
-    return perm ? perm.is_enabled : true;
+  const getPermStatus = (roleId: string, routineKey: string): boolean => {
+    const perm = permissions?.find((p: any) =>
+      (p.groupId ?? p.group_id) === roleId &&
+      (p.routineKey ?? p.routine_key) === routineKey
+    );
+    // Se não houver registro, considera habilitado por padrão
+    if (!perm) return true;
+    return (p => p.isEnabled ?? p.is_enabled ?? true)(perm);
   };
 
   if (loadingPerms) {
@@ -75,7 +91,7 @@ const GroupPermissions = () => {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-8 pb-Safe">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-8 pb-12">
       <header>
         <h1 className="text-3xl font-bold flex items-center gap-2">
           <Shield className="h-8 w-8 text-primary" />
@@ -87,28 +103,31 @@ const GroupPermissions = () => {
       </header>
 
       {/* Role Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {ROLE_TYPES.map((role) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {groups?.map((group: any) => (
           <Card
-            key={role.id}
+            key={group.id}
             className={cn(
-              "cursor-pointer transition-all border-2",
-              selectedRole === role.id ? "border-primary bg-primary/5" : "border-transparent hover:bg-muted/50"
+              "cursor-pointer transition-all hover:shadow-md border-2",
+              selectedRole === group.id ? "border-primary bg-primary/5" : "border-transparent hover:bg-muted/50"
             )}
-            onClick={() => setSelectedRole(role.id)}
+            onClick={() => setSelectedRole(group.id)}
           >
             <CardHeader className="p-4">
               <div className="flex items-center justify-between">
-                <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center text-white", role.color)}>
+                <div className="h-12 w-12 rounded-2xl flex items-center justify-center text-primary bg-primary/10">
                   <Users className="h-6 w-6" />
                 </div>
-                {selectedRole === role.id && <ChevronRight className="h-5 w-5 text-primary" />}
+                {selectedRole === group.id && <ChevronRight className="h-5 w-5 text-primary" />}
               </div>
-              <CardTitle className="mt-3 text-lg">{role.label}</CardTitle>
-              <CardDescription>{role.description}</CardDescription>
+              <CardTitle className="mt-3 text-lg">{group.name}</CardTitle>
+              <CardDescription>{group.description || "Departamento"}</CardDescription>
             </CardHeader>
           </Card>
         ))}
+        {groups?.length === 0 && (
+          <p className="text-muted-foreground text-sm col-span-3">Nenhum departamento cadastrado.</p>
+        )}
       </div>
 
       {/* Permissions Panel */}
@@ -118,7 +137,7 @@ const GroupPermissions = () => {
             <CardHeader className="border-b bg-muted/20 pb-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-xl">Rotinas: {selectedRoleConfig?.label}</CardTitle>
+                  <CardTitle className="text-xl">Rotinas: {selectedGroupObj?.name}</CardTitle>
                   <CardDescription>
                     Ative ou desative os módulos que usuários com este perfil poderão acessar.
                   </CardDescription>
@@ -129,7 +148,7 @@ const GroupPermissions = () => {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:gap-px md:bg-muted/20">
+              <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:gap-px lg:bg-muted/20">
                 {ROUTINES.map((routine) => {
                   const isEnabled = getPermStatus(selectedRole, routine.id);
                   return (

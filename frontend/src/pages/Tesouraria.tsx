@@ -23,29 +23,29 @@ type PaymentType = "dizimo" | "oferta";
 
 interface TreasuryEntry {
   id: string;
-  member_name: string;
+  memberName: string;
   amount: number;
-  payment_type: PaymentType;
-  payment_date: string;
+  paymentType: PaymentType;
+  paymentDate: string;
   notes: string | null;
-  created_by: string;
-  created_at: string;
+  createdBy: string;
+  createdAt: string;
 }
 
 interface CultoReport {
   id: string;
-  report_date: string;
-  report_type: string;
-  total_attendees: number;
-  children_count: number;
-  youth_count: number;
-  monitors_count: number;
-  public_count: number;
+  reportDate: string;
+  reportType: string;
+  totalAttendees: number;
+  childrenCount: number;
+  youthCount: number;
+  monitorsCount: number;
+  publicCount: number;
   notes: string | null;
-  created_by: string;
-  event_id: string | null;
-  escala_data: { role: string; name: string }[] | null;
-  event_title?: string;
+  createdBy: string;
+  eventId: string | null;
+  escalaData: { role: string; name: string }[] | null;
+  eventTitle?: string;
 }
 
 // ─── PIX Copy Button ──────────────────────────────────────────────────────────
@@ -90,7 +90,7 @@ const MemberTesouraria = ({
     queryKey: ["treasury-my-entries", user?.id],
     queryFn: async () => {
       const { data } = await api.get('/treasury-entries', { params: { createdBy: user?.id } });
-      return (data || []).map((e: any) => ({ ...e, member_name: e.memberName, payment_type: e.paymentType, payment_date: e.paymentDate })) as TreasuryEntry[];
+      return data as TreasuryEntry[];
     },
     enabled: !!user?.id,
   });
@@ -119,9 +119,9 @@ const MemberTesouraria = ({
     onError: (err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" }),
   });
 
-  const myTotal = myEntries?.reduce((s, e) => s + e.amount, 0) || 0;
-  const myTithes = myEntries?.filter(e => e.payment_type === "dizimo").reduce((s, e) => s + e.amount, 0) || 0;
-  const myOfferings = myEntries?.filter(e => e.payment_type === "oferta").reduce((s, e) => s + e.amount, 0) || 0;
+  const myTotal = myEntries?.reduce((s, e) => s + Number(e.amount || 0), 0) || 0;
+  const myTithes = myEntries?.filter(e => e.paymentType === "dizimo").reduce((s, e) => s + Number(e.amount || 0), 0) || 0;
+  const myOfferings = myEntries?.filter(e => e.paymentType === "oferta").reduce((s, e) => s + Number(e.amount || 0), 0) || 0;
 
   return (
     <div className="space-y-6">
@@ -199,21 +199,21 @@ const MemberTesouraria = ({
         {myEntries?.map(entry => (
           <Card key={entry.id} className="border-0 shadow-sm rounded-2xl">
             <CardContent className="p-4 flex items-center gap-3">
-              <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${entry.payment_type === "dizimo" ? "bg-primary/10 text-primary" : "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600"}`}>
-                {entry.payment_type === "dizimo" ? <Heart className="h-5 w-5" /> : <DollarSign className="h-5 w-5" />}
+              <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${entry.paymentType === "dizimo" ? "bg-primary/10 text-primary" : "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600"}`}>
+                {entry.paymentType === "dizimo" ? <Heart className="h-5 w-5" /> : <DollarSign className="h-5 w-5" />}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Badge variant={entry.payment_type === "dizimo" ? "default" : "secondary"} className="text-[10px] capitalize">
-                    {entry.payment_type}
+                  <Badge variant={entry.paymentType === "dizimo" ? "default" : "secondary"} className="text-[10px] capitalize">
+                    {entry.paymentType}
                   </Badge>
                   <span className="text-xs text-muted-foreground">
-                    {safeFormat(entry.payment_date + "T12:00:00", "dd/MM/yyyy")}
+                    {safeFormat(entry.paymentDate + "T12:00:00", "dd/MM/yyyy")}
                   </span>
                 </div>
                 {entry.notes && <p className="text-xs text-muted-foreground mt-0.5 truncate italic">{entry.notes}</p>}
               </div>
-              <p className="font-bold text-emerald-600 shrink-0">R$ {entry.amount.toFixed(2)}</p>
+              <p className="font-bold text-emerald-600 shrink-0">R$ {Number(entry.amount || 0).toFixed(2)}</p>
             </CardContent>
           </Card>
         ))}
@@ -302,8 +302,7 @@ const MemberTesouraria = ({
   );
 };
 
-// ─── Admin View ───────────────────────────────────────────────────────────────
-const AdminTesouraria = ({ pixKey, user }: { pixKey: string; user: any }) => {
+const AdminTesouraria = ({ pixKey, user, isAdminCCM }: { pixKey: string; user: any; isAdminCCM: boolean }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { skin } = useTheme();
@@ -322,8 +321,9 @@ const AdminTesouraria = ({ pixKey, user }: { pixKey: string; user: any }) => {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [escala, setEscala] = useState<{ role: string; name: string }[]>([]);
 
-  // Entries filter
+  // Entries
   const [filterType, setFilterType] = useState<"all" | PaymentType>("all");
+  const [deletingEntry, setDeletingEntry] = useState<TreasuryEntry | null>(null);
 
   const { data: events } = useQuery({
     queryKey: ["events-for-reports"],
@@ -337,7 +337,7 @@ const AdminTesouraria = ({ pixKey, user }: { pixKey: string; user: any }) => {
     queryKey: ["treasury-all-entries"],
     queryFn: async () => {
       const { data } = await api.get('/treasury-entries');
-      return (data || []).map((e: any) => ({ ...e, member_name: e.memberName, payment_type: e.paymentType, payment_date: e.paymentDate })) as TreasuryEntry[];
+      return data as TreasuryEntry[];
     },
   });
 
@@ -347,17 +347,17 @@ const AdminTesouraria = ({ pixKey, user }: { pixKey: string; user: any }) => {
       const { data } = await api.get('/culto-reports');
       return (data || []).map((r: any) => ({
         ...r,
-        report_date: r.reportDate,
-        report_type: r.reportType,
-        total_attendees: r.totalAttendees,
-        children_count: r.childrenCount,
-        youth_count: r.youthCount,
-        monitors_count: r.monitorsCount,
-        public_count: r.publicCount,
-        event_id: r.eventId,
-        created_by: r.createdBy,
-        escala_data: r.escalaData,
-        event_title: r.event?.title,
+        reportDate: r.reportDate,
+        reportType: r.reportType,
+        totalAttendees: r.totalAttendees,
+        childrenCount: r.childrenCount,
+        youthCount: r.youthCount,
+        monitorsCount: r.monitorsCount,
+        publicCount: r.publicCount,
+        eventId: r.eventId,
+        createdBy: r.createdBy,
+        escalaData: r.escalaData,
+        eventTitle: r.event?.title,
       })) as CultoReport[];
     },
   });
@@ -377,15 +377,15 @@ const AdminTesouraria = ({ pixKey, user }: { pixKey: string; user: any }) => {
 
   const handleEditReport = (r: CultoReport) => {
     setEditingReport(r);
-    setReportDate(r.report_date);
-    setReportType(r.report_type);
-    setTotalAttendees(r.total_attendees || 0);
-    setChildrenCount(r.children_count || 0);
-    setYouthCount(r.youth_count || 0);
-    setMonitorsCount(r.monitors_count || 0);
+    setReportDate(r.reportDate);
+    setReportType(r.reportType);
+    setTotalAttendees(r.totalAttendees || 0);
+    setChildrenCount(r.childrenCount || 0);
+    setYouthCount(r.youthCount || 0);
+    setMonitorsCount(r.monitorsCount || 0);
     setReportNotes(r.notes || "");
-    setSelectedEventId(r.event_id);
-    setEscala(r.escala_data || []);
+    setSelectedEventId(r.eventId);
+    setEscala(r.escalaData || []);
     setReportOpen(true);
   };
 
@@ -443,6 +443,19 @@ const AdminTesouraria = ({ pixKey, user }: { pixKey: string; user: any }) => {
     setEscala(newEscala);
   };
 
+  const deleteEntryMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/treasury-entries/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["treasury-all-entries"] });
+      queryClient.invalidateQueries({ queryKey: ["treasury-my-entries"] });
+      setDeletingEntry(null);
+      toast({ title: "Contribuição excluída." });
+    },
+    onError: (err: any) => toast({ title: "Erro ao excluir", description: err.message, variant: "destructive" }),
+  });
+
   const deleteReportMutation = useMutation({
     mutationFn: async (id: string) => {
       await api.delete(`/culto-reports/${id}`);
@@ -455,14 +468,14 @@ const AdminTesouraria = ({ pixKey, user }: { pixKey: string; user: any }) => {
   });
 
   // Computed stats
-  const totalTithes = allEntries?.filter(e => e.payment_type === "dizimo").reduce((s, e) => s + e.amount, 0) || 0;
-  const totalOfferings = allEntries?.filter(e => e.payment_type === "oferta").reduce((s, e) => s + e.amount, 0) || 0;
+  const totalTithes = allEntries?.filter(e => e.paymentType === "dizimo").reduce((s, e) => s + Number(e.amount || 0), 0) || 0;
+  const totalOfferings = allEntries?.filter(e => e.paymentType === "oferta").reduce((s, e) => s + Number(e.amount || 0), 0) || 0;
   const totalAmount = totalTithes + totalOfferings;
-  const uniqueTithers = new Set(allEntries?.filter(e => e.payment_type === "dizimo").map(e => e.member_name)).size;
-  const totalPeople = cultoReports?.reduce((s, r) => s + (r.total_attendees || 0), 0) || 0;
+  const uniqueTithers = new Set(allEntries?.filter(e => e.paymentType === "dizimo").map(e => e.memberName)).size;
+  const totalPeople = cultoReports?.reduce((s, r) => s + (r.totalAttendees || 0), 0) || 0;
 
   const filteredEntries = allEntries?.filter(e =>
-    filterType === "all" ? true : e.payment_type === filterType
+    filterType === "all" ? true : e.paymentType === filterType
   ) || [];
 
   return (
@@ -536,22 +549,33 @@ const AdminTesouraria = ({ pixKey, user }: { pixKey: string; user: any }) => {
             {filteredEntries.map(entry => (
               <Card key={entry.id} className="border-0 shadow-sm rounded-2xl">
                 <CardContent className="p-4 flex items-center gap-3">
-                  <div className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 ${entry.payment_type === "dizimo" ? "bg-primary/10 text-primary" : "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600"}`}>
-                    {entry.payment_type === "dizimo" ? <Heart className="h-4 w-4" /> : <DollarSign className="h-4 w-4" />}
+                  <div className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 ${entry.paymentType === "dizimo" ? "bg-primary/10 text-primary" : "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600"}`}>
+                    {entry.paymentType === "dizimo" ? <Heart className="h-4 w-4" /> : <DollarSign className="h-4 w-4" />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm truncate">{entry.member_name || "—"}</p>
+                    <p className="font-semibold text-sm truncate">{entry.memberName || "—"}</p>
                     <div className="flex items-center gap-2">
-                      <Badge variant={entry.payment_type === "dizimo" ? "default" : "secondary"} className="text-[9px] capitalize">
-                        {entry.payment_type}
+                      <Badge variant={entry.paymentType === "dizimo" ? "default" : "secondary"} className="text-[9px] capitalize">
+                        {entry.paymentType}
                       </Badge>
                       <span className="text-[10px] text-muted-foreground">
-                        {safeFormat(entry.payment_date + "T12:00:00", "dd/MM/yyyy")}
+                        {safeFormat(entry.paymentDate + "T12:00:00", "dd/MM/yyyy")}
                       </span>
                     </div>
                     {entry.notes && <p className="text-[10px] text-muted-foreground truncate italic mt-0.5">{entry.notes}</p>}
                   </div>
-                  <p className="font-bold text-emerald-600 shrink-0 text-sm">R$ {entry.amount.toFixed(2)}</p>
+                  <div className="flex items-center gap-1">
+                    <p className="font-bold text-emerald-600 shrink-0 text-sm">R$ {Number(entry.amount || 0).toFixed(2)}</p>
+                    {isAdminCCM && (
+                      <button
+                        onClick={() => setDeletingEntry(entry)}
+                        className="ml-2 p-1.5 rounded-lg text-destructive/60 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        title="Excluir contribuição"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -594,7 +618,7 @@ const AdminTesouraria = ({ pixKey, user }: { pixKey: string; user: any }) => {
                 <CardContent className="p-4 text-center">
                   <Baby className="h-4 w-4 mx-auto text-primary mb-1" />
                   <p className="text-lg font-bold">
-                    {cultoReports?.reduce((s, r) => s + (r.children_count || 0), 0) || 0}
+                    {cultoReports?.reduce((s, r) => s + (r.childrenCount || 0), 0) || 0}
                   </p>
                   <p className="text-[10px] text-muted-foreground">Total Kids</p>
                 </CardContent>
@@ -628,32 +652,32 @@ const AdminTesouraria = ({ pixKey, user }: { pixKey: string; user: any }) => {
                   <div className="flex items-start justify-between">
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <Badge variant="secondary" className="capitalize text-xs">{r.report_type}</Badge>
+                        <Badge variant="secondary" className="capitalize text-xs">{r.reportType}</Badge>
                         <span className="text-sm font-semibold flex items-center gap-1">
                           <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
-                          {safeFormat(r.report_date + "T12:00:00", "dd/MM/yyyy")}
+                          {safeFormat(r.reportDate + "T12:00:00", "dd/MM/yyyy")}
                         </span>
                       </div>
-                      {r.event_title && (
+                      {r.eventTitle && (
                         <p className="text-xs font-bold text-primary flex items-center gap-1">
-                          <CalendarDays className="h-3 w-3" /> {r.event_title}
+                          <CalendarDays className="h-3 w-3" /> {r.eventTitle}
                         </p>
                       )}
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                         <div className="bg-muted/50 rounded-xl p-2 text-center">
-                          <p className="font-bold text-base">{r.total_attendees}</p>
+                          <p className="font-bold text-base">{r.totalAttendees}</p>
                           <p className="text-muted-foreground">Frequência</p>
                         </div>
                         <div className="bg-muted/50 rounded-xl p-2 text-center">
-                          <p className="font-bold text-base">{r.children_count || 0}</p>
+                          <p className="font-bold text-base">{r.childrenCount || 0}</p>
                           <p className="text-muted-foreground">Kids</p>
                         </div>
                         <div className="bg-muted/50 rounded-xl p-2 text-center">
-                          <p className="font-bold text-base">{r.youth_count || 0}</p>
+                          <p className="font-bold text-base">{r.youthCount || 0}</p>
                           <p className="text-muted-foreground">Jovens</p>
                         </div>
                         <div className="bg-muted/50 rounded-xl p-2 text-center">
-                          <p className="font-bold text-base">{r.monitors_count || 0}</p>
+                          <p className="font-bold text-base">{r.monitorsCount || 0}</p>
                           <p className="text-muted-foreground">Monitores</p>
                         </div>
                       </div>
@@ -806,19 +830,29 @@ const AdminTesouraria = ({ pixKey, user }: { pixKey: string; user: any }) => {
         onConfirm={() => deletingReport && deleteReportMutation.mutate(deletingReport.id)}
         onCancel={() => setDeletingReport(null)}
       />
+
+      <ConfirmDialog
+        open={!!deletingEntry}
+        title="Excluir Contribuição"
+        description={`Deseja realmente excluir o ${deletingEntry?.paymentType === "dizimo" ? "dízimo" : "oferta"} de R$ ${Number(deletingEntry?.amount || 0).toFixed(2)} de ${deletingEntry?.memberName}? Esta ação não pode ser desfeita.`}
+        confirmLabel="Excluir"
+        variant="danger"
+        onConfirm={() => deletingEntry && deleteEntryMutation.mutate(deletingEntry.id)}
+        onCancel={() => setDeletingEntry(null)}
+      />
     </div>
   );
 };
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const Tesouraria = () => {
-  const { user, isAdmin, routinePermissions } = useAuth();
+  const { user, isAdmin, isAdminCCM, routinePermissions } = useAuth();
   const { skin } = useTheme();
   
   const { data: siteSettings } = useQuery({
     queryKey: ["site-settings"],
     queryFn: async () => {
-      const { data } = await (supabase as any).from("site_settings").select("*");
+      const { data } = await api.get('/site-settings');
       const settings: Record<string, string> = {};
       (data || []).forEach((s: any) => { settings[s.id] = s.value; });
       return settings;
@@ -856,7 +890,7 @@ const Tesouraria = () => {
         </TabsList>
 
         <TabsContent value="admin" className="pt-4">
-          <AdminTesouraria pixKey={pixKey} user={user} />
+          <AdminTesouraria pixKey={pixKey} user={user} isAdminCCM={isAdminCCM} />
         </TabsContent>
 
         <TabsContent value="membro" className="pt-4">

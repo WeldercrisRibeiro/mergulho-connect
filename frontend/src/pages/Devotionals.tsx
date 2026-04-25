@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { BookOpen, Plus, Edit2, Trash2, Heart, Users, Upload, Mic2, Loader2, MessageCircle } from "lucide-react";
+import { BookOpen, Plus, Edit2, Trash2, Heart, Users, Image as ImageIcon, Video, Loader2, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -37,20 +37,15 @@ async function createDevotionalDispatch(params: {
   formData.append("content", params.content);
   formData.append("type", "devotional");
   formData.append("priority", "normal");
-  formData.append("scheduled_at", params.scheduledAt);
-  if (params.createdBy) formData.append("created_by", params.createdBy);
-  // Envia URL de mídia para o backend baixar e anexar ao disparo
-  if (params.attachmentUrl) formData.append("attachment_url", params.attachmentUrl);
+  formData.append("scheduledAt", params.scheduledAt);
+  if (params.createdBy) formData.append("createdBy", params.createdBy);
+  
+  // Nota: O backend atualmente aceita anexos via upload de arquivos ('files').
+  // A URL da mídia do devocional é enviada aqui, mas para o bot enviar a mídia,
+  // o backend precisaria baixar a URL. Por enquanto, garantimos que o disparo seja criado sem erro 400.
+  if (params.attachmentUrl) formData.append("attachmentUrl", params.attachmentUrl);
 
-  const res = await fetch(`/api/dispatches`, {
-    method: "POST",
-    body: formData,
-  });
-
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.error || `Erro ao criar disparo (${res.status})`);
-  }
+  await api.post("/dispatches", formData);
 }
 
 // ─── Componente principal ─────────────────────────────────────────────────────
@@ -69,15 +64,16 @@ const Devotionals = () => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [mediaUrl, setMediaUrl] = useState("");
+  const [isVideoUpload, setIsVideoUpload] = useState(false);
   const [publishDate, setPublishDate] = useState("");
   const [expirationDate, setExpirationDate] = useState("");
-  const [status, setStatus] = useState("published");
+  const [status, setStatus] = useState("publicado");
   const [isActive, setIsActive] = useState(true);
   // WhatsApp dispatch
   const [sendViaWhatsapp, setSendViaWhatsapp] = useState(false);
   const [signEnabled, setSignEnabled] = useState(false);
 
-  const signatureName: string = profile?.full_name || user?.user_metadata?.full_name || "";
+  const signatureName: string = profile?.fullName || user?.user_metadata?.full_name || "";
 
   const { data: devotionals } = useQuery({
     queryKey: ["devotionals", isAdmin],
@@ -87,12 +83,12 @@ const Devotionals = () => {
       if (!isAdmin) {
         const now = new Date().toISOString();
         return all.filter((d: any) =>
-          d.status === 'published' && d.isActive &&
+          d.status === 'publicado' && d.isActive &&
           d.publishDate <= now &&
           (!d.expirationDate || d.expirationDate > now)
-        ).map((d: any) => ({ ...d, publish_date: d.publishDate, media_url: d.mediaUrl, is_active: d.isActive, expiration_date: d.expirationDate }));
+        );
       }
-      return all.map((d: any) => ({ ...d, publish_date: d.publishDate, media_url: d.mediaUrl, is_active: d.isActive, expiration_date: d.expirationDate }));
+      return all;
     },
   });
 
@@ -124,19 +120,14 @@ const Devotionals = () => {
       if (!likes || likes.length === 0) return [];
       const uids = likes.map((l: any) => l.userId);
       const { data: profiles } = await api.get('/profiles');
-      return (profiles || []).filter((p: any) => uids.includes(p.userId)).map((p: any) => ({ ...p, user_id: p.userId, full_name: p.fullName }));
+      return (profiles || []).filter((p: any) => uids.includes(p.userId)).map((p: any) => ({ ...p, userId: p.userId, fullName: p.fullName }));
     },
     enabled: !!likersDevId,
   });
 
   const likeMutation = useMutation({
     mutationFn: async (devId: string) => {
-      const liked = myLikes?.has(devId);
-      if (liked) {
-        await api.delete('/devotional-likes', { params: { devotionalId: devId, userId: user!.id } });
-      } else {
-        await api.post('/devotional-likes', { devotionalId: devId, userId: user!.id });
-      }
+      await api.post('/devotional-likes/toggle', { devotionalId: devId, userId: user!.id });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-likes"] });
@@ -148,9 +139,10 @@ const Devotionals = () => {
     setTitle("");
     setContent("");
     setMediaUrl("");
+    setIsVideoUpload(false);
     setPublishDate("");
     setExpirationDate("");
-    setStatus("published");
+    setStatus("publicado");
     setIsActive(true);
     setSendViaWhatsapp(false);
     setSignEnabled(false);
@@ -160,18 +152,19 @@ const Devotionals = () => {
     setEditingDev(dev);
     setTitle(dev.title || "");
     setContent(dev.content || "");
-    setMediaUrl(dev.media_url || "");
-    setStatus(dev.status || "published");
-    setIsActive(dev.is_active !== false);
+    setMediaUrl(dev.mediaUrl || "");
+    setIsVideoUpload(dev.isVideoUpload || false);
+    setStatus(dev.status || "publicado");
+    setIsActive(dev.isActive !== false);
     setSendViaWhatsapp(false); // nunca re-dispara na edição por padrão
     setSignEnabled(false);
-    if (dev.publish_date) {
-      const d = new Date(dev.publish_date);
+    if (dev.publishDate) {
+      const d = new Date(dev.publishDate);
       d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
       setPublishDate(d.toISOString().slice(0, 16));
     }
-    if (dev.expiration_date) {
-      const d = new Date(dev.expiration_date);
+    if (dev.expirationDate) {
+      const d = new Date(dev.expirationDate);
       d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
       setExpirationDate(d.toISOString().slice(0, 16));
     } else {
@@ -189,6 +182,7 @@ const Devotionals = () => {
         title,
         content,
         mediaUrl: mediaUrl || null,
+        isVideoUpload,
         status,
         isActive,
         publishDate: scheduledAt,
@@ -272,21 +266,21 @@ const Devotionals = () => {
                     <CardTitle className="text-lg">{dev.title}</CardTitle>
                     <div className="flex items-center gap-2 mt-1">
                       <p className="text-xs text-muted-foreground">
-                        {dev.publish_date &&
-                          format(new Date(dev.publish_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                        {dev.publishDate &&
+                          format(new Date(dev.publishDate), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
                       </p>
                       {isAdmin && (
                         <div className="flex gap-1">
                           <Badge
-                            variant={dev.status === "published" ? "default" : "secondary"}
+                            variant={dev.status === "publicado" ? "default" : "secondary"}
                             className="text-[10px]"
                           >
                             {dev.status}
                           </Badge>
-                          {!dev.is_active && (
+                          {!dev.isActive && (
                             <Badge variant="destructive" className="text-[10px]">Inativo</Badge>
                           )}
-                          {dev.expiration_date && new Date(dev.expiration_date) < new Date() && (
+                          {dev.expirationDate && new Date(dev.expirationDate) < new Date() && (
                             <Badge variant="outline" className="text-[10px] text-orange-500 border-orange-500">
                               Expirado
                             </Badge>
@@ -309,16 +303,22 @@ const Devotionals = () => {
               </CardHeader>
               <CardContent>
                 <p className="whitespace-pre-wrap text-sm text-muted-foreground mb-4">{dev.content}</p>
-                {dev.media_url && (
+                {dev.mediaUrl && (
                   <div className="mt-2 mb-4 rounded-lg overflow-hidden">
-                    {dev.media_url.includes("youtube") || dev.media_url.includes("youtu.be") ? (
+                    {dev.mediaUrl.includes("youtube") || dev.mediaUrl.includes("youtu.be") ? (
                       <iframe
                         className="w-full aspect-video rounded-lg"
-                        src={dev.media_url.replace("watch?v=", "embed/")}
+                        src={dev.mediaUrl.replace("watch?v=", "embed/")}
                         allowFullScreen
                       />
+                    ) : dev.isVideoUpload || (dev.mediaUrl && dev.mediaUrl.match(/\.(mp4|webm|mov)(\?.*)?$/i)) ? (
+                      <video
+                        src={dev.mediaUrl}
+                        controls
+                        className="w-full rounded-lg max-h-[400px]"
+                      />
                     ) : (
-                      <img src={dev.media_url} alt={dev.title} className="w-full rounded-lg" />
+                      <img src={dev.mediaUrl} alt={dev.title} className="w-full rounded-lg" />
                     )}
                   </div>
                 )}
@@ -369,6 +369,7 @@ const Devotionals = () => {
             expirationDate={expirationDate} setExpirationDate={setExpirationDate}
             isActive={isActive} setIsActive={setIsActive}
             mediaUrl={mediaUrl} setMediaUrl={setMediaUrl}
+            isVideoUpload={isVideoUpload} setIsVideoUpload={setIsVideoUpload}
             sendViaWhatsapp={sendViaWhatsapp} setSendViaWhatsapp={setSendViaWhatsapp}
             signEnabled={signEnabled} setSignEnabled={setSignEnabled}
             signatureName={signatureName}
@@ -404,6 +405,7 @@ const Devotionals = () => {
             expirationDate={expirationDate} setExpirationDate={setExpirationDate}
             isActive={isActive} setIsActive={setIsActive}
             mediaUrl={mediaUrl} setMediaUrl={setMediaUrl}
+            isVideoUpload={isVideoUpload} setIsVideoUpload={setIsVideoUpload}
             sendViaWhatsapp={sendViaWhatsapp} setSendViaWhatsapp={setSendViaWhatsapp}
             signEnabled={signEnabled} setSignEnabled={setSignEnabled}
             signatureName={signatureName}
@@ -444,11 +446,11 @@ const Devotionals = () => {
               <p className="text-sm text-muted-foreground text-center py-4">Ninguém curtiu ainda</p>
             )}
             {likers?.map((p: any) => (
-              <div key={p.user_id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/40">
+              <div key={p.userId} className="flex items-center gap-3 p-2 rounded-lg bg-muted/40">
                 <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <span className="text-primary font-bold text-sm">{(p.full_name || "?").charAt(0)}</span>
+                  <span className="text-primary font-bold text-sm">{(p.fullName || "?").charAt(0)}</span>
                 </div>
-                <span className="text-sm font-medium">{p.full_name || "Membro"}</span>
+                <span className="text-sm font-medium">{p.fullName || "Membro"}</span>
               </div>
             ))}
           </div>
@@ -471,6 +473,7 @@ const DevForm = ({
   expirationDate, setExpirationDate,
   isActive, setIsActive,
   mediaUrl, setMediaUrl,
+  isVideoUpload, setIsVideoUpload,
   sendViaWhatsapp, setSendViaWhatsapp,
   signEnabled, setSignEnabled,
   signatureName,
@@ -489,6 +492,7 @@ const DevForm = ({
       formData.append('file', file);
       const { data } = await api.post('/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       setMediaUrl(data.url);
+      if (setIsVideoUpload) setIsVideoUpload(false);
     } catch (err: any) {
       console.error("Upload error:", getErrorMessage(err));
     } finally {
@@ -505,6 +509,7 @@ const DevForm = ({
       formData.append('file', file);
       const { data } = await api.post('/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       setMediaUrl(data.url);
+      if (setIsVideoUpload) setIsVideoUpload(true);
     } catch (err: any) {
       console.error("Upload error:", getErrorMessage(err));
     } finally {
@@ -561,14 +566,14 @@ const DevForm = ({
             <Select value={status} onValueChange={setStatus}>
               <SelectTrigger className="rounded-xl h-11"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="published">Publicar Imediatamente</SelectItem>
-                <SelectItem value="scheduled">Agendar p/ Futuro</SelectItem>
-                <SelectItem value="draft">Manter como Rascunho</SelectItem>
+                <SelectItem value="publicado">Publicar Imediatamente</SelectItem>
+                <SelectItem value="agendado">Agendar p/ Futuro</SelectItem>
+                <SelectItem value="rascunho">Manter como Rascunho</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {(status === "scheduled" || status === "published") && (
+          {(status === "agendado" || status === "publicado") && (
             <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
               <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 Data/Hora de Ativação
@@ -613,7 +618,7 @@ const DevForm = ({
         <div className="flex gap-2">
           <Input
             value={mediaUrl}
-            onChange={(e: any) => setMediaUrl(e.target.value)}
+            onChange={(e: any) => { setMediaUrl(e.target.value); if (setIsVideoUpload) setIsVideoUpload(false); }}
             placeholder="Cole uma URL ou use os botões ao lado"
             className="flex-1 rounded-xl h-11"
           />
@@ -626,7 +631,7 @@ const DevForm = ({
             onClick={() => fileRef.current?.click()}
             disabled={uploading}
           >
-            <Upload className="h-4 w-4" />
+            <ImageIcon className="h-4 w-4" />
           </Button>
           <Button
             type="button"
@@ -635,7 +640,7 @@ const DevForm = ({
             onClick={() => videoRef.current?.click()}
             disabled={uploading}
           >
-            <Mic2 className="h-4 w-4" />
+            <Video className="h-4 w-4" />
           </Button>
         </div>
         {uploading && (
@@ -647,7 +652,7 @@ const DevForm = ({
           <div className="relative mt-2 rounded-xl overflow-hidden border-2 border-background shadow-md bg-muted aspect-video max-h-48 mx-auto">
             {mediaUrl.includes("youtube") || mediaUrl.includes("youtu.be") ? (
               <iframe className="w-full h-full" src={mediaUrl.replace("watch?v=", "embed/")} allowFullScreen />
-            ) : mediaUrl.match(/\.(mp4|webm|mov)/) ? (
+            ) : isVideoUpload || mediaUrl.match(/\.(mp4|webm|mov)(\?.*)?$/i) ? (
               <video src={mediaUrl} controls className="w-full h-full object-cover" />
             ) : (
               <img src={mediaUrl} alt="Preview" className="w-full h-full object-cover" />
@@ -656,7 +661,7 @@ const DevForm = ({
               variant="destructive"
               size="icon"
               className="absolute top-2 right-2 h-7 w-7 rounded-full"
-              onClick={() => setMediaUrl("")}
+              onClick={() => { setMediaUrl(""); if (setIsVideoUpload) setIsVideoUpload(false); }}
             >
               <Trash2 className="h-3.5 w-3.5" />
             </Button>

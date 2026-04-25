@@ -13,6 +13,7 @@ import { useTheme } from "@/components/ThemeProvider";
 import VideoPlayer from "@/components/VideoPlayer";
 import { PublicAgenda } from "@/components/PublicAgenda"; // ajuste o path conforme sua estrutura
 import { TestimonialCarousel } from "@/components/TestimonialCarousel";
+import MapViewer from "@/components/MapViewer";
 
 const Landing = () => {
   const [formData, setFormData] = useState({ name: "", phone: "", subject: "Quero me tornar Membro", message: "" });
@@ -297,9 +298,17 @@ const Landing = () => {
             <div className="flex flex-col space-y-6 lg:border-l lg:pl-16 border-border/50">
               <div>
                 <h3 className="text-2xl font-bold mb-6 flex items-center gap-2"><MapPin className="text-primary" /> Onde Estamos</h3>
-                <div className="w-full h-[250px] md:h-[350px] rounded-3xl overflow-hidden bg-muted/50 border-2 border-white/20 shadow-xl relative group transition-all duration-500 hover:shadow-primary/30 hover:border-primary/50 mb-8">
-                  <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d388.0409256833397!2d-38.58419775850198!3d-3.723572088732412!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x7c74b53c0489361%3A0xb90a07e97b6bb455!2sIgreja%20Crist%C3%A3%20Aba%20Pai!5e0!3m2!1spt-BR!2sbr!4v1775220550750!5m2!1spt-BR!2sbr" width="100%" height="100%" style={{ border: 0 }} allowFullScreen={false} loading="lazy" referrerPolicy="no-referrer-when-downgrade" className="grayscale-[0.3] group-hover:grayscale-0 transition-all duration-700"></iframe>
-                </div>
+                <MapViewer
+                  lat={-3.723844}
+                  lng={-38.584113}
+                  title="Igreja Cristã Aba Pai"
+                  address="Rua Rio Paraguai, 534 - Fortaleza, CE"
+                  height="h-[250px] md:h-[350px]"
+                  zoom={16}
+                  showControls={true}
+                  showOpenInMapsButton={true}
+                  className="mb-8"
+                />
               </div>
 
               <div className="grid sm:grid-cols-2 gap-6">

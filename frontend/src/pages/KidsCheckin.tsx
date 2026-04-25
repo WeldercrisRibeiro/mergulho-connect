@@ -33,13 +33,103 @@ const KidsCheckin = () => {
   const [selectedGuardian, setSelectedGuardian] = useState<any>(null);
   const [showScanner, setShowScanner] = useState(false);
   const [tokenInput, setTokenInput] = useState("");
+  const [callingItem, setCallingItem] = useState<any>(null);
+  const [callMessage, setCallMessage] = useState("");
+  const [retrievalItem, setRetrievalItem] = useState<any>(null);
+  const [retrievalToken, setRetrievalToken] = useState("");
+
+  // Queries
+  const { data: events } = useQuery({
+    queryKey: ["events"],
+    queryFn: async () => {
+      const response = await api.get("/events");
+      return response.data;
+    },
+  });
+
+  const { data: guardians } = useQuery({
+    queryKey: ["guardians", guardianSearch],
+    queryFn: async () => {
+      if (!guardianSearch || guardianSearch.length < 3) return [];
+      const response = await api.get("/profiles");
+      return response.data.filter((p: any) => 
+        p.fullName?.toLowerCase().includes(guardianSearch.toLowerCase()) ||
+        p.whatsappPhone?.includes(guardianSearch)
+      );
+    },
+    enabled: guardianSearch.length >= 3,
+  });
+
+  const { data: activeCheckins, isLoading: loadingCheckins } = useQuery({
+    queryKey: ["kids-checkins", selectedEventId],
+    queryFn: async () => {
+      if (!selectedEventId) return [];
+      const response = await api.get(`/kids-checkins?eventId=${selectedEventId}&status=active`);
+      return response.data;
+    },
+    enabled: !!selectedEventId,
+    refetchInterval: 10000,
+  });
+
+  // Mutations
+  const checkinMutation = useMutation({
+    mutationFn: async () => {
+      const token = Math.floor(100000 + Math.random() * 900000).toString();
+      const payload = {
+        eventId: selectedEventId,
+        childName: childName,
+        guardianId: selectedGuardian.userId,
+        itemsDescription: itemsInfo,
+        validationToken: token,
+        category: category,
+      };
+      return api.post("/kids-checkins", payload);
+    },
+    onSuccess: () => {
+      toast({ title: "✅ Check-in realizado!", description: `${childName} registrado com sucesso.` });
+      setChildName("");
+      setItemsInfo("");
+      setSelectedGuardian(null);
+      queryClient.invalidateQueries({ queryKey: ["kids-checkins"] });
+      logAudit("CHECKIN_KIDS", "Realizado check-in de criança/volume", { childName, category });
+    },
+    onError: (err: any) => {
+      toast({ title: "Erro no check-in", description: getErrorMessage(err), variant: "destructive" });
+    }
+  });
+
+  const checkoutMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return api.patch(`/kids-checkins/${id}`, { status: "retirado" });
+    },
+    onSuccess: () => {
+      toast({ title: "✅ Retirada confirmada!", description: "O registro foi finalizado." });
+      queryClient.invalidateQueries({ queryKey: ["kids-checkins"] });
+    },
+    onError: (err: any) => {
+      toast({ title: "Erro na retirada", description: getErrorMessage(err), variant: "destructive" });
+    }
+  });
+
+  const callGuardianMutation = useMutation({
+    mutationFn: async (item: any) => {
+      return api.patch(`/kids-checkins/${item.id}`, { callRequested: true });
+    },
+    onSuccess: () => {
+      toast({ title: "🔔 Chamada enviada!", description: "O responsável foi notificado." });
+      setCallingItem(null);
+      queryClient.invalidateQueries({ queryKey: ["kids-checkins"] });
+    },
+    onError: (err: any) => {
+      toast({ title: "Erro ao chamar", description: getErrorMessage(err), variant: "destructive" });
+    }
   });
 
   // Token/QR validation (for gerentes)
   const handleValidateToken = async (token: string) => {
-    const match = activeCheckins?.find((c: any) => c.validation_token === token);
+    const match = activeCheckins?.find((c: any) => c.validationToken === token);
     if (match) {
-      toast({ title: `✅ Token válido!`, description: `${match.child_name} — Fazendo checkout...` });
+      toast({ title: `✅ Token válido!`, description: `${match.childName} — Fazendo checkout...` });
       checkoutMutation.mutate(match.id);
       setRetrievalItem(null); // Fecha modal imediatamente
     } else {
@@ -146,17 +236,17 @@ const KidsCheckin = () => {
                       <div className="mt-2 space-y-1 bg-muted/30 p-2 rounded-2xl border border-dashed border-primary/20 max-h-48 overflow-y-auto shadow-inner">
                         {guardians.map((g: any) => (
                           <div 
-                            key={g.user_id} 
+                            key={g.userId} 
                             onClick={() => { setSelectedGuardian(g); setGuardianSearch(""); }}
                             className="p-3 hover:bg-card rounded-xl cursor-pointer transition-all flex items-center justify-between group"
                           >
                             <div className="flex items-center gap-3">
                               <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-xs text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                                {g.full_name?.charAt(0)}
+                                {g.fullName?.charAt(0)}
                               </div>
-                              <span className="text-sm font-bold">{g.full_name}</span>
+                              <span className="text-sm font-bold">{g.fullName}</span>
                             </div>
-                            <span className="text-xs text-muted-foreground">{g.whatsapp_phone}</span>
+                            <span className="text-xs text-muted-foreground">{g.whatsappPhone}</span>
                           </div>
                         ))}
                       </div>
@@ -167,11 +257,11 @@ const KidsCheckin = () => {
                     <div className="p-4 bg-primary/5 rounded-2xl border border-primary/20 flex items-center justify-between animate-in fade-in slide-in-from-top-2">
                       <div className="flex items-center gap-3">
                         <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center font-bold text-xs text-primary">
-                          {selectedGuardian.full_name.charAt(0)}
+                          {selectedGuardian.fullName.charAt(0)}
                         </div>
                         <div>
-                          <p className="text-xs font-bold leading-none">{selectedGuardian.full_name}</p>
-                          <p className="text-[10px] text-muted-foreground">{selectedGuardian.whatsapp_phone}</p>
+                          <p className="text-xs font-bold leading-none">{selectedGuardian.fullName}</p>
+                          <p className="text-[10px] text-muted-foreground">{selectedGuardian.whatsappPhone}</p>
                         </div>
                       </div>
                       <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setSelectedGuardian(null)}>
@@ -253,17 +343,17 @@ const KidsCheckin = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {activeCheckins.map((item: any) => (
-                  <Card key={item.id} className={cn("border-0 shadow-2xl relative overflow-hidden group transition-all hover:translate-y-[-4px] rounded-[2.5rem]", item.call_requested && "ring-4 ring-rose-500 ring-offset-4")}>
-                    {item.call_requested && (
+                  <Card key={item.id} className={cn("border-0 shadow-2xl relative overflow-hidden group transition-all hover:translate-y-[-4px] rounded-[2.5rem]", item.callRequested && "ring-4 ring-rose-500 ring-offset-4")}>
+                    {item.callRequested && (
                       <div className="absolute top-0 right-0 bg-rose-500 text-white text-[12px] px-4 py-1.5 font-black animate-pulse uppercase tracking-widest z-10 rounded-bl-2xl">Chamado!</div>
                     )}
                     <CardContent className="p-8 space-y-6">
                       <div className="flex justify-between items-start">
                         <div className="min-w-0">
                           <p className="text-[11px] font-black text-primary uppercase tracking-[0.2em] mb-1">{item.category === 'kids' ? 'CRIANÇA' : 'IDENTIFICAÇÃO'}</p>
-                          <h4 className="font-black text-2xl leading-tight uppercase truncate text-slate-800 dark:text-slate-100">{item.child_name}</h4>
+                          <h4 className="font-black text-2xl leading-tight uppercase truncate text-slate-800 dark:text-slate-100">{item.childName}</h4>
                           <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-2 font-black uppercase tracking-widest">
-                            <ShieldCheck className="h-3 w-3" /> RESP.: {item.profiles?.full_name?.split(' ')[0]}
+                            <ShieldCheck className="h-3 w-3" /> RESP.: {item.guardian?.fullName?.split(' ')[0]}
                           </p>
                         </div>
                         <div className="shrink-0 h-14 w-14 bg-muted rounded-2xl flex items-center justify-center font-black text-xl text-muted-foreground/50 border-2 border-dashed border-muted-foreground/20">
@@ -274,7 +364,7 @@ const KidsCheckin = () => {
                       <div className="p-4 bg-muted/30 rounded-2xl space-y-1">
                         <p className="text-[10px] font-black text-muted-foreground uppercase">Observações:</p>
                         <p className="text-sm font-medium italic text-slate-600 dark:text-slate-400">
-                          {item.items_description || "Nenhuma observação."}
+                          {item.itemsDescription || "Nenhuma observação."}
                         </p>
                       </div>
 
@@ -284,7 +374,7 @@ const KidsCheckin = () => {
                           className="h-14 rounded-2xl gap-2 font-black uppercase text-xs tracking-tighter"
                           onClick={() => {
                             setCallingItem(item);
-                            setCallMessage(`⚠️ Olá, o responsável por ${item.child_name || "seu item"} favor dirigir-se ao local para retirada da liberação.`);
+                            setCallMessage(`\u26A0\uFE0F Ol\u00E1, o respons\u00E1vel por ${item.childName || "seu item"} favor dirigir-se ao local para retirada da libera\u00E7\u00E3o.`);
                           }}
                         >
                           <Phone className="h-4 w-4" />
@@ -337,7 +427,7 @@ const KidsCheckin = () => {
           </DialogHeader>
           <div className="space-y-4 py-3">
             <p className="text-sm text-muted-foreground">
-              Esta ação ativará o modo de chamada na tela e enviará uma mensagem no WhatsApp do responsável (<strong>{callingItem?.profiles?.full_name}</strong>) enviada imediatamente.
+              Esta ação ativará o modo de chamada na tela e enviará uma mensagem no WhatsApp do responsável (<strong>{callingItem?.guardian?.fullName}</strong>) enviada imediatamente.
             </p>
             <div className="space-y-2">
               <Label>Mensagem Padrão (pode ser ajustada)</Label>
@@ -378,8 +468,8 @@ const KidsCheckin = () => {
           <div className="space-y-4 py-3">
             <div className="p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 text-center">
               <p className="text-sm text-muted-foreground uppercase font-bold tracking-wider">Item / Criança</p>
-              <p className="text-2xl font-black text-emerald-700">{retrievalItem?.child_name?.toUpperCase()}</p>
-              <p className="text-xs text-emerald-600 mt-1">Responsável: {retrievalItem?.profiles?.full_name}</p>
+              <p className="text-2xl font-black text-emerald-700">{retrievalItem?.childName?.toUpperCase()}</p>
+              <p className="text-xs text-emerald-600 mt-1">Responsável: {retrievalItem?.guardian?.fullName}</p>
             </div>
             
             <div className="space-y-2">
