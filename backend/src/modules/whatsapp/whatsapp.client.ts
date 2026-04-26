@@ -5,6 +5,7 @@ import makeWASocket, {
   WASocket,
   AnyMessageContent,
   useMultiFileAuthState,
+  makeCacheableSignalKeyStore,
 } from '@whiskeysockets/baileys';
 import { Boom } from '@hapi/boom';
 import pino from 'pino';
@@ -84,7 +85,10 @@ export async function startSocket(prisma: PrismaClient): Promise<void> {
 
     socket = makeWASocket({
       version,
-      auth: state,
+      auth: {
+        creds: state.creds,
+        keys: makeCacheableSignalKeyStore(state.keys, logger),
+      },
       logger,
       browser: Browsers.ubuntu('Chrome'),
       syncFullHistory: false,

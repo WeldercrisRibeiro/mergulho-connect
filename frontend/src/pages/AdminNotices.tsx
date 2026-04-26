@@ -36,12 +36,12 @@ type Dispatch = {
 
 function WaBubble({ children, time }: { children: React.ReactNode; time: string }) {
   return (
-    <div className="self-end bg-[#DCF8C6] p-1.5 pb-5 rounded-xl rounded-tr-sm shadow-sm relative max-w-[85%] animate-in fade-in duration-300 min-w-[80px]">
-      {children}
-      <span className="text-[10.5px] text-[#075E54]/70 font-medium absolute bottom-1 right-2 inline-flex items-center gap-1">
-        {time}<CheckCircle2 className="h-[14px] w-[14px] text-[#34B7F1]" strokeWidth={2.5} />
+    <div className="self-end bg-[#DCF8C6] dark:bg-[#005c4b] p-1.5 pb-5 rounded-xl rounded-tr-sm shadow-sm relative max-w-[85%] animate-in fade-in duration-300 min-w-[80px]">
+      <div className="text-[#111111] dark:text-[#e9edef]">{children}</div>
+      <span className="text-[10.5px] text-[#075E54]/70 dark:text-white/50 font-medium absolute bottom-1 right-2 inline-flex items-center gap-1">
+        {time}<CheckCircle2 className="h-[14px] w-[14px] text-[#34B7F1] dark:text-[#53bdeb]" strokeWidth={2.5} />
       </span>
-      <svg viewBox="0 0 8 13" width="8" height="13" className="absolute top-0 -right-[7px] text-[#DCF8C6]">
+      <svg viewBox="0 0 8 13" width="8" height="13" className="absolute top-0 -right-[7px] text-[#DCF8C6] dark:text-[#005c4b]">
         <path opacity=".13" d="M5.188 1H0v11.193l6.467-8.625C7.526 2.156 6.958 1 5.188 1z" />
         <path fill="currentColor" d="M5.188 0H0v11.193l6.467-8.625C7.526 1.156 6.958 0 5.188 0z" />
       </svg>
@@ -366,12 +366,12 @@ const AdminNotices = () => {
     <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-8 pb-safe animate-fade-in">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="h-14 w-14 rounded-2xl bg-[#25D366]/10 text-[#25D366] flex items-center justify-center shadow-inner">
+          <div className="h-14 w-14 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shadow-[inset_0_0_20px_rgba(16,185,129,0.1)] border border-emerald-500/20">
             <Megaphone className="h-7 w-7" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Disparos (WhatsApp)</h1>
-            <p className="text-sm text-muted-foreground">Envio rico em mídia com integração ao bot Baileys.</p>
+            <h1 className="text-2xl font-black tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">Disparos (WhatsApp)</h1>
+            <p className="text-sm text-muted-foreground/80 font-medium">Envio rico em mídia com integração ao bot Baileys.</p>
           </div>
         </div>
 
@@ -379,19 +379,20 @@ const AdminNotices = () => {
           {canCreate && (
             <Dialog open={isOpen} onOpenChange={(val) => { setIsOpen(val); if (!val) resetForm(); }}>
               <DialogTrigger asChild>
-                <Button className="gap-2 bg-[#25D366] hover:bg-[#1DA851] text-white shadow-lg shadow-[#25D366]/20 transition-transform">
+                <Button className="gap-2.5 bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:shadow-[0_0_25px_rgba(16,185,129,0.3)] transition-all duration-300 hover:scale-[1.02] active:scale-95 px-6 h-11 font-bold rounded-xl">
                   <CalendarClock className="h-4 w-4" /> Novo Disparo
                 </Button>
               </DialogTrigger>
-              <DialogContent className="w-[95vw] max-w-[1300px] p-0 rounded-3xl border-0 shadow-2xl overflow-y-auto md:overflow-hidden flex flex-col md:flex-row h-auto max-h-[95vh] md:h-[min(90vh, 820px)]">
+              <DialogContent className="w-[95vw] max-w-[1300px] p-0 rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden flex flex-col md:flex-row h-auto max-h-[95vh] md:h-[min(90vh, 850px)] bg-[#0b141a] dark:bg-[#0b141a] animate-in zoom-in-95 duration-300">
 
                 {/* LADO ESQUERDO: FORMULÁRIO */}
                 <div className="flex-1 flex flex-col bg-card min-w-0">
-                  <div className="p-6 pb-2 border-b">
-                    <DialogTitle className="text-xl font-bold flex items-center gap-2 text-[#25D366]">
-                      {editId ? <Edit3 className="h-5 w-5" /> : <Send className="h-5 w-5" />}
-                      {editId ? "Editando Disparo Agendado" : "Configurar Disparo Agendado"}
+                  <div className="p-8 pb-4 border-b border-white/5 bg-card/50">
+                    <DialogTitle className="text-2xl font-black flex items-center gap-3 text-emerald-500">
+                      {editId ? <Edit3 className="h-6 w-6" /> : <Send className="h-6 w-6" />}
+                      {editId ? "Editar Comunicado" : "Novo Disparo"}
                     </DialogTitle>
+                    <p className="text-muted-foreground/60 text-sm mt-1 font-medium">Configure os detalhes do seu envio via bot.</p>
                   </div>
 
                   <div className="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar">
@@ -399,7 +400,7 @@ const AdminNotices = () => {
                       <div className="space-y-1.5">
                         <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Público Alvo</Label>
                         <Select value={type} onValueChange={setType}>
-                          <SelectTrigger className="rounded-xl h-10 bg-muted/30"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                          <SelectTrigger className="rounded-xl h-10 bg-muted/30 dark:bg-[#2a3942] dark:border-0 dark:text-white"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                           <SelectContent>
                             {isAdmin && <SelectItem value="general">Geral (Igreja)</SelectItem>}
                             <SelectItem value="group">Departamento</SelectItem>
@@ -412,8 +413,8 @@ const AdminNotices = () => {
                         <div className="space-y-1.5 animate-in fade-in">
                           <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Departamento</Label>
                           <Select value={groupId} onValueChange={setGroupId}>
-                            <SelectTrigger className={cn("rounded-xl h-10 bg-muted/30", !groupId && !!editId && "border-rose-300 ring-rose-200")}><SelectValue placeholder="Escolha..." /></SelectTrigger>
-                            <SelectContent>{groups?.map((g) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}</SelectContent>
+                            <SelectTrigger className={cn("rounded-2xl h-12 bg-muted/20 border-white/5 focus:ring-emerald-500/20", !groupId && !!editId && "border-rose-500/50")}><SelectValue placeholder="Escolha o departamento..." /></SelectTrigger>
+                            <SelectContent className="rounded-2xl border-white/5 bg-[#1c2c33]">{groups?.map((g) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}</SelectContent>
                           </Select>
                         </div>
                       )}
@@ -431,7 +432,7 @@ const AdminNotices = () => {
                       <div className="space-y-1.5">
                         <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Prioridade Visual</Label>
                         <Select value={priority} onValueChange={setPriority}>
-                          <SelectTrigger className="rounded-xl h-10 bg-muted/30"><SelectValue placeholder="Escolha a prioridade" /></SelectTrigger>
+                          <SelectTrigger className="rounded-xl h-10 bg-muted/30 dark:bg-[#2a3942] dark:border-0 dark:text-white"><SelectValue placeholder="Escolha a prioridade" /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="normal">Baixa / Informativo</SelectItem>
                             <SelectItem value="urgent">Urgente 🚨</SelectItem>
@@ -440,20 +441,20 @@ const AdminNotices = () => {
                       </div>
                     </div>
 
-                    <div className="space-y-2 bg-[#128C7E]/10 p-4 rounded-2xl border border-[#128C7E]/20">
-                      <Label className="text-xs font-bold tracking-wider text-[#075E54] flex items-center gap-1.5">
-                        <CalendarClock className="h-4 w-4" /> Data/Hora Exata de Envio
+                    <div className="space-y-3 bg-emerald-500/5 p-6 rounded-[2rem] border border-emerald-500/10 shadow-inner">
+                      <Label className="text-[11px] font-black uppercase tracking-widest text-emerald-500/70 flex items-center gap-2 ml-1">
+                        <CalendarClock className="h-4 w-4" /> Data/Hora do Agendamento
                       </Label>
-                      <Input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} className="rounded-xl h-10 bg-white" />
+                      <Input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} className="rounded-2xl h-12 bg-card border-white/5 focus:border-emerald-500/50 focus:ring-emerald-500/20 transition-all font-bold" />
                     </div>
 
-                    <div className="space-y-1.5">
-                      <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Título Resumido de Controle (Apenas no Painel)</Label>
-                      <Input placeholder="Reunião de Jovens - Fim do Mês" value={title} onChange={(e) => setTitle(e.target.value)} className="rounded-xl h-9 bg-muted/20" />
+                    <div className="space-y-2">
+                      <Label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1">Título de Controle</Label>
+                      <Input placeholder="Ex: Reunião de Jovens - 25/04" value={title} onChange={(e) => setTitle(e.target.value)} className="rounded-2xl h-12 bg-muted/20 border-white/5 focus:border-emerald-500/50 focus:ring-emerald-500/20 transition-all font-bold" />
                     </div>
 
                     {/* CAIXA DE TEXTO E ANEXOS */}
-                    <div className="space-y-0 rounded-2xl border bg-white overflow-visible shadow-sm focus-within:ring-2 focus-within:ring-[#25D366] transition-all flex flex-col">
+                    <div className="space-y-0 rounded-2xl border dark:border-white/10 bg-white dark:bg-[#2a3942] overflow-visible shadow-sm focus-within:ring-2 focus-within:ring-[#25D366] transition-all flex flex-col">
                       {attachments.length > 0 && (
                         <div className="flex gap-2 p-3 overflow-x-auto bg-slate-50 border-b custom-scrollbar items-start rounded-t-2xl">
                           {attachments.map((att) => (
@@ -474,7 +475,7 @@ const AdminNotices = () => {
                       <Textarea
                         ref={textareaRef}
                         placeholder="Mensagem do WhatsApp. Formatações: *negrito*, _itálico_, ~tachado~, ```código```"
-                        className={cn("min-h-[140px] border-0 focus-visible:ring-0 resize-none py-3 px-4 bg-transparent text-[14.5px] leading-relaxed", attachments.length === 0 ? "rounded-t-2xl" : "")}
+                        className={cn("min-h-[140px] border-0 focus-visible:ring-0 resize-none py-3 px-4 bg-transparent text-[14.5px] leading-relaxed dark:text-[#e9edef] dark:placeholder:text-white/30", attachments.length === 0 ? "rounded-t-2xl" : "")}
                         value={content}
                         onChange={handleContentChange}
                         onSelect={handleContentSelect}
@@ -482,7 +483,7 @@ const AdminNotices = () => {
                         onKeyUp={handleContentSelect}
                       />
 
-                      <div className="flex bg-slate-50 p-2 border-t gap-1.5 items-center relative rounded-b-2xl flex-wrap">
+                      <div className="flex bg-slate-50 dark:bg-[#202c33] p-2 border-t dark:border-white/10 gap-1.5 items-center relative rounded-b-2xl flex-wrap">
                         <div className="relative">
                           <Button type="button" variant="ghost" size="icon" onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="h-9 w-9 text-slate-500 hover:text-slate-800 hover:bg-slate-200">
                             <Smile className="h-5 w-5" />
@@ -536,27 +537,27 @@ const AdminNotices = () => {
                     </div>
                   </div>
 
-                  <div className="p-6 border-t mt-auto">
+                  <div className="p-8 border-t border-white/5 bg-card/30 backdrop-blur-sm mt-auto">
                     <Button
-                      className="w-full h-11 rounded-xl font-bold bg-[#128C7E] hover:bg-[#075E54] text-white shadow-lg transition-transform"
+                      className="w-full h-14 rounded-[1.25rem] font-black text-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-xl shadow-emerald-900/20 transition-all active:scale-[0.98] flex items-center justify-center gap-3"
                       onClick={() => sendMutation.mutate()}
                       disabled={sendMutation.isPending}
                     >
-                      {sendMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <Send className="h-5 w-5 mr-2" />}
-                      Salvar Disparo na Fila
+                      {sendMutation.isPending ? <Loader2 className="h-6 w-6 animate-spin" /> : <Send className="h-6 w-6" />}
+                      {editId ? "SALVAR ALTERAÇÕES" : "CONFIRMAR DISPARO"}
                     </Button>
                   </div>
                 </div>
 
                 {/* LADO DIREITO: PREVIEW WHATSAPP */}
-                <div className="hidden md:flex bg-[#EFEAE2] shrink-0 border-l relative overflow-hidden flex-col shadow-inner" style={{ width: 'clamp(280px, 38%, 480px)' }}>
-                  <div className="bg-[#075E54] text-white px-4 py-3 shadow flex items-center gap-3 z-10">
-                    <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center overflow-hidden border border-white/20 shadow-sm shrink-0">
-                      <img src="/idvmergulho/logo.png" alt="CC Mergulho" className="h-7 w-7 object-contain" />
+                <div className="hidden md:flex bg-[#EFEAE2] dark:bg-[#0c141a] shrink-0 border-l border-white/5 relative overflow-hidden flex-col shadow-2xl" style={{ width: 'clamp(320px, 42%, 480px)' }}>
+                  <div className="bg-[#075E54] dark:bg-[#202c33] text-white px-5 py-4 shadow-lg flex items-center gap-4 z-10 border-b border-black/10">
+                    <div className="h-11 w-11 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center overflow-hidden border border-white/20 shadow-inner shrink-0">
+                      <img src="/idvmergulho/logo.png" alt="CC Mergulho" className="h-8 w-8 object-contain" />
                     </div>
                     <div className="flex-1">
-                      <div className="font-semibold text-[15.5px] leading-snug truncate pr-2">CC Mergulho Oficial</div>
-                      <div className="text-white/80 text-xs truncate">Mergulhando no evangelho</div>
+                      <div className="font-bold text-[16px] leading-snug truncate pr-2 dark:text-[#e9edef]">CC Mergulho Oficial</div>
+                      <div className="text-white/80 dark:text-[#8696a0] text-[11px] font-medium truncate uppercase tracking-widest">Mergulhando no evangelho</div>
                     </div>
                   </div>
 
@@ -570,10 +571,10 @@ const AdminNotices = () => {
                         {/* 1ª bolha: texto (enviado primeiro e separado) */}
                         {content && (
                           <WaBubble time={new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}>
-                            <p className="px-1.5 py-0.5 text-[15px] leading-snug text-[#111111]" style={{ wordBreak: "break-word" }}>
+                            <p className="px-1.5 py-0.5 text-[15px] leading-snug" style={{ wordBreak: "break-word" }}>
                               {signEnabled && signatureName && (
                                 <>
-                                  <strong className="text-[#075E54]">{signatureName}:</strong>
+                                  <strong className="text-[#075E54] dark:text-[#25D366]">{signatureName}:</strong>
                                   <br />
                                 </>
                               )}
@@ -625,41 +626,53 @@ const AdminNotices = () => {
           ) : (
             <div className="grid grid-cols-1 gap-4">
               {dispatches.map((dispatch) => (
-                <Card key={dispatch.id} className={cn("border-0 shadow-sm rounded-2xl overflow-hidden group hover:shadow-md transition-all", dispatch.status === "error" ? "border-l-4 border-l-rose-500 bg-rose-50/20" : "border border-border")}>
-                  <CardContent className="p-5 flex flex-col md:flex-row gap-4 relative">
-                    <div className="flex-1">
+                <Card key={dispatch.id} className={cn(
+                  "border-0 shadow-xl rounded-[2rem] overflow-hidden group hover:scale-[1.01] transition-all duration-500 bg-card/40 backdrop-blur-xl border border-white/5", 
+                  dispatch.status === "error" && "ring-1 ring-rose-500/20"
+                )}>
+                  <CardContent className="p-0 flex flex-col md:flex-row gap-0 relative">
+                    {/* Status side accent */}
+                    <div className={cn(
+                      "w-1.5 shrink-0",
+                      dispatch.status === "pending" && "bg-amber-500",
+                      dispatch.status === "sending" && "bg-blue-500 animate-pulse",
+                      dispatch.status === "sent" && "bg-emerald-500",
+                      dispatch.status === "error" && "bg-rose-500"
+                    )} />
+                    
+                    <div className="flex-1 p-6">
                       <div className="flex flex-col sm:flex-row justify-between gap-2 mb-3">
                         <div className="flex flex-wrap items-center gap-2">
-                          {dispatch.status === "pending" && <Badge variant="outline" className="text-amber-700 bg-amber-50">Na Fila (Aguardando Horário)</Badge>}
-                          {dispatch.status === "sending" && <Badge variant="outline" className="text-blue-700 bg-blue-50 animate-pulse">Enviando...</Badge>}
-                          {dispatch.status === "sent" && <Badge variant="outline" className="text-emerald-700 bg-emerald-50">Disparado pelo Bot</Badge>}
-                          {dispatch.status === "error" && <Badge variant="outline" className="text-rose-700 bg-rose-50">Falha ao Conectar</Badge>}
-                          {dispatch.priority === "urgent" && <Badge className="bg-rose-500 text-white text-[10px]">Urgente 🚨</Badge>}
+                          {dispatch.status === "pending" && <Badge variant="outline" className="text-amber-500 bg-amber-500/10 border-amber-500/20 rounded-lg px-2.5 py-0.5">Na Fila (Aguardando Horário)</Badge>}
+                          {dispatch.status === "sending" && <Badge variant="outline" className="text-blue-500 bg-blue-500/10 border-blue-500/20 animate-pulse rounded-lg px-2.5 py-0.5">Enviando...</Badge>}
+                          {dispatch.status === "sent" && <Badge variant="outline" className="text-emerald-500 bg-emerald-500/10 border-emerald-500/20 rounded-lg px-2.5 py-0.5">Disparado pelo Bot</Badge>}
+                          {dispatch.status === "error" && <Badge variant="outline" className="text-rose-500 bg-rose-500/10 border-rose-500/20 rounded-lg px-2.5 py-0.5">Falha ao Conectar</Badge>}
+                          {dispatch.priority === "urgent" && <Badge className="bg-gradient-to-r from-rose-500 to-orange-500 text-white text-[10px] rounded-lg px-2.5 shadow-lg shadow-rose-500/20">Urgente 🚨</Badge>}
                         </div>
-                        <span className="text-xs font-bold text-muted-foreground flex items-center gap-1.5 bg-muted/40 px-2 py-1 rounded">
-                          <CalendarClock className="h-3.5 w-3.5" /> Disparo: {safeFormat(dispatch.scheduledAt, "PPp")}
+                        <span className="text-[11px] font-bold text-muted-foreground/60 flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-xl border border-white/5">
+                          <CalendarClock className="h-3.5 w-3.5 text-primary/60" /> Disparo: {safeFormat(dispatch.scheduledAt, "PPp")}
                         </span>
                       </div>
 
                       <h4 className="font-bold text-lg text-foreground">{dispatch.title}</h4>
 
                       {dispatch.errorMessage && (
-                        <div className="mt-2 flex items-start gap-2 text-rose-600 text-xs bg-rose-50 p-2 rounded-lg border border-rose-100">
+                        <div className="mt-2 flex items-start gap-2 text-rose-600 text-xs bg-rose-500/10 p-2 rounded-lg border border-rose-500/20">
                           <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                           <span>{dispatch.errorMessage}</span>
                         </div>
                       )}
 
-                      <div className="mt-4 bg-muted/20 p-4 rounded-xl border border-muted/50 inline-flex flex-col gap-3 min-w-[300px]">
+                      <div className="mt-4 bg-muted/10 p-5 rounded-2xl border border-white/5 inline-flex flex-col gap-4 min-w-[300px] shadow-inner">
                         {dispatch.attachments.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mb-1">
+                          <div className="flex flex-wrap gap-2.5 mb-1">
                             {dispatch.attachments.map((att) => (
-                              <div key={att.id} className="flex items-center gap-2 bg-white border rounded shadow-sm overflow-hidden text-xs">
-                                {att.type === "image" && <div className="h-8 w-8 bg-slate-100 flex items-center justify-center shrink-0"><ImageIcon className="h-4 w-4 text-blue-500" /></div>}
-                                {att.type === "document" && <div className="h-8 w-8 bg-slate-100 flex items-center justify-center shrink-0"><FileText className="h-4 w-4 text-rose-500" /></div>}
-                                {att.type === "audio" && <div className="h-8 w-8 bg-slate-100 flex items-center justify-center shrink-0"><Mic className="h-4 w-4 text-purple-500" /></div>}
-                                {att.type === "video" && <div className="h-8 w-8 bg-slate-100 flex items-center justify-center shrink-0"><Video className="h-4 w-4 text-indigo-500" /></div>}
-                                <span className="truncate max-w-[120px] font-medium pr-2 text-muted-foreground">
+                              <div key={att.id} className="flex items-center gap-2.5 bg-card/60 border border-white/5 rounded-xl shadow-sm overflow-hidden text-[11px] p-1.5 pr-3 group/att transition-colors hover:bg-card">
+                                {att.type === "image" && <div className="h-7 w-7 bg-blue-500/10 rounded-lg flex items-center justify-center shrink-0"><ImageIcon className="h-3.5 w-3.5 text-blue-500" /></div>}
+                                {att.type === "document" && <div className="h-7 w-7 bg-rose-500/10 rounded-lg flex items-center justify-center shrink-0"><FileText className="h-3.5 w-3.5 text-rose-500" /></div>}
+                                {att.type === "audio" && <div className="h-7 w-7 bg-purple-500/10 rounded-lg flex items-center justify-center shrink-0"><Mic className="h-3.5 w-3.5 text-purple-500" /></div>}
+                                {att.type === "video" && <div className="h-7 w-7 bg-indigo-500/10 rounded-lg flex items-center justify-center shrink-0"><Video className="h-3.5 w-3.5 text-indigo-500" /></div>}
+                                <span className="truncate max-w-[140px] font-bold text-muted-foreground/80">
                                   {att.type === "image" ? "Imagem Anexa" : att.type === "audio" ? "Voz Gravada" : att.filename}
                                 </span>
                               </div>
@@ -668,7 +681,7 @@ const AdminNotices = () => {
                         )}
 
                         {dispatch.content && (
-                          <p className="text-[14.5px] font-medium text-slate-800 whitespace-pre-wrap leading-relaxed border-l-2 border-primary/40 pl-3">
+                          <p className="text-[14.5px] font-medium text-foreground/90 whitespace-pre-wrap leading-relaxed border-l-2 border-primary/30 pl-4">
                             {renderWhatsAppText(dispatch.content)}
                           </p>
                         )}
@@ -688,20 +701,20 @@ const AdminNotices = () => {
                             : (members?.find(m => m.userId === dispatch.targetUserId)?.fullName || "Membro");
 
                         return (
-                          <div className="mt-3 space-y-1.5">
-                            <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">Resultado do Envio</p>
+                          <div className="mt-4 space-y-2">
+                            <p className="text-[10px] uppercase tracking-widest font-black text-muted-foreground/40 mb-1 ml-1">Resultado do Envio</p>
 
                             {/* Resumo compacto */}
-                            <div className={cn("flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium", hasErrors ? "bg-rose-50 border border-rose-100" : "bg-emerald-50 border border-emerald-100")}>
+                            <div className={cn("flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold border", hasErrors ? "bg-rose-500/10 border-rose-500/20 text-rose-400" : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400")}>
                               {hasErrors
-                                ? <AlertCircle className="h-4 w-4 text-rose-500 shrink-0" />
-                                : <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />}
-                              <span className={hasErrors ? "text-rose-700" : "text-emerald-700"}>
-                                <span className="font-bold">{targetLabel}</span>
+                                ? <AlertCircle className="h-4 w-4 shrink-0" />
+                                : <CheckCircle2 className="h-4 w-4 shrink-0" />}
+                              <span>
+                                <span className="text-foreground">{targetLabel}</span>
                                 {" • "}
                                 {successCount > 0 && <span>{successCount} enviado{successCount !== 1 ? "s" : ""}</span>}
                                 {successCount > 0 && errorCount > 0 && " / "}
-                                {errorCount > 0 && <span className="text-rose-600">{errorCount} falha{errorCount !== 1 ? "s" : ""}</span>}
+                                {errorCount > 0 && <span className="text-rose-500">{errorCount} falha{errorCount !== 1 ? "s" : ""}</span>}
                               </span>
                             </div>
 
@@ -711,10 +724,10 @@ const AdminNotices = () => {
                                 ? log.recipient.slice(0, 4) + "•••" + log.recipient.slice(-4)
                                 : log.recipient;
                               return (
-                                <div key={log.id} className="flex items-start gap-2 text-xs rounded px-2 py-1 bg-rose-50 text-rose-700">
+                                <div key={log.id} className="flex items-start gap-2 text-xs rounded-lg px-3 py-1.5 bg-rose-500/5 text-rose-400/80 border border-rose-500/10">
                                   <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
                                   <span className="font-mono opacity-70">{masked}</span>
-                                  {log.error && <span className="text-[10px] opacity-70 ml-1 truncate max-w-[200px]">{log.error}</span>}
+                                  {log.error && <span className="text-[10px] opacity-70 ml-2 truncate">{log.error}</span>}
                                 </div>
                               );
                             })}
@@ -723,28 +736,28 @@ const AdminNotices = () => {
                       })()}
 
 
-                      <div className="mt-5 flex justify-end gap-3 w-full">
+                      <div className="mt-6 flex justify-end gap-3 w-full border-t border-white/5 pt-5">
                         {/* Editar só disponível para pending cujo horário ainda não chegou, ou erros */}
                         {(() => {
                           const isOverdue = dispatch.status === "pending" && new Date(dispatch.scheduledAt) <= new Date();
                           const canEdit = (dispatch.status === "pending" && !isOverdue) || dispatch.status === "error";
                           return canEdit ? (
-                            <Button variant="outline" size="sm" onClick={() => handleEdit(dispatch)} className="text-blue-700 bg-blue-50 hover:bg-blue-100 border-blue-200">
+                            <Button variant="outline" size="sm" onClick={() => handleEdit(dispatch)} className="text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/20 rounded-xl px-4 font-bold">
                               <Edit3 className="h-4 w-4 mr-2" /> Editar
                             </Button>
                           ) : isOverdue ? (
-                            <span className="text-xs text-amber-600 font-medium flex items-center gap-1 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg animate-pulse">
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Aguardando envio pelo bot...
+                            <span className="text-[11px] text-amber-500 font-bold flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 px-4 py-2 rounded-xl animate-pulse uppercase tracking-wider">
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Aguardando envio...
                             </span>
                           ) : null;
                         })()}
                         {dispatch.status === "error" && (
-                          <Button variant="outline" size="sm" onClick={() => retryMutation.mutate(dispatch.id)} disabled={retryMutation.isPending} className="text-amber-700 bg-amber-50 hover:bg-amber-100 border-amber-200">
+                          <Button variant="outline" size="sm" onClick={() => retryMutation.mutate(dispatch.id)} disabled={retryMutation.isPending} className="text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/20 rounded-xl px-4 font-bold">
                             <RefreshCw className={cn("h-4 w-4 mr-2", retryMutation.isPending && "animate-spin")} /> Reparar
                           </Button>
                         )}
                         {isAdmin && dispatch.status !== "sending" && (
-                          <Button variant="ghost" size="sm" onClick={() => deleteMutation.mutate(dispatch.id)} disabled={deleteMutation.isPending} className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
+                          <Button variant="ghost" size="sm" onClick={() => deleteMutation.mutate(dispatch.id)} disabled={deleteMutation.isPending} className="text-muted-foreground/60 hover:bg-rose-500/10 hover:text-rose-500 rounded-xl px-4 font-bold">
                             <Trash2 className="h-4 w-4 mr-2" /> Excluir
                           </Button>
                         )}
