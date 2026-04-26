@@ -11,6 +11,8 @@ import pino from 'pino';
 import * as QRCode from 'qrcode';
 import * as path from 'path';
 import * as fs from 'fs';
+import { PrismaClient } from '@prisma/client';
+import { usePrismaAuthState } from './prisma-auth';
 import { processAudioOgg, needsConversion } from '../../utils/audioConvert';
 
 export type WzStatus = 'disconnected' | 'connecting' | 'qrcode' | 'connected';
@@ -20,7 +22,6 @@ export interface SseClient {
   res: any; // Express Response
 }
 
-const AUTH_FOLDER = path.join(process.cwd(), 'baileys_auth');
 const logger = pino({ level: 'silent' });
 
 let socket: WASocket | null = null;
@@ -30,10 +31,7 @@ let reconnectTimer: NodeJS.Timeout | null = null;
 
 export const sseClients: SseClient[] = [];
 
-// Cria pasta de autenticação local
-if (!fs.existsSync(AUTH_FOLDER)) {
-  fs.mkdirSync(AUTH_FOLDER, { recursive: true });
-}
+// Pasta de autenticação local não é mais necessária para o plano de persistência em DB
 
 // ─── SSE helpers ─────────────────────────────────────────────────────────────
 
@@ -66,14 +64,14 @@ export function removeSseClient(id: string) {
 
 // ─── Socket creation ──────────────────────────────────────────────────────────
 
-export async function startSocket(): Promise<void> {
+export async function startSocket(prisma: PrismaClient): Promise<void> {
   if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
   if (socket) { try { socket.end(undefined); } catch {} socket = null; }
 
   setStatus('connecting');
 
   try {
-    const { state, saveCreds } = await useMultiFileAuthState(AUTH_FOLDER);
+    const { state, saveCreds } = await usePrismaAuthState(prisma, 'whatsapp-default');
 
     let version: [number, number, number];
     try {
@@ -120,7 +118,7 @@ export async function startSocket(): Promise<void> {
 
         if (statusCode === DisconnectReason.loggedOut) {
           console.log('[WA] Logout detectado. Limpando sessão.');
-          clearAuthFiles();
+          clearAuthFiles(prisma);
           setStatus('disconnected', null);
           socket = null;
           return;
@@ -130,7 +128,7 @@ export async function startSocket(): Promise<void> {
         socket = null;
         setStatus('connecting');
         reconnectTimer = setTimeout(() => {
-          startSocket().catch((err) => {
+          startSocket(prisma).catch((err) => {
             console.error('[WA] Falha na reconexão:', err);
             setStatus('disconnected', null);
           });
@@ -146,7 +144,7 @@ export async function startSocket(): Promise<void> {
 
 // ─── API pública ─────────────────────────────────────────────────────────────
 
-export async function connectWhatsApp(): Promise<void> {
+export async function connectWhatsApp(prisma: PrismaClient): Promise<void> {
   if (currentStatus === 'connected') { 
     console.log('[WA] Já está conectado. Sincronizando status...');
     setStatus('connected', null); 
@@ -157,10 +155,10 @@ export async function connectWhatsApp(): Promise<void> {
     setStatus('connecting', currentQrCode);
     return; 
   }
-  await startSocket();
+  await startSocket(prisma);
 }
 
-export async function disconnectWhatsApp(): Promise<void> {
+export async function disconnectWhatsApp(prisma: PrismaClient): Promise<void> {
   console.log('[WA] Solicitando desconexão forçada...');
   if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
   
@@ -177,7 +175,7 @@ export async function disconnectWhatsApp(): Promise<void> {
     socket = null;
   }
   
-  clearAuthFiles();
+  clearAuthFiles(prisma);
   setStatus('disconnected', null);
   console.log('[WA] Desconectado e sessão removida com sucesso.');
 }
@@ -186,11 +184,11 @@ export function isConnected(): boolean {
   return currentStatus === 'connected' && socket !== null;
 }
 
-export async function tryAutoConnect(): Promise<void> {
-  const files = fs.existsSync(AUTH_FOLDER) ? fs.readdirSync(AUTH_FOLDER) : [];
-  if (files.length > 0) {
-    console.log('[WA] Sessão prévia encontrada. Reconectando automaticamente...');
-    await startSocket();
+export async function tryAutoConnect(prisma: PrismaClient): Promise<void> {
+  const sessionExists = await prisma.baileysAuth.count({ where: { sessionId: 'whatsapp-default' } });
+  if (sessionExists > 0) {
+    console.log('[WA] Sessão prévia encontrada no banco. Reconectando automaticamente...');
+    await startSocket(prisma);
   }
 }
 
@@ -245,6 +243,8 @@ export function formatPhoneNumber(phone: string): string {
   throw new Error(`Número inválido (${number.length} dígitos). Esperado: DDD+8 ou DDD+9+8 dígitos.`);
 }
 
-function clearAuthFiles() {
-  try { fs.readdirSync(AUTH_FOLDER).forEach((f) => fs.unlinkSync(path.join(AUTH_FOLDER, f))); } catch {}
+async function clearAuthFiles(prisma: PrismaClient) {
+  try {
+    await prisma.baileysAuth.deleteMany({ where: { sessionId: 'whatsapp-default' } });
+  } catch {}
 }

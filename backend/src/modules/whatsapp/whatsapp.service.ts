@@ -25,13 +25,13 @@ export class WhatsAppService implements OnModuleInit {
 
   async onModuleInit() {
     // Tenta reconectar automaticamente ao iniciar
-    await tryAutoConnect().catch((err) => console.error('[WA] Falha no auto-connect:', err));
+    await tryAutoConnect(this.prisma).catch((err) => console.error('[WA] Falha no auto-connect:', err));
   }
 
   // ─── Controle de conexão ─────────────────────────────────────────────────
 
-  connect() { return connectWhatsApp(); }
-  disconnect() { return disconnectWhatsApp(); }
+  connect() { return connectWhatsApp(this.prisma); }
+  disconnect() { return disconnectWhatsApp(this.prisma); }
   getStatus() { return getStatus(); }
   isConnected() { return isConnected(); }
   addSseClient(id: string, res: any) { addSseClient(id, res); }

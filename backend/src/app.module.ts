@@ -34,6 +34,7 @@ import { VolunteersModule } from './modules/volunteers/volunteers.module';
 import { VolunteerSchedulesModule } from './modules/volunteer-schedules/volunteer-schedules.module';
 import { WzDispatchesModule } from './modules/wz-dispatches/wz-dispatches.module';
 import { WhatsAppModule } from './modules/whatsapp/whatsapp.module';
+import { HealthModule } from './modules/health/health.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { MaintenanceModule } from './modules/maintenance/maintenance.module';
 import { JwtAuthGuard } from './modules/auth/jwt-auth.guard';
@@ -74,6 +75,7 @@ import { RolesGuard } from './modules/auth/roles.guard';
     VolunteerSchedulesModule,
     WzDispatchesModule,
     WhatsAppModule,
+    HealthModule,
     UploadModule,
     MaintenanceModule,
   ],
