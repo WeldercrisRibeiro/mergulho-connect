@@ -1,16 +1,24 @@
-import { Controller, Post, Body, Delete, Param, Patch } from '@nestjs/common';
+import { Controller, Post, Body, Delete, Param, Patch, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { PrismaService } from '../../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
+import { Roles } from './roles.decorator';
+import { RolesGuard } from './roles.guard';
+import { JwtAuthGuard } from './jwt-auth.guard';
+import { CreateAdminUserDto } from './dto/create-admin-user.dto';
+import { UpdateAdminUserDto } from './dto/update-admin-user.dto';
+import { ResetAdminPasswordDto } from './dto/reset-admin-password.dto';
 
 @ApiTags('Admin Users')
 @ApiBearerAuth()
 @Controller('admin/users')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin_ccm')
 export class AdminUsersController {
   constructor(private prisma: PrismaService) {}
 
   @Post()
-  async createUser(@Body() dto: any) {
+  async createUser(@Body() dto: CreateAdminUserDto) {
     const hashedPassword = await bcrypt.hash(dto.password || '123456', 10);
     return this.prisma.$transaction(async (tx) => {
       const u = await tx.user.create({
@@ -42,7 +50,7 @@ export class AdminUsersController {
   }
 
   @Patch(':id')
-  async updateUser(@Param('id') id: string, @Body() dto: any) {
+  async updateUser(@Param('id') id: string, @Body() dto: UpdateAdminUserDto) {
     return this.prisma.$transaction(async (tx) => {
       // Update email if provided
       if (dto.email) {
@@ -91,7 +99,7 @@ export class AdminUsersController {
   }
 
   @Post(':id/reset-password')
-  async resetPassword(@Param('id') id: string, @Body() dto: any) {
+  async resetPassword(@Param('id') id: string, @Body() dto: ResetAdminPasswordDto) {
     const password = dto.password || '123456';
     const hashedPassword = await bcrypt.hash(password, 10);
     await this.prisma.user.update({

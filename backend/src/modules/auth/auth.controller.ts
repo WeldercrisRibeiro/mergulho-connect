@@ -5,6 +5,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { Public } from './public.decorator';
 import { ChangePasswordWithCredentialsDto } from './dto/change-password-with-credentials.dto';
+import { UpdatePasswordDto } from './dto/update-password.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -35,8 +36,8 @@ export class AuthController {
   @Patch('password')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Atualizar senha do usuário logado' })
-  updatePassword(@Request() req, @Body('password') password: string) {
-    return this.authService.updatePassword(req.user.id, password);
+  updatePassword(@Request() req, @Body() dto: UpdatePasswordDto) {
+    return this.authService.updatePassword(req.user.id, dto.password);
   }
 
   @Patch('password/by-credentials')

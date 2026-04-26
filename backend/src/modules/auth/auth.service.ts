@@ -14,21 +14,25 @@ export class AuthService {
   ) {}
 
   async login(dto: LoginDto) {
+    console.log(`🔑 Tentativa de login para: ${dto.email}`);
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
       include: { profile: true, userRole: true },
     });
 
     if (!user) {
+      console.log(`❌ Usuário não encontrado: ${dto.email}`);
       throw new UnauthorizedException('E-mail ou senha incorretos.');
     }
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
     if (!isPasswordValid) {
+      console.log(`❌ Senha incorreta para: ${dto.email}`);
       throw new UnauthorizedException('E-mail ou senha incorretos.');
     }
 
     const payload = { sub: user.id, email: user.email, role: user.userRole?.role || 'membro' };
+    //console.log(`✅ Login bem-sucedido: ${user.email} (Role: ${payload.role})`);
     
     return {
       access_token: this.jwtService.sign(payload),

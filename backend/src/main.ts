@@ -8,10 +8,25 @@ import * as fs from 'fs';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const corsOrigins = (process.env.CORS_ORIGINS || '')
+    .replace(/["]/g, '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  console.log('🔒 CORS Origins permitidas:', corsOrigins.length > 0 ? corsOrigins : 'TODAS (Dev mode)');
 
   // ─── CORS ─────────────────────────────────────────────────────────────────
   app.enableCors({
-    origin: true,
+    origin: (origin, callback) => {
+      // Em desenvolvimento, permite tudo para evitar problemas de porta (5173, 5174, 8080, etc)
+      if (!origin || process.env.NODE_ENV === 'development') {
+        return callback(null, true);
+      }
+
+      const isAllowed = corsOrigins.includes(origin);
+      return callback(null, isAllowed);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],

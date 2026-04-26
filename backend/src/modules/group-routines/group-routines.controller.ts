@@ -10,7 +10,7 @@ import { UpdateGroupRoutineDto } from './dto/update-group-routine.dto';
 export class GroupRoutinesController {
   constructor(private readonly service: GroupRoutinesService) {}
   @Post() create(@Body() dto: CreateGroupRoutineDto) { return this.service.create(dto); }
-  @Get() @ApiQuery({ name: 'groupId', required: false }) findAll(@Query('groupId') groupId?: string) { return this.service.findAll(groupId); }
+  @Get() @ApiQuery({ name: 'groupId', required: false }) @ApiQuery({ name: 'includeRoles', required: false }) findAll(@Query('groupId') groupId?: string, @Query('includeRoles') includeRoles?: string) { return this.service.findAll(groupId, includeRoles === 'true'); }
   @Get('groups') @ApiQuery({ name: 'groupIds', required: true }) findByGroups(@Query('groupIds') groupIds: string) { return this.service.findByGroups(groupIds); }
   @Get(':id') findOne(@Param('id') id: string) { return this.service.findOne(id); }
   @Patch(':id') update(@Param('id') id: string, @Body() dto: UpdateGroupRoutineDto) { return this.service.update(id, dto); }

@@ -84,7 +84,7 @@ const SettingsPage = () => {
   const { data: permissions } = useQuery({
     queryKey: ["all-role-routines"],
     queryFn: async () => {
-      const { data } = await api.get('/group-routines');
+      const { data } = await api.get('/group-routines', { params: { includeRoles: true } });
       return data || [];
     },
   });
@@ -203,14 +203,15 @@ const SettingsPage = () => {
 
   const toggleRoutineMutation = useMutation({
     mutationFn: async ({ roleId, routineKey, enabled }: { roleId: string, routineKey: string, enabled: boolean }) => {
+      const normalizedRoutineKey = routineKey.toLowerCase();
       const existing = permissions?.find((p: any) =>
-        (p.groupId ?? p.group_id) === roleId &&
-        (p.routineKey ?? p.routine_key) === routineKey
+        (p.roleId ?? p.role_id) === roleId &&
+        String(p.routineKey ?? p.routine_key).toLowerCase() === normalizedRoutineKey
       );
       if (existing) {
         await api.patch(`/group-routines/${existing.id}`, { isEnabled: enabled });
       } else {
-        await api.post('/group-routines', { groupId: roleId, routineKey, isEnabled: enabled });
+        await api.post('/group-routines', { roleId, routineKey: normalizedRoutineKey, isEnabled: enabled });
       }
     },
     onSuccess: () => {
@@ -221,12 +222,13 @@ const SettingsPage = () => {
   });
 
   const getPermStatus = (roleId: string, routineKey: string): boolean => {
+    const normalizedRoutineKey = routineKey.toLowerCase();
     const perm = permissions?.find((p: any) =>
-      (p.groupId ?? p.group_id) === roleId &&
-      (p.routineKey ?? p.routine_key) === routineKey
+      (p.roleId ?? p.role_id) === roleId &&
+      String(p.routineKey ?? p.routine_key).toLowerCase() === normalizedRoutineKey
     );
-    if (!perm) return true;
-    return (p => p.isEnabled ?? p.is_enabled ?? true)(perm);
+    if (!perm) return false;
+    return (p => p.isEnabled ?? p.is_enabled ?? false)(perm);
   };
 
 
@@ -390,31 +392,6 @@ const SettingsPage = () => {
       setDeletingTest(null);
       toast({ title: "Depoimento removido!" });
     },
-  });
-
-  const toggleRoutinePermission = useMutation({
-    mutationFn: async ({ role, routineId, currentPermission }: { role: string; routineId: string; currentPermission: any }) => {
-      if (currentPermission) {
-        // Se existe, deletar
-        await api.delete(`/group-routines/${currentPermission.id}`);
-      } else {
-        // Se não existe, criar vinculado ao Role (usando groupId como role para fins de mapeamento simples)
-        // No banco, groupId Ǹ opcional. Podemos usar o role como identificador se o backend permitir,
-        // mas o padrão atual Ǹ usar o groupId. Se selectedRole for um dos ROLE_TYPES, 
-        // precisamos de uma lǪgica que mapeie isso no backend ou use um grupo especial.
-        // Pelo que vi no backend, ele espera um groupId.
-        await api.post(`/group-routines`, {
-          routineKey: routineId,
-          isEnabled: true,
-          groupId: role // Aqui assume-se que o role id Ǹ o que passamos
-        });
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["all-role-routines"] });
-      toast({ title: "Permissão atualizada!" });
-    },
-    onError: (err: any) => toast({ title: "Erro", description: getErrorMessage(err), variant: "destructive" }),
   });
 
   // Função para abrir o uploader de imagem chamando o input invisível
@@ -834,8 +811,7 @@ const SettingsPage = () => {
                     {/* Rotinas Gerais */}
                     {ROUTINES.map((routine) => {
                       const Icon = routine.icon;
-                      const currentPermission = permissions?.find((p: any) => p.routineKey === routine.id && p.groupId === selectedRole);
-                      const isEnabled = !!currentPermission;
+                      const isEnabled = getPermStatus(selectedRole!, routine.id);
 
                       return (
                         <div
@@ -844,7 +820,7 @@ const SettingsPage = () => {
                             "group relative flex items-center gap-4 p-4 rounded-2xl border transition-all cursor-pointer",
                             isEnabled ? "bg-primary/5 border-primary/20 shadow-sm" : "bg-background border-border/40 hover:border-border"
                           )}
-                          onClick={() => toggleRoutinePermission.mutate({ role: selectedRole!, routineId: routine.id, currentPermission })}
+                          onClick={() => toggleRoutineMutation.mutate({ roleId: selectedRole!, routineKey: routine.id, enabled: !isEnabled })}
                         >
                           <div className={cn(
                             "p-3 rounded-xl transition-colors",
@@ -859,7 +835,7 @@ const SettingsPage = () => {
                           <div className="absolute right-4">
                             <Switch
                               checked={isEnabled}
-                              onCheckedChange={() => toggleRoutinePermission.mutate({ role: selectedRole!, routineId: routine.id, currentPermission })}
+                              onCheckedChange={(checked) => toggleRoutineMutation.mutate({ roleId: selectedRole!, routineKey: routine.id, enabled: checked })}
                             />
                           </div>
                         </div>
@@ -869,8 +845,7 @@ const SettingsPage = () => {
                     {/* Rotinas Administrativas (Apenas se Admin estiver selecionado) */}
                     {selectedRole === 'c1f324b3-45ed-453a-941c-d030e22d7721' && CCM_ONLY_ROUTINES.map((routine) => {
                       const Icon = routine.icon;
-                      const currentPermission = permissions?.find((p: any) => p.routineKey === routine.id && p.groupId === selectedRole);
-                      const isEnabled = !!currentPermission;
+                      const isEnabled = getPermStatus(selectedRole!, routine.id);
 
                       return (
                         <div
@@ -879,7 +854,7 @@ const SettingsPage = () => {
                             "group relative flex items-center gap-4 p-4 rounded-2xl border border-dashed transition-all cursor-pointer",
                             isEnabled ? "bg-slate-900 text-white border-slate-700 shadow-md" : "bg-background border-border/40 hover:border-border"
                           )}
-                          onClick={() => toggleRoutinePermission.mutate({ role: selectedRole!, routineId: routine.id, currentPermission })}
+                          onClick={() => toggleRoutineMutation.mutate({ roleId: selectedRole!, routineKey: routine.id, enabled: !isEnabled })}
                         >
                           <div className={cn(
                             "p-3 rounded-xl transition-colors",
@@ -897,7 +872,7 @@ const SettingsPage = () => {
                           <div className="absolute right-4">
                             <Switch
                               checked={isEnabled}
-                              onCheckedChange={() => toggleRoutinePermission.mutate({ role: selectedRole!, routineId: routine.id, currentPermission })}
+                              onCheckedChange={(checked) => toggleRoutineMutation.mutate({ roleId: selectedRole!, routineKey: routine.id, enabled: checked })}
                             />
                           </div>
                         </div>

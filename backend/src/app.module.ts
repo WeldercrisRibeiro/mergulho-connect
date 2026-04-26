@@ -35,7 +35,9 @@ import { VolunteerSchedulesModule } from './modules/volunteer-schedules/voluntee
 import { WzDispatchesModule } from './modules/wz-dispatches/wz-dispatches.module';
 import { WhatsAppModule } from './modules/whatsapp/whatsapp.module';
 import { UploadModule } from './modules/upload/upload.module';
+import { MaintenanceModule } from './modules/maintenance/maintenance.module';
 import { JwtAuthGuard } from './modules/auth/jwt-auth.guard';
+import { RolesGuard } from './modules/auth/roles.guard';
 
 @Module({
   imports: [
@@ -73,11 +75,16 @@ import { JwtAuthGuard } from './modules/auth/jwt-auth.guard';
     WzDispatchesModule,
     WhatsAppModule,
     UploadModule,
+    MaintenanceModule,
   ],
   providers: [
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
   ],
 })

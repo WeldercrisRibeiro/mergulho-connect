@@ -83,9 +83,10 @@ model GroupRoutine {
   isEnabled  Boolean?  @default(true) @map("is_enabled")
   updatedAt  DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
   groupId    String?   @map("group_id") @db.Uuid
+  roleId     String?   @map("role_id") @db.Uuid
   group      Group?    @relation(fields: [groupId], references: [id])
 
-  @@unique([groupId, routineKey])
+  @@unique([groupId, roleId, routineKey])
   @@map("group_routines")
 }
 
@@ -450,4 +451,15 @@ enum PaymentStatus {
   cancelled
 
   @@map("payment_status")
+}
+
+model MaintenanceLog {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  scriptId  String   @map("script_id")
+  executorId String  @map("executor_id") @db.Uuid
+  details   String?
+  status    String   @default("success")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("maintenance_logs")
 }

@@ -40,22 +40,23 @@ const GroupPermissions = () => {
   const { data: permissions, isLoading: loadingPerms } = useQuery({
     queryKey: ["all-role-routines"],
     queryFn: async () => {
-      const { data } = await api.get('/group-routines');
+      const { data } = await api.get('/group-routines', { params: { includeRoles: true } });
       return data || [];
     },
   });
 
   const toggleMutation = useMutation({
     mutationFn: async ({ roleId, routineKey, enabled }: { roleId: string, routineKey: string, enabled: boolean }) => {
+      const normalizedRoutineKey = routineKey.toLowerCase();
       // Tenta encontrar registro existente para fazer update, senão cria
       const existing = permissions?.find((p: any) =>
         (p.groupId ?? p.group_id) === roleId &&
-        (p.routineKey ?? p.routine_key) === routineKey
+        String(p.routineKey ?? p.routine_key).toLowerCase() === normalizedRoutineKey
       );
       if (existing) {
         await api.patch(`/group-routines/${existing.id}`, { isEnabled: enabled });
       } else {
-        await api.post('/group-routines', { groupId: roleId, routineKey, isEnabled: enabled });
+        await api.post('/group-routines', { groupId: roleId, routineKey: normalizedRoutineKey, isEnabled: enabled });
       }
     },
     onSuccess: () => {
@@ -68,9 +69,10 @@ const GroupPermissions = () => {
   const selectedGroupObj = groups?.find((g: any) => g.id === selectedRole);
 
   const getPermStatus = (roleId: string, routineKey: string): boolean => {
+    const normalizedRoutineKey = routineKey.toLowerCase();
     const perm = permissions?.find((p: any) =>
       (p.groupId ?? p.group_id) === roleId &&
-      (p.routineKey ?? p.routine_key) === routineKey
+      String(p.routineKey ?? p.routine_key).toLowerCase() === normalizedRoutineKey
     );
     // Se não houver registro, considera desabilitado por padrão
     if (!perm) return false;
