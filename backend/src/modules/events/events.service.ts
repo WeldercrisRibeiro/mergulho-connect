@@ -21,7 +21,13 @@ export class EventsService {
     });
   }
 
-  findPublic() { return this.prisma.event.findMany({ where: { isPublic: true }, orderBy: { eventDate: 'asc' } }); }
+  findPublic() {
+    return this.prisma.event.findMany({
+      where: { isPublic: true },
+      orderBy: { eventDate: 'asc' },
+      include: { group: true }
+    });
+  }
 
   findOne(id: string) {
     return this.prisma.event.findUnique({

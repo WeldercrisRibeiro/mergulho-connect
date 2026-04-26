@@ -11,7 +11,6 @@ interface AuthContextType {
   isAdmin: boolean;
   isAdminCCM: boolean;
   isGerente: boolean;
-  isVisitor: boolean;
   managedGroupIds: string[];
   userGroupIds: string[];
   profile: { fullName: string; avatarUrl: string | null; whatsappPhone: string | null; username: string | null; createdAt: string | null } | null;
@@ -29,7 +28,6 @@ const AuthContext = createContext<AuthContextType>({
   isAdmin: false,
   isAdminCCM: false,
   isGerente: false,
-  isVisitor: false,
   managedGroupIds: [],
   userGroupIds: [],
   profile: null,
@@ -64,7 +62,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isAdminCCM, setIsAdminCCM] = useState(false);
   const [isGerente, setIsGerente] = useState(false);
-  const [isVisitor, setIsVisitor] = useState(false);
   const [managedGroupIds, setManagedGroupIds] = useState<string[]>([]);
   const [userGroupIds, setUserGroupIds] = useState<string[]>([]);
   const [profile, setProfile] = useState<AuthContextType["profile"]>(null);
@@ -93,16 +90,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      if (token === "FAKE_EMERGENCY_TOKEN") {
-        setUser({ id: "emergency-id", email: "emergency@teste.com", role: "admin" });
-        setProfile({ fullName: "Modo Emergência", avatarUrl: null, whatsappPhone: null, username: "admin", createdAt: new Date().toISOString() });
-        setIsAdmin(true);
-        setIsAdminCCM(true);
-        setIsGerente(true);
-        setLoading(false);
-        return;
-      }
-
       try {
         const { data: me } = await api.get('/auth/me');
         setUser(me);
@@ -124,7 +111,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setProfile(null);
     setIsAdmin(false);
     setIsGerente(false);
-    setIsVisitor(false);
     setManagedGroupIds([]);
     setUserGroupIds([]);
     setRoutinePermissions({});
@@ -161,11 +147,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const hasAdminCCM = rolesList.includes("admin_ccm");
       const hasAdmin = rolesList.includes("admin") || rolesList.includes("pastor") || hasAdminCCM;
       const hasGerente = rolesList.includes("gerente");
-      const hasVisitante = rolesList.includes("visitante");
 
       setIsAdminCCM(hasAdminCCM);
       setIsAdmin(hasAdmin);
-      setIsVisitor(hasVisitante);
 
       const { data: managedGroups } = await api.get(`/member-groups/user/${userId}`);
 
@@ -305,7 +289,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isAdmin,
         isAdminCCM,
         isGerente,
-        isVisitor,
         managedGroupIds: managedGroupIds || [],
         userGroupIds: userGroupIds || [],
         profile,

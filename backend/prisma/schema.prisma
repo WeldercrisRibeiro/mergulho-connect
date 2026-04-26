@@ -200,9 +200,9 @@ model WzDispatch {
   sentAt        DateTime?              @map("sent_at") @db.Timestamp(6)
   errorMessage  String?                @map("error_message")
   createdBy     String?                @map("created_by")
-  attachmentUrl String?                @map("attachment_url")
   createdAt     DateTime               @default(now()) @map("created_at") @db.Timestamp(6)
   id            String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  attachmentUrl String?                @map("attachment_url")
   attachments   WzDispatchAttachment[]
   logs          WzDispatchLog[]
 

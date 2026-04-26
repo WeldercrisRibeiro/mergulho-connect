@@ -16,7 +16,6 @@ import { ShieldCheck, UserPlus, Search, QrCode, Phone, CheckCircle2, XCircle, Lo
 import { QRCodeSVG } from "qrcode.react";
 import { safeFormatTime } from "@/lib/dateUtils";
 import { cn } from "@/lib/utils";
-import { logAudit } from "@/lib/auditLogger";
 import QRScanner from "@/components/QRScanner";
 import { getErrorMessage } from "@/lib/errorMessages";
 
@@ -91,7 +90,6 @@ const KidsCheckin = () => {
       setItemsInfo("");
       setSelectedGuardian(null);
       queryClient.invalidateQueries({ queryKey: ["kids-checkins"] });
-      logAudit("CHECKIN_KIDS", "Realizado check-in de criança/volume", { childName, category });
     },
     onError: (err: any) => {
       toast({ title: "Erro no check-in", description: getErrorMessage(err), variant: "destructive" });

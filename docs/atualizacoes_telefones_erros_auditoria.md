@@ -37,8 +37,3 @@ Para suavizar o feedback recebido por ações não permitidas, problemas de cone
 
 ---
 
-## 4. Auditoria Exclusiva para ADM CCM
-O controle em cima dos Logins e CRUD foi elevado da flag mista geral de `admin` para acesso global exclusivo de `admin_ccm`.
-- **`AuditLogs.tsx`:** Adicionado guardião no topo da rota. Se um admin não-CCM acessar a aba (`!isAdminCCM`), é redirecionado coercivamente para a `Home`.
-- **`auditLogger.ts`:** Amplia as informações listadas nos resumos de dados. Captura o status da flag do autor do clique (agora retornando no formato JSON de exibição atributos como o `user_role` e o `local_time` de SP do evento, não mais amontoado).
-- **Settings/Privilégios:** Separado visualmente das rotinas delegáveis pelas congregações (Membros, Células, Chat). Injetado o menu `Acesso Exclusivo — ADM CCM` em formato vermelho vibrante limitando gerentes ou admins locais de controlarem quem acessa Auditoria da plataforma.

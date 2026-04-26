@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Heart, X, BookOpen } from "lucide-react";
 import { safeFormat } from "@/lib/dateUtils";
@@ -76,6 +76,10 @@ const DevotionalWelcome = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-[540px] p-0 overflow-hidden gap-0">
+        <DialogHeader className="sr-only">
+          <DialogTitle>Devocional do Dia</DialogTitle>
+          <DialogDescription>Leia o devocional de hoje.</DialogDescription>
+        </DialogHeader>
         {/* Header strip */}
         <div className="bg-gradient-to-r from-primary to-primary/70 p-5 relative">
           <div className="flex items-center gap-2 text-white">

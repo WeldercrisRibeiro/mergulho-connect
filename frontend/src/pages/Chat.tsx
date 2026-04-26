@@ -426,7 +426,7 @@ const { data: conversations } = useQuery({
 
   if (view.type === "list") {
     return (
-      <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
+      <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6 pb-20 md:pb-8">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <MessageCircle className="h-6 w-6 text-primary" />
@@ -449,7 +449,7 @@ const { data: conversations } = useQuery({
               return (
                 <Card
                   key={`group-${g.id}`}
-                  className="neo-shadow-sm border-0 cursor-pointer hover:scale-[1.01] transition-transform"
+                  className="neo-shadow-sm border-0 cursor-pointer hover:scale-[1.01] transition-transform active:scale-[0.995]"
                   onClick={() => openConv(g.id, { type: "group", groupId: g.id, groupName: g.name })}
                 >
                   <CardContent className="flex items-center gap-3 p-4">
@@ -495,7 +495,7 @@ const { data: conversations } = useQuery({
               return (
                 <Card
                   key={conv.userId}
-                  className="neo-shadow-sm border-0 cursor-pointer hover:scale-[1.01] transition-transform"
+                  className="neo-shadow-sm border-0 cursor-pointer hover:scale-[1.01] transition-transform active:scale-[0.995]"
                   onClick={() => openConv(conv.userId, { type: "direct", userId: conv.userId, userName: conv.name || "Membro" })}
                 >
                   <CardContent className="flex items-center gap-3 p-4">
@@ -623,7 +623,7 @@ const { data: conversations } = useQuery({
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 overscroll-contain">
         {(!messages || messages.length === 0) && (
           <p className="text-center text-sm text-muted-foreground py-8">Nenhuma mensagem ainda. Diga olá! 👋</p>
         )}
@@ -680,7 +680,7 @@ const { data: conversations } = useQuery({
       />
 
       {/* Input */}
-      <form onSubmit={handleSend} className="p-4 border-t bg-card flex gap-2">
+      <form onSubmit={handleSend} className="p-4 border-t bg-card/95 backdrop-blur-sm flex gap-2 pb-safe">
         <Input
           value={message}
           onChange={(e) => setMessage(e.target.value)}

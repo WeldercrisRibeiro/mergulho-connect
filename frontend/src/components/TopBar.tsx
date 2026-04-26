@@ -1,9 +1,9 @@
-import { Menu, Sun, Moon, Bell, BellOff, MessageCircle } from "lucide-react";
+import { Menu, Sun, Moon, Bell, BellOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "./ThemeProvider";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 interface TopBarProps {
@@ -11,8 +11,9 @@ interface TopBarProps {
 }
 
 const TopBar = ({ onToggleSidebar }: TopBarProps) => {
-  const { isAdmin, isAdminCCM, isGerente, isVisitor, profile, unreadAnnouncements } = useAuth();
+  const { isAdmin, isAdminCCM, isGerente, profile } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const location = useLocation();
   const [notifEnabled, setNotifEnabled] = useState(
     typeof window !== "undefined" && "Notification" in window && (window as any).Notification.permission === "granted" && localStorage.getItem("notify_enabled") === "true"
   );
@@ -37,8 +38,6 @@ const TopBar = ({ onToggleSidebar }: TopBarProps) => {
     ? "Admin"
     : isGerente
     ? "Gerente"
-    : isVisitor
-    ? "Visitante"
     : "Membro";
 
   const roleBgClass = isAdminCCM
@@ -47,12 +46,27 @@ const TopBar = ({ onToggleSidebar }: TopBarProps) => {
     ? "bg-primary/10 text-primary border-primary/20"
     : isGerente
     ? "bg-blue-500/10 text-blue-600 border-blue-300/30"
-    : isVisitor
-    ? "bg-orange-500/10 text-orange-600 border-orange-300/30"
     : "bg-muted text-muted-foreground border-border";
 
   const avatarUrl = profile?.avatarUrl;
   const initials = (profile?.fullName || "M").charAt(0).toUpperCase();
+  const pageTitleMap: Record<string, string> = {
+    "/home": "Início",
+    "/agenda": "Agenda",
+    "/devocionais": "Devocionais",
+    "/chat": "Chat",
+    "/perfil": "Perfil",
+    "/membros": "Membros",
+    "/departamentos": "Departamentos",
+    "/voluntarios": "Voluntários",
+    "/tesouraria": "Tesouraria",
+    "/relatorios": "Relatórios",
+    "/configuracoes": "Ajustes",
+  };
+  const currentPageTitle =
+    pageTitleMap[location.pathname] ||
+    Object.entries(pageTitleMap).find(([path]) => location.pathname.startsWith(`${path}/`))?.[1] ||
+    "Comunidade";
 
   return (
     <header className="sticky top-0 z-40 h-14 border-b bg-sidebar/95 backdrop-blur-sm flex items-center px-3 gap-2 shadow-sm">
@@ -67,6 +81,9 @@ const TopBar = ({ onToggleSidebar }: TopBarProps) => {
         >
           <Menu className="h-5 w-5" />
         </Button>
+      </div>
+      <div className="min-w-0 md:hidden">
+        <p className="text-xs font-semibold text-sidebar-foreground/85 truncate">{currentPageTitle}</p>
       </div>
 
       {/* Spacer */}

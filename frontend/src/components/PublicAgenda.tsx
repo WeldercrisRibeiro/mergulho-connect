@@ -28,7 +28,7 @@ export const PublicAgenda = () => {
   const { data: events, isLoading } = useQuery({
     queryKey: ["public-agenda"],
     queryFn: async () => {
-      const { data } = await api.get('/events', { params: { public: true, limit: 6, upcoming: true } });
+      const { data } = await api.get('/events/public');
       return data || [];
     },
     refetchInterval: 60000,
@@ -36,10 +36,20 @@ export const PublicAgenda = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center py-16">
-        <div className="flex flex-col items-center gap-3">
-          <span className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
-          <p className="text-sm text-muted-foreground">Carregando agenda...</p>
+      <div className="space-y-3 py-3">
+        {Array.from({ length: 3 }).map((_, idx) => (
+          <Card key={idx} className="rounded-2xl border-0 shadow-sm bg-card/70 backdrop-blur-sm">
+            <CardContent className="p-4">
+              <div className="animate-pulse space-y-2">
+                <div className="h-3 w-24 rounded bg-muted" />
+                <div className="h-4 w-2/3 rounded bg-muted" />
+                <div className="h-3 w-1/2 rounded bg-muted" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+        <div className="pt-1 text-center">
+          <p className="text-xs text-muted-foreground">Atualizando agenda...</p>
         </div>
       </div>
     );
@@ -65,7 +75,7 @@ export const PublicAgenda = () => {
         return (
           <Link key={event.id} to="/auth?request=true" className="block focus:outline-none">
             <Card
-              className="border-0 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl overflow-hidden group bg-card/80 backdrop-blur-sm"
+              className="border-0 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl overflow-hidden group bg-card/80 backdrop-blur-sm hover:-translate-y-0.5"
             >
               <div className="flex">
                 {/* Color accent bar */}
@@ -91,9 +101,9 @@ export const PublicAgenda = () => {
                           {emoji} {EVENT_TYPE_LABELS[event.eventType] || "Compromisso"}
                         </span>
                         {/* Badge de departamento para eventos não-gerais que foram tornados públicos */}
-                        {!event.isGeneral && event.isPublic && event.groups?.name && (
+                        {!event.isGeneral && event.isPublic && event.group?.name && (
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">
-                            🏷️ {event.groups.name}
+                            🏷️ {event.group.name}
                           </span>
                         )}
                         {isPaid && (
@@ -134,6 +144,7 @@ export const PublicAgenda = () => {
                           <span className="truncate">{event.speakers}</span>
                         </div>
                       )}
+                      <p className="mt-2 text-[11px] text-primary/80 font-medium">Toque para solicitar acesso e confirmar presença</p>
                     </div>
 
                     <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0 group-hover:text-primary group-hover:translate-x-0.5 transition-all mt-1" />

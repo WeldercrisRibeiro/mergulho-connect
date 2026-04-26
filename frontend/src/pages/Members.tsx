@@ -252,7 +252,7 @@ const Members = () => {
         {filtered?.map((member: any) => (
           <Card key={member.id} className="border border-border/50 bg-card/60 backdrop-blur-sm shadow-md hover:shadow-xl transition-all duration-300 rounded-3xl overflow-hidden group">
             <CardContent className="p-5 flex flex-col h-full relative">
-              
+
               <div className="flex items-start justify-between gap-3 mb-4">
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center shrink-0 shadow-inner border border-primary/20">
@@ -273,8 +273,8 @@ const Members = () => {
                         <div className="flex items-center gap-1 text-primary text-[10px] sm:text-xs font-bold min-w-0">
                           <User className="h-3 w-3 shrink-0" />
                           <span className="truncate">
-                            @{((member.username && !/^\d{8,}$/.test(member.username)) 
-                              ? member.username 
+                            @{((member.username && !/^\d{8,}$/.test(member.username))
+                              ? member.username
                               : (member.fullName?.trim().toLowerCase().replace(/\s+/g, ".") || member.username)).toLowerCase()}
                           </span>
                         </div>
@@ -292,7 +292,7 @@ const Members = () => {
                     >
                       <Key className="h-5 w-5 sm:h-4 sm:w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" 
+                    <Button variant="ghost" size="icon"
                       className="h-10 w-10 sm:h-8 sm:w-8 rounded-full hover:bg-primary/10 text-primary/80 hover:text-primary transition-colors"
                       onClick={() => handleEdit(member)}>
                       <Edit2 className="h-5 w-5 sm:h-4 sm:w-4" />
@@ -307,7 +307,7 @@ const Members = () => {
                   </div>
                 )}
               </div>
-              
+
               {member.whatsappPhone && (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3 bg-muted/40 p-2 rounded-xl border border-border/40 inline-flex w-max max-w-full">
                   <Phone className="h-3 w-3 text-primary shrink-0" />
@@ -402,7 +402,7 @@ const Members = () => {
                   <SelectTrigger className="rounded-xl h-11"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="membro">Membro</SelectItem>
-                    <SelectItem value="gerente">Líder (Gerente)</SelectItem>
+                    <SelectItem value="gerente">Líder</SelectItem>
                     <SelectItem value="pastor">Pastor</SelectItem>
                     <SelectItem value="admin">Administrador</SelectItem>
                     {isAdminCCM && (
@@ -458,7 +458,7 @@ const Members = () => {
                   <SelectTrigger className="rounded-xl h-11"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="membro">Membro</SelectItem>
-                    <SelectItem value="gerente">Líder (Gerente)</SelectItem>
+                    <SelectItem value="gerente">Líder</SelectItem>
                     <SelectItem value="pastor">Pastor</SelectItem>
                     <SelectItem value="admin">Administrador</SelectItem>
                     {isAdminCCM && (

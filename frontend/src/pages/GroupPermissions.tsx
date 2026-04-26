@@ -72,9 +72,9 @@ const GroupPermissions = () => {
       (p.groupId ?? p.group_id) === roleId &&
       (p.routineKey ?? p.routine_key) === routineKey
     );
-    // Se não houver registro, considera habilitado por padrão
-    if (!perm) return true;
-    return (p => p.isEnabled ?? p.is_enabled ?? true)(perm);
+    // Se não houver registro, considera desabilitado por padrão
+    if (!perm) return false;
+    return (p => p.isEnabled ?? p.is_enabled ?? false)(perm);
   };
 
   if (loadingPerms) {
@@ -171,6 +171,7 @@ const GroupPermissions = () => {
                         </span>
                         <Switch
                           checked={isEnabled}
+                          disabled={toggleMutation.isPending}
                           onCheckedChange={(checked) => toggleMutation.mutate({
                             roleId: selectedRole,
                             routineKey: routine.id,
@@ -192,7 +193,7 @@ const GroupPermissions = () => {
             <div>
               <h4 className="font-semibold text-sm">Como as permissões funcionam?</h4>
               <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                As alterações refletem nos acessos dos usuários com o perfil <b>{selectedRoleConfig?.label}</b>.
+                As alterações refletem nos acessos dos usuários com o perfil <b>{selectedGroupObj?.name}</b>.
                 Administradores Globais mantêm acesso total a todas as rotinas independente destas configurações.
               </p>
             </div>

@@ -3,6 +3,7 @@ import { ApiTags, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
+import { Public } from '../auth/public.decorator';
 
 @ApiTags('Events')
 @ApiBearerAuth()
@@ -21,7 +22,9 @@ export class EventsController {
       isGeneral !== undefined ? isGeneral === 'true' : undefined,
     );
   }
-  @Get('public') findPublic() { return this.service.findPublic(); }
+  @Get('public')
+  @Public()
+  findPublic() { return this.service.findPublic(); }
   @Get(':id') findOne(@Param('id') id: string) { return this.service.findOne(id); }
   @Patch(':id') update(@Param('id') id: string, @Body() dto: UpdateEventDto) { return this.service.update(id, dto); }
   @Delete(':id') remove(@Param('id') id: string) { return this.service.remove(id); }

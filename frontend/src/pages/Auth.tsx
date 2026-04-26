@@ -105,45 +105,39 @@ const Auth = () => {
 
     try {
       const cleanUsername = username.trim().toLowerCase();
-      const loginEmail = cleanUsername.replace(/\s+/g, ".") + "@ccmergulho.com";
+      const loginEmail = cleanUsername.includes("@")
+        ? cleanUsername
+        : cleanUsername.replace(/\s+/g, ".") + "@ccmergulho.com";
       const phoneDigits = cleanUsername.replace(/\D/g, "");
       const phoneEmail = phoneDigits + "@ccmergulho.com";
       const phoneEmail55 = "55" + phoneDigits + "@ccmergulho.com";
-
-      // 1. Tenta verificar a senha atual com o formato de username
-      let { error: signInError } = await supabase.auth.signInWithPassword({
-        email: loginEmail,
-        password: password.trim()
-      });
-
-      // 2. Se falhar, tenta com formato de telefone (exato)
-      if (signInError && phoneDigits.length >= 8) {
-        const { error: phoneError } = await supabase.auth.signInWithPassword({
-          email: phoneEmail,
-          password: password.trim()
-        });
-        signInError = phoneError;
-
-        // 3. Se falhou e não tem 55, tenta com 55
-        if (signInError && !phoneDigits.startsWith("55")) {
-          const { error: phoneError55 } = await supabase.auth.signInWithPassword({
-            email: phoneEmail55,
-            password: password.trim()
-          });
-          signInError = phoneError55;
+      const candidates = [loginEmail];
+      if (phoneDigits.length >= 8) {
+        candidates.push(phoneEmail);
+        if (!phoneDigits.startsWith("55")) {
+          candidates.push(phoneEmail55);
         }
       }
 
-      if (signInError) {
-        throw new Error(signInError.message || "Senha atual incorreta ou usuário não encontrado.");
+      let lastError: unknown = null;
+      let updated = false;
+      for (const email of candidates) {
+        try {
+          await api.patch("/auth/password/by-credentials", {
+            email,
+            currentPassword: password.trim(),
+            newPassword: newPassword.trim(),
+          });
+          updated = true;
+          break;
+        } catch (candidateError) {
+          lastError = candidateError;
+        }
       }
 
-      // 2. Com o usuário logado, atualiza para a nova senha
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: newPassword
-      });
-
-      if (updateError) throw updateError;
+      if (!updated) {
+        throw lastError;
+      }
 
       toast({
         title: "Sucesso!",
@@ -157,7 +151,7 @@ const Auth = () => {
     } catch (error: any) {
       toast({
         title: "Erro ao trocar senha",
-        description: error.message,
+        description: getErrorMessage(error),
         variant: "destructive",
       });
     } finally {
@@ -282,7 +276,7 @@ const Auth = () => {
                     className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="usuário ou telefone"
+                    placeholder="usuário"
                     required
                   />
                 </div>
@@ -318,7 +312,8 @@ const Auth = () => {
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="Mínimo 6 caracteres"
                       required
-                      minLength={3}
+                      minLength={6}
+                      autoComplete="new-password"
                     />
                     <button
                       type="button"
@@ -348,10 +343,13 @@ const Auth = () => {
                     className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Seu usuário definido pelo ADM"
+                    placeholder="Seu usuário"
                     required
                     autoComplete="username"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Use seu usuário.
+                  </p>
                 </div>
                 <div className="space-y-2 text-left">
                   <div className="flex items-center justify-between">
@@ -373,7 +371,7 @@ const Auth = () => {
                       onChange={(e) => setPassword(e.target.value)}
                       className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium pr-10"
                       required
-                      minLength={3}
+                      minLength={6}
                       autoComplete="current-password"
                     />
                     <button
@@ -389,17 +387,6 @@ const Auth = () => {
                   {loading ? "Aguarde..." : "Entrar na Comunidade"}
                 </Button>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    localStorage.setItem("mergulho_auth_token", "FAKE_EMERGENCY_TOKEN");
-                    window.location.reload();
-                  }}
-                  className="w-full h-12 border-dashed border-rose-500/50 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-xl"
-                >
-                  Acesso de Emergência (Teste)
-                </Button>
                 <div className="mt-8 text-center text-sm">
                   <button type="button" onClick={() => setIsRequesting(true)} className="text-muted-foreground hover:text-primary transition-colors font-medium border-b border-transparent hover:border-primary pb-0.5">
                     Não tem acesso? Solicite aos Administradores

@@ -100,21 +100,20 @@ npx prisma generate
 
 ---
 
-## 👤 6. Criar o Primeiro Administrador
+## 👤 6. Criar o Primeiro Usuário e Promover para Admin
 
-O sistema precisa de pelo menos um admin para o primeiro acesso. Execute o seed:
+Atualmente não existe script de seed versionado para admin. O fluxo inicial é:
 
+1. Criar o primeiro usuário via endpoint de registro:
 ```bash
-# Dentro da pasta backend/
-npx ts-node seed-admin.ts
+curl -X POST http://localhost:3001/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d "{\"name\":\"Admin Inicial\",\"email\":\"admin@ccmergulho.com\",\"password\":\"123456\"}"
 ```
-
-Isso cria um usuário admin com:
-- **Email**: definido no script `seed-admin.ts`
-- **Senha padrão**: `123456`
+2. Promover esse usuário para admin no banco (via Prisma Studio ou SQL), ajustando `user_roles.role` para `admin`.
 
 > [!WARNING]
-> Troque a senha imediatamente após o primeiro login.
+> Troque a senha imediatamente após o primeiro login e nunca mantenha senha padrão em produção.
 
 ---
 
@@ -127,12 +126,12 @@ npm run start:dev
 
 O backend estará disponível em:
 - **API**: http://localhost:3001/api
-- **Swagger (documentação interativa)**: http://localhost:3001/api
+- **Swagger (documentação interativa)**: http://localhost:3001/docs
 
 Você verá no terminal:
 ```
 🚀 API rodando em: http://localhost:3001/api
-📚 Swagger em:     http://localhost:3001/api
+📚 Swagger em:     http://localhost:3001/docs
 ```
 
 ---

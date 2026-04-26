@@ -68,7 +68,6 @@ mergulho-connect/
 | `volunteer-schedules` | `/api/volunteer-schedules` | Escalas de voluntários |
 | `culto-reports` | `/api/culto-reports` | Relatórios de culto |
 | `event-reports` | `/api/event-reports` | Relatórios de evento |
-| `audit-logs` | `/api/audit-logs` | Trilha de auditoria |
 | `whatsapp` | `/api/whatsapp` | Gerenciamento da sessão Baileys |
 | `wz-dispatches` | `/api/wz-dispatches` | Disparos em massa (WhatsApp) |
 | `upload` | `/api/upload` | Upload de imagens/arquivos |
@@ -103,7 +102,6 @@ mergulho-connect/
 | `/whatsapp` | `AdminWhatsApp` | Admin |
 | `/gestao-rotinas` | `GroupPermissions` | Admin/Gerente |
 | `/tesouraria` | `Tesouraria` | Admin/Gerente |
-| `/auditoria` | `AuditLogs` | Admin |
 
 ---
 

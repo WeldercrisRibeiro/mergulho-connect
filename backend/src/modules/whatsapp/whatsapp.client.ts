@@ -147,21 +147,39 @@ export async function startSocket(): Promise<void> {
 // ─── API pública ─────────────────────────────────────────────────────────────
 
 export async function connectWhatsApp(): Promise<void> {
-  if (currentStatus === 'connected') { console.log('[WA] Já está conectado.'); return; }
-  if (currentStatus === 'connecting') { console.log('[WA] Já está conectando...'); return; }
+  if (currentStatus === 'connected') { 
+    console.log('[WA] Já está conectado. Sincronizando status...');
+    setStatus('connected', null); 
+    return; 
+  }
+  if (currentStatus === 'connecting') { 
+    console.log('[WA] Já está conectando...'); 
+    setStatus('connecting', currentQrCode);
+    return; 
+  }
   await startSocket();
 }
 
 export async function disconnectWhatsApp(): Promise<void> {
+  console.log('[WA] Solicitando desconexão forçada...');
   if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+  
   if (socket) {
-    try { await socket.logout(); } catch {}
+    try { 
+      // Tenta logout amigável, mas não espera muito
+      await Promise.race([
+        socket.logout(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
+      ]).catch(() => console.log('[WA] Logout amigável falhou ou timeout, forçando fechamento.'));
+    } catch {}
+    
     try { socket.end(undefined); } catch {}
     socket = null;
   }
+  
   clearAuthFiles();
   setStatus('disconnected', null);
-  console.log('[WA] Desconectado e sessão removida.');
+  console.log('[WA] Desconectado e sessão removida com sucesso.');
 }
 
 export function isConnected(): boolean {

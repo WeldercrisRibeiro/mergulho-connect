@@ -13,7 +13,7 @@ import { JwtStrategy } from './jwt.strategy';
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        secret: config.get('JWT_SECRET') || 'mergulho-connect-secret-jwt-key',
+        secret: config.getOrThrow<string>('JWT_SECRET'),
         signOptions: { 
           expiresIn: config.get('JWT_EXPIRES_IN') || '7d' 
         },

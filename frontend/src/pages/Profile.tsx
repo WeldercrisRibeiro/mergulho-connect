@@ -14,7 +14,7 @@ import { normalizePhoneForDB, formatPhoneForDisplay } from "@/lib/phoneUtils";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 const Profile = () => {
-  const { user, profile, signOut, isAdmin, isGerente, isVisitor, refreshProfile } = useAuth();
+  const { user, profile, signOut, isAdmin, isGerente, refreshProfile } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -34,17 +34,15 @@ const Profile = () => {
     if (profile) {
       setFullName(profile.fullName || "");
       setWhatsapp(formatPhoneForDisplay(profile.whatsappPhone || ""));
-      
       const rawUsername = profile.username || "";
       const isPhoneLike = /^\d{8,}$/.test(rawUsername);
       const emailPrefix = user?.email?.split('@')[0] || "";
       setUsername(rawUsername && !isPhoneLike ? rawUsername : emailPrefix);
-      
       setAvatarUrl(profile.avatarUrl || null);
     }
   }, [profile, user]);
 
-  const roleLabel = isAdmin ? "Administrador" : isGerente ? "Gerente" : isVisitor ? "Visitante" : "Membro";
+  const roleLabel = isAdmin ? "Administrador" : isGerente ? "Gerente" : "Membro";
   const roleBg = isAdmin
     ? "bg-primary/10 text-primary border-primary/30"
     : isGerente
@@ -127,7 +125,7 @@ const Profile = () => {
   });
 
   return (
-    <div className="p-4 md:p-8 max-w-lg mx-auto space-y-6">
+    <div className="p-4 md:p-8 max-w-lg mx-auto space-y-6 pb-20 md:pb-8">
       <h1 className="text-2xl font-bold flex items-center gap-2">
         <User className="h-6 w-6 text-primary" />
         Meu Perfil
@@ -234,7 +232,7 @@ const Profile = () => {
             <div className="space-y-1.5">
               <Label>Meus departamentos</Label>
               <div className="flex gap-1.5 flex-wrap">
-                {myGroups.map((name: string) => (
+                {Array.from(new Set(myGroups)).map((name: string) => (
                   <Badge key={name} variant="secondary">{name}</Badge>
                 ))}
               </div>
@@ -277,7 +275,7 @@ const Profile = () => {
           </div>
 
           {/* Actions */}
-          <div className="flex gap-2 pt-4">
+          <div className="flex gap-2 pt-4 sticky bottom-16 md:bottom-0 bg-background/95 backdrop-blur-sm py-2">
             <Button
               onClick={() => updateMutation.mutate()}
               disabled={updateMutation.isPending}

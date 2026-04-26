@@ -144,6 +144,15 @@ const AdminWhatsApp = () => {
                   {loading ? <RefreshCw className="h-5 w-5 animate-spin" /> : <QrCode className="h-5 w-5" />}
                   Gerar QR Code de Acesso
                 </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleDisconnect}
+                  disabled={loading}
+                  className="text-muted-foreground hover:text-destructive text-xs gap-1.5"
+                >
+                  <PowerOff className="h-3 w-3" /> Forçar Limpeza de Sessão
+                </Button>
               </div>
             )}
 

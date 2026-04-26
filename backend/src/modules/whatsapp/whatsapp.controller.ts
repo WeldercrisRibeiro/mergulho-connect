@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Res, Delete } from '@nestjs/common';
+import { Public } from '../auth/public.decorator';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { WhatsAppService } from './whatsapp.service';
@@ -28,6 +29,7 @@ export class WhatsAppController {
   }
 
   @Get('sse')
+  @Public()
   sse(@Res() res: Response) {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');

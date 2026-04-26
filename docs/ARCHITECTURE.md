@@ -134,7 +134,6 @@ frontend/src/
 │   └── AuthContext.tsx  # Estado global do usuário logado
 ├── lib/
 │   ├── api.ts           # Instância do Axios com baseURL e interceptores
-│   ├── auditLogger.ts   # Helper para registrar ações na auditoria
 │   ├── dateUtils.ts     # Formatação de datas
 │   ├── errorMessages.ts # Tratamento centralizado de erros da API
 │   ├── phoneUtils.ts    # Formatação de telefones

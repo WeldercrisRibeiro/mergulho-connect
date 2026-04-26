@@ -1,12 +1,15 @@
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -14,7 +17,7 @@ interface ConfirmDialogProps {
   description?: string;
   confirmLabel?: string;
   cancelLabel?: string;
-  variant?: "danger" | "default";
+  variant?: "danger" | "destructive" | "default";
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -30,27 +33,39 @@ const ConfirmDialog = ({
   onCancel,
 }: ConfirmDialogProps) => {
   return (
-    <Dialog open={open} onOpenChange={(val) => !val && onCancel()}>
-      <DialogContent className="sm:max-w-[380px]">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          {description && (
-            <DialogDescription>{description}</DialogDescription>
-          )}
-        </DialogHeader>
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={onCancel}>
+    <AlertDialog open={open} onOpenChange={(val) => !val && onCancel()}>
+      <AlertDialogContent className="rounded-3xl">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="text-xl font-bold">{title}</AlertDialogTitle>
+          <AlertDialogDescription className="text-muted-foreground">
+            {description || "Por favor, confirme esta ação."}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter className="gap-2">
+          <AlertDialogCancel 
+            onClick={onCancel} 
+            className="rounded-xl border-2"
+          >
             {cancelLabel}
-          </Button>
-          <Button
-            variant={variant === "danger" ? "destructive" : "default"}
-            onClick={() => { onConfirm(); onCancel(); }}
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={(e) => {
+              e.preventDefault();
+              onConfirm();
+              onCancel();
+            }}
+            className={cn(
+              "rounded-xl px-6 font-bold transition-all active:scale-95",
+              (variant === "danger" || variant === "destructive") 
+                ? "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-lg shadow-destructive/20" 
+                : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20"
+            )}
           >
             {confirmLabel}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 };
 

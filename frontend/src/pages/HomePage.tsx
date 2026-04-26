@@ -11,9 +11,10 @@ import { Link } from "react-router-dom";
 import { useTheme } from "@/components/ThemeProvider";
 import { cn } from "@/lib/utils";
 import { safeFormatMonth, safeFormatDay, safeFormatTime } from "@/lib/dateUtils";
+import { PhotoCarousel } from "@/components/PhotoCarousel";
 
 const HomePage = () => {
-  const { profile, user, isVisitor, isAdmin, isAdminCCM, userGroupIds, routinePermissions } = useAuth();
+  const { profile, user, isAdmin, isAdminCCM, userGroupIds, routinePermissions } = useAuth();
   const { skin } = useTheme();
 
   const { data: myActiveCheckin } = useQuery({
@@ -34,6 +35,14 @@ const HomePage = () => {
     queryFn: async () => {
       const { data } = await api.get("/site-settings");
       return data?.reduce((acc: any, curr: any) => ({ ...acc, [curr.id]: curr.value }), {} as any) || {};
+    },
+  });
+
+  const { data: homeBanners } = useQuery({
+    queryKey: ["home-banners"],
+    queryFn: async () => {
+      const { data } = await api.get('/landing-photos', { params: { isBanner: 'true' } });
+      return data || [];
     },
   });
 
@@ -79,7 +88,7 @@ const HomePage = () => {
   });
 
   return (
-    <div className="min-h-screen bg-background pb-12">
+    <div className="min-h-screen bg-background pb-16">
       {/* Hero Welcome Section */}
       <div className="relative overflow-hidden bg-primary px-4 py-8 md:px-8 md:py-10 text-primary-foreground">
         <div className="absolute inset-0 bg-gradient-to-br from-cyan-900 via-cyan-800 to-blue-900" />
@@ -105,25 +114,28 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Billboard Section (Outdoor Style) */}
+      {/* Billboard Section (Outdoor Style) - Responsive Single Banner */}
       {(siteSettings?.homepage_banner || siteSettings?.homepage_banner_mobile) && (
         <div className="px-4 mt-6">
           <div className="max-w-6xl mx-auto rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-2xl ring-4 ring-white/10 dark:ring-white/5 border-4 border-muted/20 bg-muted/10">
-            {/* Banner Desktop (Oculta no mobile se houver banner mobile) */}
             {siteSettings?.homepage_banner && (
               <img 
                 src={siteSettings.homepage_banner} 
-                alt="Mural Mergulho Desktop" 
-                className={`w-full h-auto max-h-[500px] lg:max-h-[600px] object-cover hover:scale-105 transition-transform duration-700 aspect-video md:aspect-[16/5] ${siteSettings.homepage_banner_mobile ? 'hidden md:block' : 'block'}`}
+                alt="Banner Desktop" 
+                className={cn(
+                  "w-full h-auto max-h-[500px] lg:max-h-[600px] object-cover aspect-video md:aspect-[16/5]",
+                  siteSettings.homepage_banner_mobile ? "hidden md:block" : "block"
+                )}
               />
             )}
-            
-            {/* Banner Mobile (Oculta no desktop) */}
             {siteSettings?.homepage_banner_mobile && (
               <img 
                 src={siteSettings.homepage_banner_mobile} 
-                alt="Mural Mergulho Mobile" 
-                className={`w-full h-auto object-cover hover:scale-105 transition-transform duration-700 aspect-[4/5] sm:aspect-square md:hidden ${!siteSettings.homepage_banner ? 'block' : ''}`}
+                alt="Banner Mobile" 
+                className={cn(
+                  "w-full h-auto object-cover aspect-[4/5] sm:aspect-square md:hidden",
+                  !siteSettings.homepage_banner ? "block" : ""
+                )}
               />
             )}
           </div>
@@ -172,14 +184,13 @@ const HomePage = () => {
             { icon: Megaphone, label: "Avisos", path: "/Disparos", color: skin !== "default" ? "bg-primary text-white" : "bg-brand-charcoal text-white", routine: "Disparos" ,adminOnly: true},
             { icon: BarChart3, label: "Relatórios", path: "/relatorios", color: skin !== "default" ? "bg-primary text-white" : "bg-brand-cyan text-white", adminOnly: true, routine: "relatorios" },
           ].filter((item: any) => {
-            if (isVisitor) return ["/agenda", "/devocionais"].includes(item.path);
             if (item.path === "/membros" && isAdminCCM) return false;
             if (item.adminOnly && !isAdmin) return false;
-            if (item.routine && !isAdmin && routinePermissions[item.routine] === false) return false;
+            if (item.routine && !isAdmin && routinePermissions[item.routine] !== true) return false;
             return true;
           }).map(({ icon: Icon, label, path, color }) => (
-            <Link key={path} to={path} className="block h-full">
-              <Card className="border-0 shadow-lg overflow-hidden hover:translate-y-[-4px] transition-all duration-300 group relative bg-card/60 backdrop-blur-sm h-full cursor-pointer min-h-[140px]">
+            <Link key={path} to={path} className="block h-full" aria-label={`Ir para ${label}`}>
+              <Card className="border-0 shadow-lg overflow-hidden hover:translate-y-[-4px] transition-all duration-300 group relative bg-card/60 backdrop-blur-sm h-full cursor-pointer min-h-[140px] active:scale-[0.99]">
                 <div className={`absolute -top-10 -right-10 w-32 h-32 blur-3xl opacity-20 rounded-full ${color.split(' ')[0]}`} />
                 <div className={`absolute top-0 left-0 w-full h-1 ${color.split(' ')[0]}`} />
                 <CardContent className="p-4 sm:p-5 flex flex-col items-center justify-center relative z-10 h-full">
@@ -187,6 +198,7 @@ const HomePage = () => {
                     <Icon className="h-6 w-6 sm:h-7 sm:w-7" />
                   </div>
                   <span className="text-sm sm:text-base font-bold text-foreground block text-center leading-tight mt-1">{label}</span>
+                  <span className="mt-1 text-[10px] text-muted-foreground">Abrir</span>
                 </CardContent>
                 <div className={cn("absolute -bottom-4 -right-4 opacity-[0.03] transform scale-[5] pointer-events-none group-hover:opacity-[0.06] transition-opacity", color.split(' ')[0].replace('bg-', 'text-'))}>
                   <Icon className="h-full w-full" />

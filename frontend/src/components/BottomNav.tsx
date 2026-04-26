@@ -4,7 +4,9 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTheme } from "@/components/ThemeProvider";
+import api from "@/lib/api";
 
 const navItems = [
   { path: "/home", icon: Home, label: "Início" },
@@ -16,38 +18,62 @@ const navItems = [
 
 const BottomNav = () => {
   const location = useLocation();
-  const { isAdmin, isAdminCCM, isGerente, isVisitor, routinePermissions, unreadAnnouncements } = useAuth();
+  const { isAdmin, isAdminCCM, isGerente, routinePermissions, unreadAnnouncements } = useAuth();
   const { skin } = useTheme();
   const [open, setOpen] = useState(false);
 
-  const filteredNavItems = navItems.filter(item => {
-    if (isVisitor) {
-      return ["/home", "/agenda", "/devocionais", "/perfil"].includes(item.path);
-    }
+  const { data: contactMessages } = useQuery({
+    queryKey: ["contact-messages"],
+    queryFn: async () => {
+      if (!isAdmin) return [];
+      const { data } = await api.get('/contact-messages');
+      return data || [];
+    },
+    enabled: !!isAdmin
+  });
+
+  const unreadInbox = contactMessages?.some((m: any) => m.status !== "archived") || false;
+
+  const filteredNavItems = navItems.filter((item) => {
     const routineKeyMap: Record<string, string> = {
       "/agenda": "agenda",
       "/devocionais": "devocionais",
       "/chat": "chat"
     };
     const key = routineKeyMap[item.path];
-    if (key && !isAdmin && routinePermissions[key] === false) return false;
-      return true;
-    });
+    if (key && !isAdmin && routinePermissions[key] !== true) return false;
+    return true;
+  });
 
   const hasMaisItems = Boolean(isAdmin || routinePermissions.voluntarios === true || routinePermissions.tesouraria === true);
+  const isPathActive = (path: string) =>
+    location.pathname === path || location.pathname.startsWith(`${path}/`);
+  const isMaisActive = [
+    "/departamentos",
+    "/membros",
+    "/voluntarios",
+    "/tesouraria",
+    "/relatorios",
+    "/configuracoes",
+    "/whatsapp",
+    "/checkin-kids",
+    "/Disparos",
+    "/gestao-rotinas",
+  ].some((path) => isPathActive(path));
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-card/95 backdrop-blur-sm md:hidden pb-safe">
-      <div className="flex items-center justify-around py-2 px-1">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-card/95 backdrop-blur-sm md:hidden pb-safe shadow-[0_-6px_20px_-14px_rgba(0,0,0,0.35)]">
+      <div className="flex items-stretch justify-around py-1.5 px-1">
         {filteredNavItems.map(({ path, icon: Icon, label }) => {
-          const active = location.pathname === path;
+          const active = isPathActive(path);
           return (
             <Link
               key={path}
               to={path}
+              aria-current={active ? "page" : undefined}
               className={cn(
-                "flex flex-col items-center gap-0.5 px-3 py-1 text-xs transition-colors",
-                active ? "text-primary" : "text-muted-foreground"
+                "flex min-w-[64px] flex-col items-center justify-center gap-0.5 rounded-xl px-3 py-1.5 text-xs transition-all",
+                active ? "bg-primary/10 text-primary" : "text-muted-foreground"
               )}
             >
               <Icon className={cn("h-5 w-5", active && "stroke-[2.5]")} />
@@ -60,17 +86,20 @@ const BottomNav = () => {
             <SheetTrigger asChild>
               <button
                 className={cn(
-                  "flex flex-col items-center gap-0.5 px-2 py-1 text-xs transition-colors",
-                  "text-muted-foreground outline-none"
+                  "flex min-w-[64px] flex-col items-center justify-center gap-0.5 rounded-xl px-2 py-1.5 text-xs transition-all outline-none",
+                  isMaisActive ? "bg-primary/10 text-primary" : "text-muted-foreground"
                 )}
               >
                 <div className="relative">
                   <ShieldCheck className="h-5 w-5" />
-                  {unreadAnnouncements > 0 && (
-                    <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-blue-500 border-2 border-card animate-pulse" />
+                  {(unreadAnnouncements > 0 || unreadInbox) && (
+                    <span className={cn(
+                      "absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full border-2 border-card animate-pulse",
+                      unreadInbox ? "bg-red-500" : "bg-blue-500"
+                    )} />
                   )}
                 </div>
-                <span className="font-medium truncate">Mais</span>
+                <span className={cn("truncate", isMaisActive ? "font-semibold" : "font-medium")}>Mais</span>
               </button>
             </SheetTrigger>
             <SheetContent side="bottom" className="h-[auto] max-h-[85vh] rounded-t-[2.5rem] px-6 pb-12 pt-4 border-t-0 shadow-[0_-20px_50px_-20px_rgba(0,0,0,0.3)] bg-background/95 backdrop-blur-xl">
@@ -129,6 +158,9 @@ const BottomNav = () => {
                     <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center shadow-sm transition-colors", 
                       skin !== "default" ? "bg-primary/20 border border-primary/30" : "bg-brand-charcoal/10 border border-brand-charcoal/20 group-hover:bg-brand-charcoal/20 dark:bg-white/10 dark:border-white/20 dark:group-hover:bg-white/20")}>
                       <Settings className={cn("h-6 w-6", skin !== "default" ? "text-primary" : "text-brand-charcoal dark:text-white")} />
+                      {unreadInbox && (
+                        <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500 border-2 border-background animate-pulse" />
+                      )}
                     </div>
                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">Ajustes</span>
                   </Link>

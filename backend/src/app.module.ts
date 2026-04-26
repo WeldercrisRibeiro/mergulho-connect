@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { APP_GUARD } from '@nestjs/core';
 
 import { PrismaModule } from './prisma/prisma.module';
 
@@ -34,6 +35,7 @@ import { VolunteerSchedulesModule } from './modules/volunteer-schedules/voluntee
 import { WzDispatchesModule } from './modules/wz-dispatches/wz-dispatches.module';
 import { WhatsAppModule } from './modules/whatsapp/whatsapp.module';
 import { UploadModule } from './modules/upload/upload.module';
+import { JwtAuthGuard } from './modules/auth/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -71,6 +73,12 @@ import { UploadModule } from './modules/upload/upload.module';
     WzDispatchesModule,
     WhatsAppModule,
     UploadModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
   ],
 })
 export class AppModule {}

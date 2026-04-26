@@ -4,6 +4,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ChangePasswordWithCredentialsDto } from './dto/change-password-with-credentials.dto';
 
 @Injectable()
 export class AuthService {
@@ -88,5 +89,22 @@ export class AuthService {
       data: { password: hashedPassword },
     });
     return { success: true, message: 'Senha atualizada com sucesso.' };
+  }
+
+  async updatePasswordWithCredentials(dto: ChangePasswordWithCredentialsDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Usuário ou senha atual inválidos.');
+    }
+
+    const isPasswordValid = await bcrypt.compare(dto.currentPassword, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Usuário ou senha atual inválidos.');
+    }
+
+    return this.updatePassword(user.id, dto.newPassword);
   }
 }

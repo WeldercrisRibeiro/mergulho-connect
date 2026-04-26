@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Home, Calendar, BookOpen, MessageCircle, User, Users, LogOut, Shield, ShieldCheck, Settings, HandHeart, BarChart3, Megaphone, Smartphone, FileSearch, Wallet, Inbox } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -62,7 +63,7 @@ interface DesktopSidebarProps {
 
 const DesktopSidebar = ({ collapsed = false, onToggle }: DesktopSidebarProps) => {
   const location = useLocation();
-  const { isAdmin, isAdminCCM, isGerente, isVisitor, signOut, profile, user, routinePermissions, unreadAnnouncements } = useAuth();
+  const { isAdmin, isAdminCCM, isGerente, signOut, profile, user, routinePermissions, unreadAnnouncements } = useAuth();
   const { theme } = useTheme();
   const [totalUnread, setTotalUnread] = useState(0);
 
@@ -114,6 +115,18 @@ const DesktopSidebar = ({ collapsed = false, onToggle }: DesktopSidebarProps) =>
     return () => clearInterval(interval);
   }, [user]);
 
+  const { data: contactMessages } = useQuery({
+    queryKey: ["contact-messages"],
+    queryFn: async () => {
+      if (!isAdmin) return [];
+      const { data } = await api.get('/contact-messages');
+      return data || [];
+    },
+    enabled: !!user && isAdmin
+  });
+
+  const unreadInbox = contactMessages?.some((m: any) => m.status !== "archived") || false;
+
   return (
     <TooltipProvider delayDuration={0}>
       <aside
@@ -141,24 +154,15 @@ const DesktopSidebar = ({ collapsed = false, onToggle }: DesktopSidebarProps) =>
           )}
         </div>
 
-
-
         {/* Nav */}
         <nav className="flex-1 px-2 py-4 space-y-6 overflow-y-auto custom-scrollbar">
           {navGroups.map((group) => {
             const filteredItems = group.items.filter(item => {
-              const visitorAllowed = ["/home", "/agenda", "/devocionais", "/perfil"].includes(item.path);
-              if (isVisitor && !visitorAllowed) return false;
               if (item.adminOnly && !isAdmin) return false;
-              // Rotinas abertas por padrão para não-admin (agenda, devocionais, chat, voluntarios)
-              const openByDefault = ["/agenda", "/devocionais", "/chat", "/voluntarios"].includes(item.path);
+              
               // Se tem routine key e não é admin: exige permissão explícita (true)
-              if (item.routine && !isAdmin && !openByDefault) {
+              if (item.routine && !isAdmin) {
                 if (routinePermissions[item.routine] !== true) return false;
-              }
-              // Se tem routine key, não é admin, é rota aberta por padrão: esconde apenas se explicitamente false
-              if (item.routine && !isAdmin && openByDefault) {
-                if (routinePermissions[item.routine] === false) return false;
               }
               return true;
             });
@@ -198,6 +202,9 @@ const DesktopSidebar = ({ collapsed = false, onToggle }: DesktopSidebarProps) =>
                             <span className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-blue-500 text-white text-[9px] font-bold flex items-center justify-center animate-bounce border-2 border-sidebar">
                               {unreadAnnouncements > 9 ? "9+" : unreadAnnouncements}
                             </span>
+                          )}
+                          {path === "/configuracoes" && unreadInbox && (
+                            <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500 border-2 border-sidebar animate-pulse" />
                           )}
                         </div>
                         {!collapsed && <span className="truncate">{label}</span>}

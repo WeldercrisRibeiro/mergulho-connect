@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { Settings, ImagePlus, MessageSquareQuote, Trash2, Plus, Edit2, ChevronLeft, ChevronRight, Upload, Mail, CheckCircle, Archive, Video, Youtube, Shield, Users, Calendar, BookOpen, HandHeart, BarChart3, MessageCircle, ShieldCheck, Megaphone, Lock, ChevronRight as ChevronRightIcon, Bell, ArrowRight, Wallet, FileSearch } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -22,7 +22,7 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { normalizePhoneForDB } from "@/lib/phoneUtils";
 import { Switch } from "@/components/ui/switch";
 import { MapPin, ExternalLink } from "lucide-react";
- 
+
 const SettingsPage = () => {
   const { user, profile, isAdmin, isGerente, isAdminCCM, refreshProfile } = useAuth();
   const { toast } = useToast();
@@ -38,15 +38,74 @@ const SettingsPage = () => {
     },
     enabled: !!user?.id
   });
- 
+
+  const { data: photos } = useQuery({
+    queryKey: ["landing-photos"],
+    queryFn: async () => {
+      const { data } = await api.get('/landing-photos', { params: { isBanner: 'false' } });
+      return data || [];
+    },
+  });
+
+  const { data: homeBanners } = useQuery({
+    queryKey: ["landing-photos-banners"],
+    queryFn: async () => {
+      const { data } = await api.get('/landing-photos', { params: { isBanner: 'true' } });
+      return data || [];
+    },
+  });
+
+  const { data: testimonials } = useQuery({
+    queryKey: ["landing-testimonials"],
+    queryFn: async () => {
+      const { data } = await api.get('/landing-testimonials');
+      return data || [];
+    },
+  });
+
+  const { data: contactMessages } = useQuery({
+    queryKey: ["contact-messages"],
+    queryFn: async () => {
+      const { data } = await api.get('/contact-messages');
+      return data || [];
+    },
+  });
+
+  const { data: siteSettings } = useQuery({
+    queryKey: ["site-settings"],
+    queryFn: async () => {
+      const { data } = await api.get('/site-settings');
+      const settings: Record<string, string> = {};
+      (data || []).forEach((s: any) => { settings[s.id] = s.value; });
+      return settings;
+    },
+  });
+
+  const { data: permissions } = useQuery({
+    queryKey: ["all-role-routines"],
+    queryFn: async () => {
+      const { data } = await api.get('/group-routines');
+      return data || [];
+    },
+  });
+
   // Photo state
   const [photoCaption, setPhotoCaption] = useState("");
+  const [photoIsBanner, setPhotoIsBanner] = useState(false);
   const [editingPhoto, setEditingPhoto] = useState<any>(null);
   const [deletingPhoto, setDeletingPhoto] = useState<any>(null);
   const [photoDialogOpen, setPhotoDialogOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [carouselIdx, setCarouselIdx] = useState(0);
- 
+
+  useEffect(() => {
+    if (photos && carouselIdx >= photos.length && photos.length > 0) {
+      setCarouselIdx(photos.length - 1);
+    } else if (photos && photos.length === 0) {
+      setCarouselIdx(0);
+    }
+  }, [photos, carouselIdx]);
+
   // Testimonial state
   const [testName, setTestName] = useState("");
   const [testRole, setTestRole] = useState("");
@@ -55,14 +114,14 @@ const SettingsPage = () => {
   const [editingTest, setEditingTest] = useState<any>(null);
   const [deletingTest, setDeletingTest] = useState<any>(null);
   const [testDialogOpen, setTestDialogOpen] = useState(false);
- 
+
   // Video state
   const [tempVideoUrl, setTempVideoUrl] = useState("");
   const [tempIsVideoUpload, setTempIsVideoUpload] = useState(false);
- 
+
   // Routine Permissions state
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
- 
+
   const ROUTINES = [
     { id: "agenda", label: "Agenda", icon: Calendar, description: "Gestão de eventos e compromissos" },
     { id: "devocionais", label: "Devocionais", icon: BookOpen, description: "Leituras e meditações diárias" },
@@ -75,67 +134,22 @@ const SettingsPage = () => {
     { id: "tesouraria", label: "Tesouraria", icon: Wallet, description: "Gestão financeira e dízimos" },
   ];
 
-  // Rotinas exclusivas ADM CCM — não aparecem na grade geral de roles
   const CCM_ONLY_ROUTINES = [
-    { id: "auditoria", label: "Auditoria & Logs", icon: FileSearch, description: "Registros de acesso e ações do sistema" },
     { id: "ajustes", label: "Configurações", icon: Settings, description: "Ajustes gerais da plataforma" },
   ];
- 
+
   const ROLE_TYPES = [
-    { id: "admin", label: "Administrador", description: "Acesso total ao sistema", color: "bg-primary" },
-    { id: "gerente", label: "Líder (Gerente)", description: "Líderes de departamento", color: "bg-emerald-500" },
-    { id: "membro", label: "Membro", description: "Acesso básico", color: "bg-slate-500" },
+    { id: "c1f324b3-45ed-453a-941c-d030e22d7721", label: "Administrador", description: "Acesso total ao sistema", color: "bg-primary" },
+    { id: "3e4bce2a-7856-4801-b466-7b8e3d12a74b", label: "Líder", description: "Líderes de departamento", color: "bg-emerald-500" },
+    { id: "071c2037-fa67-43ab-9d1b-4480fe15fd92", label: "Membro", description: "Acesso básico", color: "bg-slate-500" },
   ];
- 
-  const { data: photos } = useQuery({
-    queryKey: ["landing-photos"],
-    queryFn: async () => {
-      const { data } = await api.get('/landing-photos');
-      return data || [];
-    },
-  });
- 
-  const { data: testimonials } = useQuery({
-    queryKey: ["landing-testimonials"],
-    queryFn: async () => {
-      const { data } = await api.get('/landing-testimonials');
-      return data || [];
-    },
-  });
- 
-  const { data: contactMessages } = useQuery({
-    queryKey: ["contact-messages"],
-    queryFn: async () => {
-      const { data } = await api.get('/contact-messages');
-      return data || [];
-    },
-  });
- 
-  const { data: siteSettings } = useQuery({
-    queryKey: ["site-settings"],
-    queryFn: async () => {
-      const { data } = await api.get('/site-settings');
-      const settings: Record<string, string> = {};
-      (data || []).forEach((s: any) => { settings[s.id] = s.value; });
-      return settings;
-    },
-  });
- 
-  const { data: permissions } = useQuery({
-    queryKey: ["all-role-routines"],
-    queryFn: async () => {
-      const { data } = await api.get('/group-routines');
-      return data || [];
-    },
-  });
- 
- 
+
   const [editWhatsApp, setEditWhatsApp] = useState("");
   const [editInstagram, setEditInstagram] = useState("");
   const [editFacebook, setEditFacebook] = useState("");
   const [editPixKey, setEditPixKey] = useState("");
   const [editMapsUrl, setEditMapsUrl] = useState("");
- 
+
   useEffect(() => {
     if (siteSettings) {
       setEditWhatsApp(siteSettings.whatsapp_number || "");
@@ -147,9 +161,9 @@ const SettingsPage = () => {
       setTempIsVideoUpload(siteSettings.about_us_video_is_upload === "true");
     }
   }, [siteSettings]);
- 
+
   if (!isAdmin) return <Navigate to="/home" replace />;
- 
+
   const saveSettingsMutation = useMutation({
     mutationFn: async () => {
       const updates = [
@@ -169,7 +183,7 @@ const SettingsPage = () => {
     },
     onError: (err: any) => toast({ title: "Erro ao salvar", description: getErrorMessage(err), variant: "destructive" }),
   });
- 
+
   const saveVideoSettingsMutation = useMutation({
     mutationFn: async () => {
       const updates = [
@@ -186,7 +200,7 @@ const SettingsPage = () => {
     },
     onError: (err: any) => toast({ title: "Erro ao salvar vídeo", description: getErrorMessage(err), variant: "destructive" }),
   });
- 
+
   const toggleRoutineMutation = useMutation({
     mutationFn: async ({ roleId, routineKey, enabled }: { roleId: string, routineKey: string, enabled: boolean }) => {
       const existing = permissions?.find((p: any) =>
@@ -205,7 +219,7 @@ const SettingsPage = () => {
     },
     onError: (err: any) => toast({ title: "Erro ao salvar", description: getErrorMessage(err), variant: "destructive" }),
   });
- 
+
   const getPermStatus = (roleId: string, routineKey: string): boolean => {
     const perm = permissions?.find((p: any) =>
       (p.groupId ?? p.group_id) === roleId &&
@@ -214,8 +228,8 @@ const SettingsPage = () => {
     if (!perm) return true;
     return (p => p.isEnabled ?? p.is_enabled ?? true)(perm);
   };
- 
- 
+
+
   const loadSettings = () => {
     if (siteSettings) {
       setEditWhatsApp(siteSettings.whatsapp_number || "");
@@ -223,7 +237,7 @@ const SettingsPage = () => {
       setEditFacebook(siteSettings.facebook_url || "");
     }
   };
- 
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -233,13 +247,14 @@ const SettingsPage = () => {
       formData.append('file', file);
       const { data: uploadData } = await api.post('/upload', formData);
       const publicUrl = uploadData.url;
- 
+
       if (editingPhoto) {
-        await api.patch(`/landing-photos/${editingPhoto.id}`, { url: publicUrl, caption: photoCaption });
+        await api.patch(`/landing-photos/${editingPhoto.id}`, { url: publicUrl, caption: photoCaption, isBanner: photoIsBanner });
       } else {
-        await api.post(`/landing-photos`, { url: publicUrl, caption: photoCaption });
+        await api.post(`/landing-photos`, { url: publicUrl, caption: photoCaption, isBanner: photoIsBanner });
       }
       queryClient.invalidateQueries({ queryKey: ["landing-photos"] });
+      queryClient.invalidateQueries({ queryKey: ["landing-photos-banners"] });
       setPhotoDialogOpen(false);
       setEditingPhoto(null);
       setPhotoCaption("");
@@ -250,7 +265,7 @@ const SettingsPage = () => {
       setUploading(false);
     }
   };
- 
+
   const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -268,7 +283,7 @@ const SettingsPage = () => {
       setUploading(false);
     }
   };
- 
+
   const handleSiteSettingUpload = async (e: React.ChangeEvent<HTMLInputElement>, settingKey: string) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -286,7 +301,7 @@ const SettingsPage = () => {
       setUploading(false);
     }
   };
- 
+
   const handleRemoveSiteSetting = async (settingKey: string) => {
     if (!window.confirm("Tem certeza que deseja remover este banner?")) return;
     setUploading(true);
@@ -300,39 +315,47 @@ const SettingsPage = () => {
       setUploading(false);
     }
   };
- 
+
   const savePhotoMutation = useMutation({
     mutationFn: async () => {
       if (editingPhoto && !fileInputRef.current?.files?.[0]) {
-        await api.patch(`/landing-photos/${editingPhoto.id}`, { caption: photoCaption });
+        await api.patch(`/landing-photos/${editingPhoto.id}`, { caption: photoCaption, isBanner: photoIsBanner });
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["landing-photos"] });
+      queryClient.invalidateQueries({ queryKey: ["landing-photos-banners"] });
       setPhotoDialogOpen(false);
       setEditingPhoto(null);
       setPhotoCaption("");
       toast({ title: "Legenda atualizada!" });
     },
   });
- 
+
   const openEditPhoto = (photo: any) => {
     setEditingPhoto(photo);
     setPhotoCaption(photo.caption || "");
+    setPhotoIsBanner(photo.isBanner || photo.is_banner || false);
     setPhotoDialogOpen(true);
   };
- 
+
   const deletePhotoMutation = useMutation({
-    mutationFn: async (photo: any) => {
-      await api.delete(`/landing-photos/${photo.id}`);
+    mutationFn: async (id: string) => {
+      await api.delete(`/landing-photos/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["landing-photos"] });
+      queryClient.invalidateQueries({ queryKey: ["landing-photos-pub"] });
+      queryClient.invalidateQueries({ queryKey: ["landing-photos-banners"] });
       setDeletingPhoto(null);
+      setCarouselIdx(0);
       toast({ title: "Foto removida!" });
     },
+    onError: (err: any) => {
+      toast({ title: "Erro ao remover foto", description: getErrorMessage(err), variant: "destructive" });
+    }
   });
- 
+
   const saveTestimonialMutation = useMutation({
     mutationFn: async () => {
       if (editingTest) {
@@ -349,7 +372,7 @@ const SettingsPage = () => {
       toast({ title: editingTest ? "Depoimento atualizado!" : "Depoimento criado!" });
     },
   });
- 
+
   const openEditTest = (t: any) => {
     setEditingTest(t);
     setTestName(t.name || "");
@@ -357,7 +380,7 @@ const SettingsPage = () => {
     setTestText(t.text || "");
     setTestDialogOpen(true);
   };
- 
+
   const deleteTestMutation = useMutation({
     mutationFn: async (t: any) => {
       await api.delete(`/landing-testimonials/${t.id}`);
@@ -368,26 +391,51 @@ const SettingsPage = () => {
       toast({ title: "Depoimento removido!" });
     },
   });
- 
+
+  const toggleRoutinePermission = useMutation({
+    mutationFn: async ({ role, routineId, currentPermission }: { role: string; routineId: string; currentPermission: any }) => {
+      if (currentPermission) {
+        // Se existe, deletar
+        await api.delete(`/group-routines/${currentPermission.id}`);
+      } else {
+        // Se não existe, criar vinculado ao Role (usando groupId como role para fins de mapeamento simples)
+        // No banco, groupId Ǹ opcional. Podemos usar o role como identificador se o backend permitir,
+        // mas o padrão atual Ǹ usar o groupId. Se selectedRole for um dos ROLE_TYPES, 
+        // precisamos de uma lǪgica que mapeie isso no backend ou use um grupo especial.
+        // Pelo que vi no backend, ele espera um groupId.
+        await api.post(`/group-routines`, {
+          routineKey: routineId,
+          isEnabled: true,
+          groupId: role // Aqui assume-se que o role id Ǹ o que passamos
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["all-role-routines"] });
+      toast({ title: "Permissão atualizada!" });
+    },
+    onError: (err: any) => toast({ title: "Erro", description: getErrorMessage(err), variant: "destructive" }),
+  });
+
   // Função para abrir o uploader de imagem chamando o input invisível
   const triggerFileInput = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
- 
+
   const triggerVideoInput = () => {
     if (videoInputRef.current) {
       videoInputRef.current.click();
     }
   };
- 
- 
+
+
   return (
     <div className="space-y-6 animate-in fade-in max-w-5xl mx-auto pb-24 px-4">
       {/* Header premium */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary/80 to-primary/60 p-6 sm:p-8 text-white shadow-lg mb-2">
-        <div className="absolute inset-0 opacity-10" style={{backgroundImage:'radial-gradient(circle at 80% 20%, white 0%, transparent 60%)'}} />
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, white 0%, transparent 60%)' }} />
         <div className="relative flex items-center gap-4">
           <div className="p-3 bg-white/20 rounded-2xl backdrop-blur shrink-0">
             <Settings className="h-7 w-7 text-white" />
@@ -403,13 +451,22 @@ const SettingsPage = () => {
         <TabsList className="mb-6 bg-muted/60 border border-border/40 p-1 rounded-2xl flex-wrap h-auto gap-1 w-full sm:w-auto">
           <TabsTrigger value="landing" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all px-4">🌐 Site Público</TabsTrigger>
           <TabsTrigger value="social" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all px-4">📱 Redes Sociais</TabsTrigger>
-          <TabsTrigger value="inbox" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all px-4">✉️ Inbox</TabsTrigger>
+          <TabsTrigger value="inbox" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all px-4 relative">
+            ✉️ Inbox
+            {contactMessages?.some((m: any) => m.status !== "archived") && (
+              <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+              </span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="security" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all px-4">🛡️ Segurança</TabsTrigger>
         </TabsList>
- 
+
         <TabsContent value="inbox" className="space-y-6">
           <InboxMessages />
         </TabsContent>
- 
+
         <TabsContent value="landing" className="space-y-6">
           <Card className="border-0 shadow-lg overflow-hidden ring-1 ring-border/30">
             <CardHeader className="bg-gradient-to-r from-violet-500/10 to-primary/5 border-b py-5">
@@ -424,111 +481,61 @@ const SettingsPage = () => {
               <p className="text-sm text-muted-foreground">
                 Este vídeo aparece na seção "Sobre Nós" da página inicial. Você pode enviar um arquivo MP4/WebM padrão ou colar o link de um vídeo do youtube.
               </p>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                 <div className="space-y-4">
                   <div>
-                     <Label className="text-xs font-semibold uppercase text-muted-foreground mb-2 block">Opção 1: Fazer Upload (MP4, WebM)</Label>
-                     <div className="flex gap-2">
-                       <input type="file" ref={videoInputRef} className="hidden" accept="video/mp4,video/webm" onChange={handleVideoUpload} />
-                       <Button onClick={triggerVideoInput} disabled={uploading} variant="outline" className="w-full justify-start h-12">
-                         {uploading ? "Carregando..." : <><Upload className="h-4 w-4 mr-2"/> Enviar arquivo de vídeo</>}
-                       </Button>
-                     </div>
+                    <Label className="text-xs font-semibold uppercase text-muted-foreground mb-2 block">Opção 1: Fazer Upload (MP4, WebM)</Label>
+                    <div className="flex gap-2">
+                      <input type="file" ref={videoInputRef} className="hidden" accept="video/mp4,video/webm" onChange={handleVideoUpload} />
+                      <Button onClick={triggerVideoInput} disabled={uploading} variant="outline" className="w-full justify-start h-12">
+                        {uploading ? "Carregando..." : <><Upload className="h-4 w-4 mr-2" /> Enviar arquivo de vídeo</>}
+                      </Button>
+                    </div>
                   </div>
- 
+
                   <div className="relative flex items-center py-2">
                     <div className="flex-grow border-t border-muted"></div>
                     <span className="flex-shrink-0 mx-4 text-xs font-medium text-muted-foreground uppercase">OU</span>
                     <div className="flex-grow border-t border-muted"></div>
                   </div>
- 
+
                   <div>
-                     <Label className="text-xs font-semibold uppercase text-muted-foreground mb-2 block flex items-center gap-1">
-                       <Youtube className="h-4 w-4"/> Opção 2: Link do YouTube
-                     </Label>
-                     <Input 
-                       placeholder="https://www.youtube.com/watch?v=..." 
-                       value={tempIsVideoUpload ? "" : tempVideoUrl}
-                       onChange={(e) => {
-                         setTempVideoUrl(e.target.value);
-                         setTempIsVideoUpload(false);
-                       }}
-                       className="h-12 border-primary/20 focus-visible:ring-primary"
-                     />
+                    <Label className="text-xs font-semibold uppercase text-muted-foreground mb-2 block flex items-center gap-1">
+                      <Youtube className="h-4 w-4" /> Opção 2: Link do YouTube
+                    </Label>
+                    <Input
+                      placeholder="https://www.youtube.com/watch?v=..."
+                      value={tempIsVideoUpload ? "" : tempVideoUrl}
+                      onChange={(e) => {
+                        setTempVideoUrl(e.target.value);
+                        setTempIsVideoUpload(false);
+                      }}
+                      className="h-12 border-primary/20 focus-visible:ring-primary"
+                    />
                   </div>
- 
-                  <Button 
-                    onClick={() => saveVideoSettingsMutation.mutate()} 
+
+                  <Button
+                    onClick={() => saveVideoSettingsMutation.mutate()}
                     disabled={saveVideoSettingsMutation.isPending || (!tempVideoUrl && !tempIsVideoUpload)}
                     className="w-full sm:w-auto mt-4"
                   >
                     Salvar Vídeo Institucional
                   </Button>
                 </div>
- 
+
                 <div className="bg-muted/10 rounded-2xl border p-2 aspect-video flex items-center justify-center overflow-hidden">
-                   {tempVideoUrl ? (
-                     <div className="w-full h-full relative group">
-                       <VideoPlayer url={tempVideoUrl} isUpload={tempIsVideoUpload} />
-                     </div>
-                   ) : (
-                     <div className="text-center text-muted-foreground">
-                        <Video className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm font-medium">Nenhum vídeo configurado</p>
-                     </div>
-                   )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
- 
-          <Card className="border-0 shadow-lg overflow-hidden ring-1 ring-border/30">
-            <CardHeader className="bg-gradient-to-r from-blue-500/10 to-sky-500/5 border-b py-5">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <div className="p-1.5 bg-sky-500/15 rounded-lg">
-                  <ImagePlus className="h-4 w-4 text-sky-600 dark:text-sky-400" />
-                </div>
-                Banners da Tela Inicial
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="grid grid-cols-1 gap-6">
-                {[
-                  { key: 'homepage_banner', label: 'Monitor Desktop / PC', description: '1200x400 - horizontal' },
-                  { key: 'homepage_banner_mobile', label: 'Smartphone / Celular', description: '800x800 ou 600x800 - quadrado/vertical' },
-                ].map((banner) => (
-                  <div key={banner.key} className="space-y-3">
-                    <div className="flex items-center justify-between gap-4">
-                      <div>
-                        <Label className="font-semibold">{banner.label}</Label>
-                        <p className="text-xs text-muted-foreground">{banner.description}</p>
-                      </div>
+                  {tempVideoUrl ? (
+                    <div className="w-full h-full relative group">
+                      <VideoPlayer url={tempVideoUrl} isUpload={tempIsVideoUpload} />
                     </div>
-                    <div className="aspect-[16/9] w-full rounded-xl overflow-hidden border-2 border-dashed relative bg-muted/30 group">
-                      {siteSettings?.[banner.key] ? (
-                        <>
-                          <img src={siteSettings[banner.key]} alt={banner.label} className="w-full h-full object-cover" />
-                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                            <Label className="cursor-pointer bg-primary text-white p-2 rounded-full hover:scale-105 transition-transform" title="Trocar imagem">
-                              <ImagePlus className="h-5 w-5" />
-                              <input type="file" className="hidden" accept="image/*" onChange={(e) => handleSiteSettingUpload(e, banner.key)} disabled={uploading} />
-                            </Label>
-                            <Button size="icon" variant="destructive" className="rounded-full h-9 w-9" onClick={() => handleRemoveSiteSetting(banner.key)} title="Remover banner">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </>
-                      ) : (
-                        <Label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors text-muted-foreground">
-                          <ImagePlus className="h-8 w-8 mb-2 opacity-50" />
-                          <span className="text-sm font-medium">Adicionar Imagem</span>
-                          <input type="file" className="hidden" accept="image/*" onChange={(e) => handleSiteSettingUpload(e, banner.key)} disabled={uploading} />
-                        </Label>
-                      )}
+                  ) : (
+                    <div className="text-center text-muted-foreground">
+                      <Video className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm font-medium">Nenhum vídeo configurado</p>
                     </div>
-                  </div>
-                ))}
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -539,46 +546,64 @@ const SettingsPage = () => {
                 <div className="p-1.5 bg-amber-500/15 rounded-lg">
                   <ImagePlus className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                 </div>
-                Banners Carrossel da Home
+                Banners do Painel Interno (Home)
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {[
-                  { key: 'home_banner_1', label: 'Banner 1' },
-                  { key: 'home_banner_2', label: 'Banner 2' },
-                  { key: 'home_banner_3', label: 'Banner 3' },
-                ].map((banner, index) => (
-                  <div key={banner.key} className="space-y-3">
-                    <Label className="font-semibold">{banner.label}</Label>
-                    <div className="aspect-[16/9] w-full rounded-xl overflow-hidden border-2 border-dashed relative bg-muted/30 group">
-                      {siteSettings?.[banner.key] ? (
-                        <>
-                          <img src={siteSettings[banner.key]} alt={banner.label} className="w-full h-full object-cover" />
-                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                            <Label className="cursor-pointer bg-primary text-white p-2 rounded-full hover:scale-105 transition-transform" title="Trocar imagem">
-                              <ImagePlus className="h-5 w-5" />
-                              <input type="file" className="hidden" accept="image/*" onChange={(e) => handleSiteSettingUpload(e, banner.key)} disabled={uploading} />
-                            </Label>
-                            <Button size="icon" variant="destructive" className="rounded-full h-9 w-9" onClick={() => handleRemoveSiteSetting(banner.key)} title="Remover banner">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </>
-                      ) : (
-                        <Label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors text-muted-foreground">
-                          <ImagePlus className="h-8 w-8 mb-2 opacity-50" />
-                          <span className="text-sm font-medium">Adicionar Imagem</span>
-                          <input type="file" className="hidden" accept="image/*" onChange={(e) => handleSiteSettingUpload(e, banner.key)} disabled={uploading} />
-                        </Label>
-                      )}
-                    </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Desktop */}
+                <div className="space-y-2">
+                  <Label className="font-semibold">Versão Desktop (Horizontal - 1200x400)</Label>
+                  <div className="aspect-[16/5] w-full rounded-xl overflow-hidden border-2 border-dashed relative bg-muted/30 group">
+                    {siteSettings?.homepage_banner ? (
+                      <>
+                        <img src={siteSettings.homepage_banner} alt="Desktop" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <Label className="cursor-pointer bg-primary text-white p-2 rounded-full" title="Trocar imagem">
+                            <ImagePlus className="h-5 w-5" />
+                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handleSiteSettingUpload(e, 'homepage_banner')} disabled={uploading} />
+                          </Label>
+                          <Button size="icon" variant="destructive" className="rounded-full h-9 w-9" onClick={() => handleRemoveSiteSetting('homepage_banner')}><Trash2 className="h-4 w-4" /></Button>
+                        </div>
+                      </>
+                    ) : (
+                      <Label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors">
+                        <ImagePlus className="h-8 w-8 mb-2 opacity-50" />
+                        <span className="text-sm font-medium">Adicionar Banner Desktop</span>
+                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleSiteSettingUpload(e, 'homepage_banner')} disabled={uploading} />
+                      </Label>
+                    )}
                   </div>
-                ))}
+                </div>
+
+                {/* Mobile */}
+                <div className="space-y-2">
+                  <Label className="font-semibold">Versão Mobile (Quadrado/Vertical - 800x800)</Label>
+                  <div className="aspect-square md:aspect-[16/5] w-full max-w-[300px] md:max-w-none mx-auto md:mx-0 rounded-xl overflow-hidden border-2 border-dashed relative bg-muted/30 group">
+                    {siteSettings?.homepage_banner_mobile ? (
+                      <>
+                        <img src={siteSettings.homepage_banner_mobile} alt="Mobile" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <Label className="cursor-pointer bg-primary text-white p-2 rounded-full" title="Trocar imagem">
+                            <ImagePlus className="h-5 w-5" />
+                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handleSiteSettingUpload(e, 'homepage_banner_mobile')} disabled={uploading} />
+                          </Label>
+                          <Button size="icon" variant="destructive" className="rounded-full h-9 w-9" onClick={() => handleRemoveSiteSetting('homepage_banner_mobile')}><Trash2 className="h-4 w-4" /></Button>
+                        </div>
+                      </>
+                    ) : (
+                      <Label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors">
+                        <ImagePlus className="h-8 w-8 mb-2 opacity-50" />
+                        <span className="text-sm font-medium">Adicionar Banner Mobile</span>
+                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleSiteSettingUpload(e, 'homepage_banner_mobile')} disabled={uploading} />
+                      </Label>
+                    )}
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
- 
+
           <Card className="border-0 shadow-lg overflow-hidden ring-1 ring-border/30">
             <CardHeader className="flex flex-row items-center justify-between bg-gradient-to-r from-emerald-500/10 to-teal-500/5 border-b py-5">
               <div>
@@ -586,9 +611,9 @@ const SettingsPage = () => {
                   <div className="p-1.5 bg-emerald-500/15 rounded-lg inline-flex">
                     <ImagePlus className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                   </div>
-                  Fotos da Galeria
+                  Galeria da Página Pública (Landing Page)
                 </CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">Imagens que aparecem na página de login e na landing page principal.</p>
+                <p className="text-sm text-muted-foreground mt-1">Imagens que aparecem no carrossel da Landing Page principal (público).</p>
               </div>
               <Button onClick={() => {
                 setEditingPhoto(null);
@@ -612,12 +637,12 @@ const SettingsPage = () => {
                             <Badge className="bg-primary hover:bg-primary border-0 mb-2">Destaque {carouselIdx + 1}</Badge>
                             <p className="text-white font-medium text-lg md:text-xl drop-shadow-md">{photos[carouselIdx]?.caption || "Sem legenda"}</p>
                           </div>
-                          <div className="flex gap-2">
-                             <Button size="icon" variant="secondary" className="h-8 w-8 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur" onClick={() => openEditPhoto(photos[carouselIdx])}><Edit2 className="h-4 w-4 text-white" /></Button>
-                             <Button size="icon" variant="destructive" className="h-8 w-8 rounded-full bg-rose-500/80 hover:bg-rose-500 backdrop-blur" onClick={() => setDeletingPhoto(photos[carouselIdx])}><Trash2 className="h-4 w-4" /></Button>
+                          <div className="flex gap-2 relative z-30">
+                            <Button size="icon" variant="secondary" className="h-8 w-8 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur z-40" onClick={() => openEditPhoto(photos[carouselIdx])}><Edit2 className="h-4 w-4 text-white" /></Button>
+                            <Button size="icon" variant="destructive" className="h-8 w-8 rounded-full shadow-lg z-40" onClick={(e) => { e.stopPropagation(); setDeletingPhoto(photos[carouselIdx]); }}><Trash2 className="h-4 w-4" /></Button>
                           </div>
                         </div>
-                        
+
                         <div className="absolute inset-y-0 left-4 flex items-center">
                           <Button size="icon" variant="outline" className="rounded-full bg-background/50 border-white/20 backdrop-blur hover:bg-background/80" onClick={() => setCarouselIdx(prev => (prev === 0 ? photos.length - 1 : prev - 1))}>
                             <ChevronLeft className="h-5 w-5" />
@@ -642,7 +667,7 @@ const SettingsPage = () => {
               )}
             </CardContent>
           </Card>
- 
+
           <Card className="border-0 shadow-lg overflow-hidden ring-1 ring-border/30">
             <CardHeader className="flex flex-row items-center justify-between bg-gradient-to-r from-rose-500/10 to-pink-500/5 border-b py-5">
               <div>
@@ -669,14 +694,14 @@ const SettingsPage = () => {
                     <QuoteIcon className="absolute top-4 right-4 h-8 w-8 text-muted-foreground/10" />
                     <p className="text-sm italic mb-4 relative z-10">"{t.text}"</p>
                     <div className="flex items-center justify-between border-t pt-3">
-                       <div>
-                         <p className="font-semibold text-sm">{t.name}</p>
-                         <p className="text-xs text-muted-foreground">{t.role}</p>
-                       </div>
-                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                         <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEditTest(t)}><Edit2 className="h-4 w-4" /></Button>
-                         <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => setDeletingTest(t)}><Trash2 className="h-4 w-4" /></Button>
-                       </div>
+                      <div>
+                        <p className="font-semibold text-sm">{t.name}</p>
+                        <p className="text-xs text-muted-foreground">{t.role}</p>
+                      </div>
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEditTest(t)}><Edit2 className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => setDeletingTest(t)}><Trash2 className="h-4 w-4" /></Button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -685,7 +710,7 @@ const SettingsPage = () => {
             </CardContent>
           </Card>
         </TabsContent>
- 
+
 
         <TabsContent value="social" className="space-y-6">
           <Card className="border-0 shadow-lg overflow-hidden ring-1 ring-border/30">
@@ -750,34 +775,170 @@ const SettingsPage = () => {
                     💡 No Google Maps, clique em <strong>Compartilhar &rarr; Incorporar um mapa</strong> e cole o código <code className="bg-muted px-1 rounded">&lt;iframe&gt;</code> aqui. Nós extraímos o link para você!
                   </p>
                 </div>
-                {editMapsUrl && (
-                  <div className="mt-3 rounded-xl overflow-hidden border h-[200px]">
-                    <iframe src={editMapsUrl} width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
-                  </div>
-                )}
               </div>
 
               <Button onClick={() => saveSettingsMutation.mutate()} disabled={saveSettingsMutation.isPending} className="mt-4"><Edit2 className="h-4 w-4 mr-2" /> Salvar Links</Button>
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="security" className="space-y-6">
+          <Card className="border-0 shadow-lg overflow-hidden ring-1 ring-border/30">
+            <CardHeader className="bg-gradient-to-r from-slate-700 to-slate-900 text-white border-b py-6">
+              <CardTitle className="text-xl flex items-center gap-2">
+                <div className="p-2 bg-white/10 rounded-xl backdrop-blur-md">
+                  <Shield className="h-5 w-5 text-white" />
+                </div>
+                Gestão de Acesso por Perfil
+              </CardTitle>
+              <p className="text-slate-300 text-sm mt-1">Configure quais funcionalidades cada nível de usuário pode visualizar e interagir.</p>
+            </CardHeader>
+            <CardContent className="pt-8 space-y-8">
+              {/* Seleção de Role */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {ROLE_TYPES.map((role) => (
+                  <button
+                    key={role.id}
+                    onClick={() => setSelectedRole(role.id)}
+                    className={cn(
+                      "flex flex-col items-start p-4 rounded-2xl border-2 transition-all text-left group",
+                      selectedRole === role.id
+                        ? "border-primary bg-primary/5 ring-4 ring-primary/10 shadow-md"
+                        : "border-border/40 hover:border-border bg-muted/20"
+                    )}
+                  >
+                    <div className="flex items-center justify-between w-full mb-2">
+                      <div className={cn("px-2 py-0.5 rounded-md text-[10px] font-bold uppercase text-white shadow-sm", role.color)}>
+                        {role.label}
+                      </div>
+                      {selectedRole === role.id && <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />}
+                    </div>
+                    <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{role.description}</p>
+                  </button>
+                ))}
+              </div>
+
+              {selectedRole ? (
+                <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+                  <div className="flex items-center justify-between border-b pb-4">
+                    <div>
+                      <h3 className="text-lg font-bold flex items-center gap-2">
+                        Permissões para <span className="text-primary">{ROLE_TYPES.find(r => r.id === selectedRole)?.label}</span>
+                      </h3>
+                      <p className="text-sm text-muted-foreground">Marque as rotinas que este perfil terá acesso.</p>
+                    </div>
+                    <Badge variant="outline" className="bg-muted font-mono">{ROUTINES.length + (selectedRole === 'c1f324b3-45ed-453a-941c-d030e22d7721' ? CCM_ONLY_ROUTINES.length : 0)} Módulos</Badge>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {/* Rotinas Gerais */}
+                    {ROUTINES.map((routine) => {
+                      const Icon = routine.icon;
+                      const currentPermission = permissions?.find((p: any) => p.routineKey === routine.id && p.groupId === selectedRole);
+                      const isEnabled = !!currentPermission;
+
+                      return (
+                        <div
+                          key={routine.id}
+                          className={cn(
+                            "group relative flex items-center gap-4 p-4 rounded-2xl border transition-all cursor-pointer",
+                            isEnabled ? "bg-primary/5 border-primary/20 shadow-sm" : "bg-background border-border/40 hover:border-border"
+                          )}
+                          onClick={() => toggleRoutinePermission.mutate({ role: selectedRole!, routineId: routine.id, currentPermission })}
+                        >
+                          <div className={cn(
+                            "p-3 rounded-xl transition-colors",
+                            isEnabled ? "bg-primary text-white shadow-md" : "bg-muted text-muted-foreground group-hover:bg-muted/80"
+                          )}>
+                            <Icon className="h-5 w-5" />
+                          </div>
+                          <div className="flex-1 pr-8">
+                            <p className="font-bold text-sm">{routine.label}</p>
+                            <p className="text-[11px] text-muted-foreground leading-tight line-clamp-1">{routine.description}</p>
+                          </div>
+                          <div className="absolute right-4">
+                            <Switch
+                              checked={isEnabled}
+                              onCheckedChange={() => toggleRoutinePermission.mutate({ role: selectedRole!, routineId: routine.id, currentPermission })}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {/* Rotinas Administrativas (Apenas se Admin estiver selecionado) */}
+                    {selectedRole === 'c1f324b3-45ed-453a-941c-d030e22d7721' && CCM_ONLY_ROUTINES.map((routine) => {
+                      const Icon = routine.icon;
+                      const currentPermission = permissions?.find((p: any) => p.routineKey === routine.id && p.groupId === selectedRole);
+                      const isEnabled = !!currentPermission;
+
+                      return (
+                        <div
+                          key={routine.id}
+                          className={cn(
+                            "group relative flex items-center gap-4 p-4 rounded-2xl border border-dashed transition-all cursor-pointer",
+                            isEnabled ? "bg-slate-900 text-white border-slate-700 shadow-md" : "bg-background border-border/40 hover:border-border"
+                          )}
+                          onClick={() => toggleRoutinePermission.mutate({ role: selectedRole!, routineId: routine.id, currentPermission })}
+                        >
+                          <div className={cn(
+                            "p-3 rounded-xl transition-colors",
+                            isEnabled ? "bg-slate-700 text-white" : "bg-muted text-muted-foreground group-hover:bg-muted/80"
+                          )}>
+                            <Icon className="h-5 w-5" />
+                          </div>
+                          <div className="flex-1 pr-8">
+                            <p className="font-bold text-sm flex items-center gap-1.5">
+                              {routine.label}
+                              <Lock className="h-3 w-3 opacity-50" />
+                            </p>
+                            <p className={cn("text-[11px] leading-tight line-clamp-1", isEnabled ? "text-slate-400" : "text-muted-foreground")}>{routine.description}</p>
+                          </div>
+                          <div className="absolute right-4">
+                            <Switch
+                              checked={isEnabled}
+                              onCheckedChange={() => toggleRoutinePermission.mutate({ role: selectedRole!, routineId: routine.id, currentPermission })}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 bg-muted/20 rounded-3xl border border-dashed">
+                  <div className="p-4 bg-background rounded-full shadow-inner ring-1 ring-border">
+                    <Shield className="h-10 w-10 text-muted-foreground opacity-20" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-muted-foreground">Selecione um perfil acima</p>
+                    <p className="text-sm text-muted-foreground/60">Para começar a configurar as permissões de acesso.</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
- 
+
       {/* Photo Dialog */}
       <Dialog open={photoDialogOpen} onOpenChange={setPhotoDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{editingPhoto ? "Editar Legenda" : "Nova Foto da Galeria"}</DialogTitle>
+            <DialogDescription className="sr-only">
+              Gerencie as fotos que aparecem na página inicial e de login.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             {!editingPhoto && (
               <div className="space-y-2">
                 <Label>Escolha a imagem</Label>
                 <div className="flex gap-2">
-                   <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChangeCapture={handleFileUpload} />
-                   <Button onClick={triggerFileInput} disabled={uploading} variant="outline" className="w-full">
-                     {uploading ? "Carregando..." : <><ImagePlus className="h-4 w-4 mr-2"/> Selecionar Arquivo</>}
-                   </Button>
+                  <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChangeCapture={handleFileUpload} />
+                  <Button onClick={triggerFileInput} disabled={uploading} variant="outline" className="w-full">
+                    {uploading ? "Carregando..." : <><ImagePlus className="h-4 w-4 mr-2" /> Selecionar Arquivo</>}
+                  </Button>
                 </div>
               </div>
             )}
@@ -789,17 +950,22 @@ const SettingsPage = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setPhotoDialogOpen(false)}>Cancelar</Button>
             <Button disabled={uploading || savePhotoMutation.isPending} onClick={() => {
-               if(editingPhoto) savePhotoMutation.mutate();
-               else handleFileUpload({ target: fileInputRef.current } as any);
+              if (editingPhoto) savePhotoMutation.mutate();
+              else handleFileUpload({ target: fileInputRef.current } as any);
             }}>Salvar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
- 
+
       {/* Testimonial Dialog */}
       <Dialog open={testDialogOpen} onOpenChange={setTestDialogOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{editingTest ? "Editar Depoimento" : "Novo Depoimento"}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{editingTest ? "Editar Depoimento" : "Novo Depoimento"}</DialogTitle>
+            <DialogDescription>
+              Preencha os dados abaixo para cadastrar um novo depoimento.
+            </DialogDescription>
+          </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Nome Completo</Label>
@@ -820,13 +986,13 @@ const SettingsPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
- 
-      <ConfirmDialog open={!!deletingPhoto} title="Apagar foto?" description="Esta ação não pode ser desfeita e a imagem será removida da landing page." onConfirm={() => deletePhotoMutation.mutate(deletingPhoto)} onCancel={() => setDeletingPhoto(null)} variant="destructive" />
+
+      <ConfirmDialog open={!!deletingPhoto} title="Apagar foto?" description="Esta ação não pode ser desfeita e a imagem será removida da landing page." onConfirm={() => deletePhotoMutation.mutate(deletingPhoto.id)} onCancel={() => setDeletingPhoto(null)} variant="destructive" />
       <ConfirmDialog open={!!deletingTest} title="Remover depoimento?" description="Isso o tirará da exibição da página inicial." onConfirm={() => deleteTestMutation.mutate(deletingTest)} onCancel={() => setDeletingTest(null)} variant="destructive" />
     </div>
   );
 };
- 
+
 /** Componente inline — exibe APENAS as mensagens de contato (inbox/arquivadas) */
 function InboxMessages() {
   const { toast } = useToast();
@@ -844,13 +1010,20 @@ function InboxMessages() {
   const approveMutation = useMutation({
     mutationFn: async (m: any) => {
       const phoneDigits = (m.phone || "").replace(/\D/g, "");
-      const email = phoneDigits + "@ccmergulho.com";
+      const generatedUsername = (m.name || "").trim().split(" ")[0]
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]/g, "");
+
+      const email = generatedUsername + "@ccmergulho.com";
+
       await api.post("/admin/users", {
         email,
         password: "123456",
         fullName: m.name,
         whatsappPhone: phoneDigits,
-        username: phoneDigits,
+        username: generatedUsername,
         role: "membro",
         groups: []
       });
@@ -894,7 +1067,12 @@ function InboxMessages() {
       <CardContent className="pt-5">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid grid-cols-2 bg-muted/50 p-1 rounded-xl mb-4">
-            <TabsTrigger value="inbox" className="rounded-lg">Caixa de Entrada</TabsTrigger>
+            <TabsTrigger value="inbox" className="rounded-lg relative">
+              Caixa de Entrada
+              {messages?.some((m: any) => m.status !== "archived") && (
+                <span className="absolute top-1 right-1 flex h-2 w-2 rounded-full bg-red-500 shadow-sm" />
+              )}
+            </TabsTrigger>
             <TabsTrigger value="archived" className="rounded-lg flex gap-2">
               <Archive className="h-4 w-4" /> Arquivados
             </TabsTrigger>
@@ -948,5 +1126,5 @@ function QuoteIcon(props: any) {
     </svg>
   );
 }
- 
+
 export default SettingsPage;

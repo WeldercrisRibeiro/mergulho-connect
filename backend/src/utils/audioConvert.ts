@@ -5,15 +5,19 @@
  * Usa streams PassThrough para evitar arquivos temporários — o buffer retornado
  * é enviado diretamente ao Baileys, sem risco de arquivo "não encontrado".
  */
-import ffmpegPath from "ffmpeg-static";
-import ffmpeg from "fluent-ffmpeg";
+import * as ffmpegPath from "ffmpeg-static";
+import * as ffmpeg from "fluent-ffmpeg";
 import { PassThrough } from "stream";
 import * as fs from "fs";
 import * as path from "path";
 
+// Helper para lidar com as diferentes formas de exportação do fluent-ffmpeg
+const ffmpegCommand = (ffmpeg as any).default || ffmpeg;
+
 // Aponta o fluent-ffmpeg para o binário embutido
-if (ffmpegPath) {
-  ffmpeg.setFfmpegPath(ffmpegPath);
+const actualFfmpegPath = (ffmpegPath as any).default || ffmpegPath;
+if (actualFfmpegPath) {
+  ffmpegCommand.setFfmpegPath(actualFfmpegPath);
 }
 
 /**
@@ -42,7 +46,7 @@ export async function processAudioOgg(audioPath: string): Promise<Buffer> {
       });
 
       // Configuração otimizada para WhatsApp PTT (iOS + Android)
-      ffmpeg(inputStream)
+      ffmpegCommand(inputStream)
         .format("ogg")
         .audioCodec("libopus")
         .audioBitrate("48k")

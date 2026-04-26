@@ -383,7 +383,7 @@ const AdminNotices = () => {
                   <CalendarClock className="h-4 w-4" /> Novo Disparo
                 </Button>
               </DialogTrigger>
-              <DialogContent className="w-[95vw] max-w-[1300px] p-0 rounded-3xl border-0 shadow-2xl overflow-hidden flex flex-col md:flex-row" style={{ height: 'min(90vh, 820px)' }}>
+              <DialogContent className="w-[95vw] max-w-[1300px] p-0 rounded-3xl border-0 shadow-2xl overflow-y-auto md:overflow-hidden flex flex-col md:flex-row h-auto max-h-[95vh] md:h-[min(90vh, 820px)]">
 
                 {/* LADO ESQUERDO: FORMULÁRIO */}
                 <div className="flex-1 flex flex-col bg-card min-w-0">

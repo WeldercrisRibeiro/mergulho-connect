@@ -27,6 +27,16 @@ const Admin = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const { data: messages } = useQuery({
+    queryKey: ["admin-messages-unread-check"],
+    queryFn: async () => {
+      const { data } = await api.get("/contact-messages");
+      return data || [];
+    },
+  });
+
+  const hasUnread = messages?.some((m: any) => m.status !== "archived") || false;
+
   if (!isAdmin) return <Navigate to="/home" replace />;
 
   return (
@@ -42,7 +52,12 @@ const Admin = () => {
           <TabsTrigger value="events">Eventos</TabsTrigger>
           <TabsTrigger value="devotionals">Devocionais</TabsTrigger>
           <TabsTrigger value="members">Membros</TabsTrigger>
-          <TabsTrigger value="messages">Contatos</TabsTrigger>
+          <TabsTrigger value="messages" className="relative">
+            Contatos
+            {hasUnread && (
+              <span className="absolute -top-1 -right-1 flex h-2 w-2 rounded-full bg-red-500 shadow-sm" />
+            )}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="groups"><AdminGroups /></TabsContent>
@@ -976,14 +991,21 @@ const AdminMessages = () => {
   const approveMutation = useMutation({
     mutationFn: async (m: any) => {
       const phoneDigits = m.phone.replace(/\D/g, "");
-      const email = phoneDigits + "@ccmergulho.com";
-      
+      // Gera username a partir do primeiro nome: lowercase e sem acentos
+      const generatedUsername = (m.name || "").trim().split(" ")[0]
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") // Remove acentos
+        .replace(/[^a-z0-9]/g, ""); // Garante apenas letras e números
+
+      const email = generatedUsername + "@ccmergulho.com";
+
       await api.post("/admin/users", {
         email,
         password: "123456",
         fullName: m.name,
         whatsappPhone: normalizePhoneForDB(m.phone),
-        username: phoneDigits,
+        username: generatedUsername,
         role: "membro",
         groups: []
       });

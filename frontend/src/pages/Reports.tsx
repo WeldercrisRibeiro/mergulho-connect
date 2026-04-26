@@ -510,13 +510,12 @@ const Reports = () => {
                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
                       Frequência
                     </p>
-                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                       <StatBox label="Presentes" value={r.total_attendees || 0} accent />
                       <StatBox label="Visitantes" value={r.visitors_count || 0} />
                       <StatBox label="Kids" value={r.children_count || 0} />
                       <StatBox label="Jovens" value={r.youth_count || 0} />
                       <StatBox label="Monitores" value={r.monitors_count || 0} />
-                      <StatBox label="Kids+Jovens" value={(r.children_count || 0) + (r.youth_count || 0)} />
                     </div>
                   </div>
 

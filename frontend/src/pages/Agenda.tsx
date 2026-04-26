@@ -15,7 +15,6 @@ import { safeFormat } from "@/lib/dateUtils";
 import { Calendar, MapPin, Check, X, Share2, Plus, Edit2, Trash2, Users, Ticket, Copy, QrCode, Mic2, Info, ImagePlus, Loader2, Upload, Settings, ScanLine, Clock, Globe } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { QRCodeSVG } from "qrcode.react";
-import { logAudit } from "@/lib/auditLogger";
 import QRScanner from "@/components/QRScanner";
 import { ShareEventDialog } from "@/components/ShareEventDialog";
 import { EventNotifyDialog } from "@/components/EventNotifyDialog";
@@ -284,7 +283,6 @@ const Agenda = () => {
       setCreatingEvent(false);
       resetForm();
       toast({ title: editingEvent ? "Evento atualizado!" : "Evento criado!" });
-      logAudit(editingEvent ? "update" : "create", "agenda", { title });
     },
     onError: (err: any) => toast({ title: "Erro", description: getErrorMessage(err), variant: "destructive" }),
   });
@@ -305,24 +303,26 @@ const Agenda = () => {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6 pb-20 md:pb-8">
+      <div className="sticky top-14 z-20 -mx-4 px-4 py-3 md:static md:p-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/75 border-b md:border-0">
+        <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Calendar className="h-6 w-6 text-primary" />
           Agenda
         </h1>
         {(isAdmin || isGerente) && (
-          <Button onClick={() => { resetForm(); setCreatingEvent(true); }}>
+          <Button onClick={() => { resetForm(); setCreatingEvent(true); }} size="sm" className="md:h-10">
             <Plus className="h-4 w-4 mr-1" /> Novo Evento
           </Button>
         )}
       </div>
+      </div>
 
       {showFilters && (
-        <div className="flex flex-wrap gap-2 pb-2">
+        <div className="flex gap-2 pb-2 overflow-x-auto no-scrollbar">
           <Button variant={filter === "all" ? "default" : "outline"} size="sm" onClick={() => setFilter("all")}>Todos</Button>
           {groups?.map(g => (
-            <Button key={g.id} variant={filter === g.id ? "default" : "outline"} size="sm" onClick={() => setFilter(g.id)}>
+            <Button key={g.id} variant={filter === g.id ? "default" : "outline"} size="sm" onClick={() => setFilter(g.id)} className="shrink-0">
               {g.name}
             </Button>
           ))}
@@ -726,21 +726,18 @@ const Agenda = () => {
                   <div>
                     <p className="text-sm font-bold">Tornar público na Landing Page</p>
                     <p className="text-[10px] text-muted-foreground">
-                      {isGeneral === "true"
-                        ? "Eventos gerais já aparecem publicamente."
-                        : "Permite que este evento de departamento apareça para qualquer visitante do site."}
+                      Permite que este evento apareça para qualquer visitante do site na agenda pública.
                     </p>
                   </div>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={isPublic || isGeneral === "true"}
-                    disabled={isGeneral === "true"}
+                    checked={isPublic}
                     onChange={(e) => setIsPublic(e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className={`w-11 h-6 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full transition-colors ${isGeneral === "true" ? "bg-blue-400 cursor-not-allowed opacity-60" : "bg-muted peer-checked:bg-blue-500"}`} />
+                  <div className={`w-11 h-6 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full transition-colors bg-muted peer-checked:bg-blue-500`} />
                 </label>
               </div>
             </div>
@@ -850,7 +847,6 @@ const Agenda = () => {
                 );
                 if (error && error.code !== "23505") throw error;
                 toast({ title: "✅ Presença confirmada!", description: `Check-in registrado para "${scanningEvent.title}".` });
-                logAudit("create", "event_checkin", { eventId: scanningEvent.id, eventTitle: scanningEvent.title });
                 queryClient.invalidateQueries({ queryKey: ["events"] });
               } catch (err: any) {
                 toast({ title: "Erro no check-in", description: getErrorMessage(err), variant: "destructive" });

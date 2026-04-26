@@ -301,22 +301,6 @@ npx prisma migrate reset
 
 ---
 
-## 📊 Auditoria
-
-O sistema registra automaticamente ações importantes na tabela `audit_logs`. Para visualizar:
-
-1. Acesse `/auditoria` no frontend (apenas admins)
-2. Ou via Prisma Studio: `npx prisma studio` → tabela `audit_logs`
-
-Para registrar manualmente uma ação no frontend:
-```typescript
-import { logAudit } from '@/lib/auditLogger';
-
-logAudit('NOME_DA_ACAO', 'Descrição do que aconteceu', { dados: 'extras' });
-```
-
----
-
 ## 🩺 Verificação de Saúde do Sistema
 
 ```bash

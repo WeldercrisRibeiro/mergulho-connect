@@ -14,6 +14,7 @@ import VideoPlayer from "@/components/VideoPlayer";
 import { PublicAgenda } from "@/components/PublicAgenda"; // ajuste o path conforme sua estrutura
 import { TestimonialCarousel } from "@/components/TestimonialCarousel";
 import MapViewer from "@/components/MapViewer";
+import { PhotoCarousel } from "@/components/PhotoCarousel";
 
 const Landing = () => {
   const [formData, setFormData] = useState({ name: "", phone: "", subject: "Quero me tornar Membro", message: "" });
@@ -108,7 +109,7 @@ const Landing = () => {
       </header>
 
       {/* Hero */}
-      <section id="inicio" className="relative container mx-auto px-4 py-24 md:py-32 text-center overflow-hidden">
+      <section id="inicio" className="scroll-mt-24 relative container mx-auto px-4 py-24 md:py-32 text-center overflow-hidden">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/20 rounded-full blur-[120px] -z-10 mix-blend-screen pointer-events-none opacity-60 animate-pulse" />
         <div className="absolute top-0 right-1/4 w-[400px] h-[400px] bg-blue-500/10 rounded-full blur-[100px] -z-10 mix-blend-screen pointer-events-none" />
 
@@ -140,7 +141,7 @@ const Landing = () => {
       </section>
 
       {/* ── SEÇÃO AGENDA PÚBLICA ─────────────────────────────────────────────── */}
-      <section id="agenda" className="py-20 bg-gradient-to-b from-background to-primary/5 border-t border-border/40">
+      <section id="agenda" className="scroll-mt-24 py-20 bg-gradient-to-b from-background to-primary/5 border-t border-border/40">
         <div className="container mx-auto px-4 max-w-3xl">
           {/* Header da seção */}
           <div className="text-center mb-10">
@@ -159,7 +160,7 @@ const Landing = () => {
       </section>
 
       {/* Projetos */}
-      <section id="projetos" className="py-24 bg-gradient-to-b from-primary/5 to-background border-t border-border/50">
+      <section id="projetos" className="scroll-mt-24 py-24 bg-gradient-to-b from-primary/5 to-background border-t border-border/50">
         <div className="container mx-auto px-4 text-center max-w-3xl">
           <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-full mb-6">
             <Heart className="h-6 w-6 text-primary" />
@@ -172,7 +173,7 @@ const Landing = () => {
       </section>
 
       {/* Sobre */}
-      <section id="sobre" className="py-24 relative overflow-hidden">
+      <section id="sobre" className="scroll-mt-24 py-24 relative overflow-hidden">
         <div className="absolute right-0 bottom-0 w-96 h-96 bg-primary/10 rounded-full blur-[100px] -z-10" />
         <div className="container mx-auto px-4 text-center max-w-4xl mb-24">
           <h3 className="text-sm font-bold tracking-widest text-primary uppercase mb-3">Quem Somos</h3>
@@ -264,7 +265,7 @@ const Landing = () => {
       </section>
 
       {/* Contato */}
-      <section id="contato" className="container mx-auto px-4 py-24 mb-10">
+      <section id="contato" className="scroll-mt-24 container mx-auto px-4 py-24 mb-10">
         <div className="bg-card/50 backdrop-blur-xl border border-white/10 rounded-[3rem] shadow-2xl p-8 md:p-14 overflow-hidden relative">
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[80px] -z-10 rounded-full" />
 
@@ -362,71 +363,4 @@ const Landing = () => {
     </div>
   );
 };
-
-const PhotoCarousel = ({ photos }: { photos: any[] }) => {
-  const [idx, setIdx] = useState(0);
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setIdx((current) => (current + 1) % photos.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [photos.length]);
-
-  const prev = () => setIdx((i) => (i - 1 + photos.length) % photos.length);
-  const next = () => setIdx((i) => (i + 1) % photos.length);
-
-  const minSwipeDistance = 50;
-  const onTouchStart = (e: React.TouchEvent) => { setTouchEnd(null); setTouchStart(e.targetTouches[0].clientX); };
-  const onTouchMove = (e: React.TouchEvent) => { setTouchEnd(e.targetTouches[0].clientX); };
-  const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    const distance = touchStart - touchEnd;
-    if (distance > minSwipeDistance) next();
-    if (distance < -minSwipeDistance) prev();
-  };
-
-  return (
-    <div
-      className="relative w-full max-w-5xl mx-auto rounded-3xl overflow-hidden bg-black/5 border border-white/10 shadow-2xl group h-[300px] md:h-[500px]"
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
-    >
-      <div className="absolute inset-0 flex items-center justify-center">
-        <img
-          key={photos[idx]?.id}
-          src={photos[idx]?.url}
-          alt={photos[idx]?.caption || ""}
-          className="w-full h-full object-contain animate-fade-in transition-all duration-700"
-        />
-      </div>
-
-      {photos[idx]?.caption && (
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6 pt-12 text-white">
-          <p className="text-lg font-medium drop-shadow-md">{photos[idx].caption}</p>
-        </div>
-      )}
-
-      {photos.length > 1 && (
-        <>
-          <button onClick={prev} className="absolute left-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-black/20 hover:bg-black/50 text-white backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
-            <ChevronLeft className="h-6 w-6" />
-          </button>
-          <button onClick={next} className="absolute right-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-black/20 hover:bg-black/50 text-white backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
-            <ChevronRight className="h-6 w-6" />
-          </button>
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-            {photos.map((_, i) => (
-              <button key={i} onClick={() => setIdx(i)} className={`h-1.5 rounded-full transition-all ${i === idx ? "w-6 bg-white" : "w-1.5 bg-white/40"}`} />
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-};
-
-export default Landing;
+export default Landing;
