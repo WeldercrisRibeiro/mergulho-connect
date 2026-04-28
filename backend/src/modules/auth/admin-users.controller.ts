@@ -32,7 +32,17 @@ export class AdminUsersController {
           userId: u.id,
           fullName: dto.fullName,
           username: dto.username,
-          whatsappPhone: dto.whatsappPhone
+          whatsappPhone: dto.whatsappPhone,
+          birthDate: dto.birthDate ? new Date(dto.birthDate) : null,
+          address: dto.address,
+          street: dto.street,
+          number: dto.number,
+          neighborhood: dto.neighborhood,
+          complement: dto.complement,
+          city: dto.city,
+          state: dto.state,
+          codCep: dto.codCep,
+          country: dto.country
         }
       });
       await tx.userRole.create({
@@ -67,12 +77,32 @@ export class AdminUsersController {
           userId: id,
           fullName: dto.fullName,
           username: dto.username,
-          whatsappPhone: dto.whatsappPhone
+          whatsappPhone: dto.whatsappPhone,
+          birthDate: dto.birthDate ? new Date(dto.birthDate) : null,
+          address: dto.address,
+          street: dto.street,
+          number: dto.number,
+          neighborhood: dto.neighborhood,
+          complement: dto.complement,
+          city: dto.city,
+          state: dto.state,
+          codCep: dto.codCep,
+          country: dto.country
         },
         update: {
           fullName: dto.fullName,
           username: dto.username,
-          whatsappPhone: dto.whatsappPhone
+          whatsappPhone: dto.whatsappPhone,
+          birthDate: dto.birthDate ? new Date(dto.birthDate) : null,
+          address: dto.address,
+          street: dto.street,
+          number: dto.number,
+          neighborhood: dto.neighborhood,
+          complement: dto.complement,
+          city: dto.city,
+          state: dto.state,
+          codCep: dto.codCep,
+          country: dto.country
         }
       });
 

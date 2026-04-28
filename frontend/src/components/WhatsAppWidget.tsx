@@ -26,7 +26,14 @@ export const WhatsAppWidget = ({ phoneNumber, className }: WhatsAppWidgetProps) 
   const handleSend = () => {
     if (!message.trim()) return;
     const encodedMessage = encodeURIComponent(message);
-    window.open(`https://wa.me/${phoneNumber.replace(/\D/g, "")}?text=${encodedMessage}`, "_blank");
+    let cleanPhone = phoneNumber.replace(/\D/g, "");
+
+    // Se o número tiver 10 ou 11 dígitos (DDD + Telefone) e não começar com 55, adiciona o prefixo Brasil
+    if ((cleanPhone.length === 10 || cleanPhone.length === 11) && !cleanPhone.startsWith("55")) {
+      cleanPhone = "55" + cleanPhone;
+    }
+
+    window.open(`https://wa.me/${cleanPhone}?text=${encodedMessage}`, "_blank");
     setIsOpen(false);
     setMessage("");
   };

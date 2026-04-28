@@ -155,7 +155,16 @@ model Profile {
   sentMessages       Message[]           @relation("SentMessages")
   user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   volunteerSchedules VolunteerSchedule[]
-
+  birthDate          DateTime?           @map("birth_date") @db.Timestamptz(6)
+  address            String?             @map("address")
+  street             String?             @map("street")
+  number             String?             @map("number")
+  neighborhood       String?             @map("neighborhood")
+  complement         String?             @map("complement")
+  city               String?             @map("city")
+  state              String?             @map("state")
+  codCep            String?             @map("cod_cep")
+  country            String?             @default("Brazil") @map("country")
   @@map("profiles")
 }
 

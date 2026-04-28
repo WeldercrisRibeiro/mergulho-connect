@@ -39,4 +39,44 @@ export class CreateAdminUserDto {
   @ValidateNested({ each: true })
   @Type(() => AdminUserGroupDto)
   groups?: AdminUserGroupDto[];
+
+  @IsOptional()
+  @IsString()
+  birthDate?: string;
+
+  @IsOptional()
+  @IsString()
+  address?: string;
+
+  @IsOptional()
+  @IsString()
+  street?: string;
+
+  @IsOptional()
+  @IsString()
+  number?: string;
+
+  @IsOptional()
+  @IsString()
+  neighborhood?: string;
+
+  @IsOptional()
+  @IsString()
+  complement?: string;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @IsOptional()
+  @IsString()
+  state?: string;
+
+  @IsOptional()
+  @IsString()
+  codCep?: string;
+
+  @IsOptional()
+  @IsString()
+  country?: string;
 }

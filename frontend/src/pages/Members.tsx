@@ -18,6 +18,10 @@ import { cn, getUploadUrl } from "@/lib/utils";
 import { normalizePhoneForDB, formatPhoneForDisplay, maskPhone } from "@/lib/phoneUtils";
 import { getErrorMessage } from "@/lib/errorMessages";
 
+const maskCep = (value: string) => {
+  return value.replace(/\D/g, "").slice(0, 8).replace(/(\d{5})(\d)/, "$1-$2");
+};
+
 const Members = () => {
   const [search, setSearch] = useState("");
   const { isAdmin, IsLider, isAdminCCM } = useAuth();
@@ -35,6 +39,45 @@ const Members = () => {
   const [deletingMember, setDeletingMember] = useState<any>(null);
   const [resettingPasswordMember, setResettingPasswordMember] = useState<any>(null);
   const [removePhoto, setRemovePhoto] = useState(false);
+
+  const [editBirthDate, setEditBirthDate] = useState("");
+  const [editAddress, setEditAddress] = useState("");
+  const [editStreet, setEditStreet] = useState("");
+  const [editNumber, setEditNumber] = useState("");
+  const [editNeighborhood, setEditNeighborhood] = useState("");
+  const [editComplement, setEditComplement] = useState("");
+  const [editCity, setEditCity] = useState("");
+  const [editState, setEditState] = useState("");
+  const [editCodCep, setEditCodCep] = useState("");
+  const [editCountry, setEditCountry] = useState("Brazil");
+
+  const handleCepChange = async (cep: string) => {
+    const masked = maskCep(cep);
+    setEditCodCep(masked);
+    
+    const cleaned = masked.replace(/\D/g, "");
+    if (cleaned.length === 8) {
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${cleaned}/json/`);
+        const data = await response.json();
+        
+        if (!data.erro) {
+          setEditAddress(`${data.logradouro}${data.bairro ? ', ' + data.bairro : ''}`);
+          setEditStreet(data.logradouro);
+          setEditNeighborhood(data.bairro);
+          setEditComplement(data.complemento || "");
+          setEditCity(data.localidade);
+          setEditState(data.uf);
+          toast({ title: "Endereço encontrado!", description: "Os campos foram preenchidos automaticamente." });
+        } else {
+          toast({ title: "CEP não encontrado", description: "Verifique o número digitado.", variant: "destructive" });
+        }
+      } catch (error) {
+        console.error("Erro ao buscar CEP:", error);
+        toast({ title: "Erro na busca", description: "Não foi possível conectar ao serviço de CEP.", variant: "destructive" });
+      }
+    }
+  };
 
   if (!isAdmin && !IsLider) {
     return <Navigate to="/home" replace />;
@@ -83,6 +126,16 @@ const Members = () => {
     setEditRole(m.roles?.[0]?.role || "membro");
     setSelectedGroups(m.groupIds || []);
     setRemovePhoto(false);
+    setEditBirthDate(m.birthDate ? new Date(m.birthDate).toISOString().split('T')[0] : "");
+    setEditAddress(m.address || "");
+    setEditStreet(m.street || "");
+    setEditNumber(m.number || "");
+    setEditNeighborhood(m.neighborhood || "");
+    setEditComplement(m.complement || "");
+    setEditCity(m.city || "");
+    setEditState(m.state || "");
+    setEditCodCep(m.codCep || "");
+    setEditCountry(m.country || "Brazil");
   };
 
   const updateMutation = useMutation({
@@ -93,7 +146,17 @@ const Members = () => {
       const cleanUsername = (editUsername || "").trim().toLowerCase().replace("@ccmergulho.com", "").replace(/\s+/g, ".") || phoneDigits;
       const email = cleanUsername + "@ccmergulho.com";
       await api.patch(`/admin/users/${editingMember.userId}`, {
-        email, fullName: editName, whatsappPhone: normalizedPhone, username: cleanUsername, role: editRole, groups: selectedGroups
+        email, fullName: editName, whatsappPhone: normalizedPhone, username: cleanUsername, role: editRole, groups: selectedGroups,
+        birthDate: editBirthDate || null,
+        address: editAddress,
+        street: editStreet,
+        number: editNumber,
+        neighborhood: editNeighborhood,
+        complement: editComplement,
+        city: editCity,
+        state: editState,
+        codCep: editCodCep,
+        country: editCountry
       });
     },
     onSuccess: () => {
@@ -114,13 +177,24 @@ const Members = () => {
       const cleanUsername = (editUsername || "").trim().toLowerCase().replace(/\s+/g, ".") || phoneDigits;
       const email = cleanUsername + "@ccmergulho.com";
       await api.post(`/admin/users`, {
-        email, fullName: editName, whatsappPhone: normalizedPhone, username: cleanUsername, role: editRole, groups: selectedGroups, password: "123456"
+        email, fullName: editName, whatsappPhone: normalizedPhone, username: cleanUsername, role: editRole, groups: selectedGroups, password: "123456",
+        birthDate: editBirthDate || null,
+        address: editAddress,
+        street: editStreet,
+        number: editNumber,
+        neighborhood: editNeighborhood,
+        complement: editComplement,
+        city: editCity,
+        state: editState,
+        codCep: editCodCep,
+        country: editCountry
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["members"] });
       setCreatingMember(false);
       setEditName(""); setEditUsername(""); setEditPhone(""); setEditRole("membro"); setSelectedGroups([]);
+      setEditBirthDate(""); setEditAddress(""); setEditStreet(""); setEditNumber(""); setEditNeighborhood(""); setEditComplement(""); setEditCity(""); setEditState(""); setEditCodCep(""); setEditCountry("Brazil");
       toast({ title: "Membro criado!", description: `Usuário (Login): ${editUsername} | Senha: 123456` });
     },
     onError: (err: any) => {
@@ -214,6 +288,7 @@ const Members = () => {
         {isAdmin && (
           <Button onClick={() => {
             setEditName(""); setEditPhone(""); setEditRole("membro"); setSelectedGroups([]);
+            setEditBirthDate(""); setEditAddress(""); setEditCity(""); setEditState(""); setEditCodCep(""); setEditCountry("Brasil");
             setCreatingMember(true);
           }}>
             <Plus className="h-4 w-4 mr-1" /> Novo Membro
@@ -420,6 +495,52 @@ const Members = () => {
                 </Select>
               </div>
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Data de Nascimento</Label>
+                <Input type="date" value={editBirthDate} onChange={e => setEditBirthDate(e.target.value)} className="rounded-xl h-11" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">CEP</Label>
+                <Input value={editCodCep} onChange={e => handleCepChange(e.target.value)} placeholder="00000-000" className="rounded-xl h-11" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Rua</Label>
+                <Input value={editStreet} onChange={e => setEditStreet(e.target.value)} placeholder="Rua" className="rounded-xl h-11" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Bairro</Label>
+                <Input value={editNeighborhood} onChange={e => setEditNeighborhood(e.target.value)} placeholder="Bairro" className="rounded-xl h-11" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Número</Label>
+                <Input value={editNumber} onChange={e => setEditNumber(e.target.value)} placeholder="Nº" className="rounded-xl h-11" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Complemento</Label>
+                <Input value={editComplement} onChange={e => setEditComplement(e.target.value)} placeholder="Apto, Bloco, etc." className="rounded-xl h-11" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Cidade</Label>
+                <Input value={editCity} onChange={e => setEditCity(e.target.value)} placeholder="Cidade" className="rounded-xl h-11" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Estado (UF)</Label>
+                <Input value={editState} onChange={e => setEditState(e.target.value)} placeholder="Ex: CE" className="rounded-xl h-11" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">País</Label>
+                <Input value={editCountry} onChange={e => setEditCountry(e.target.value)} className="rounded-xl h-11" />
+              </div>
+            </div>
             <div className="space-y-3">
               <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Vincular a Departamentos</Label>
               <GroupCheckboxes />
@@ -492,6 +613,52 @@ const Members = () => {
                     )}
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Data de Nascimento</Label>
+                <Input type="date" value={editBirthDate} onChange={e => setEditBirthDate(e.target.value)} className="rounded-xl h-11" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">CEP</Label>
+                <Input value={editCodCep} onChange={e => handleCepChange(e.target.value)} placeholder="00000-000" className="rounded-xl h-11" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Rua</Label>
+                <Input value={editStreet} onChange={e => setEditStreet(e.target.value)} placeholder="Rua" className="rounded-xl h-11" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Bairro</Label>
+                <Input value={editNeighborhood} onChange={e => setEditNeighborhood(e.target.value)} placeholder="Bairro" className="rounded-xl h-11" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Número</Label>
+                <Input value={editNumber} onChange={e => setEditNumber(e.target.value)} placeholder="Nº" className="rounded-xl h-11" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Complemento</Label>
+                <Input value={editComplement} onChange={e => setEditComplement(e.target.value)} placeholder="Apto, Bloco, etc." className="rounded-xl h-11" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Cidade</Label>
+                <Input value={editCity} onChange={e => setEditCity(e.target.value)} placeholder="Cidade" className="rounded-xl h-11" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Estado (UF)</Label>
+                <Input value={editState} onChange={e => setEditState(e.target.value)} placeholder="Ex: CE" className="rounded-xl h-11" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">País</Label>
+                <Input value={editCountry} onChange={e => setEditCountry(e.target.value)} className="rounded-xl h-11" />
               </div>
             </div>
 
