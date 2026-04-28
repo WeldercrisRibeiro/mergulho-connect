@@ -75,13 +75,13 @@ const DevotionalWelcome = () => {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="md:max-w-[850px] p-0 overflow-hidden gap-0">
+      <DialogContent className="w-[94vw] md:max-w-[850px] max-h-[90vh] p-0 overflow-hidden gap-0 flex flex-col">
         <DialogHeader className="sr-only">
           <DialogTitle>Devocional do Dia</DialogTitle>
           <DialogDescription>Leia o devocional de hoje.</DialogDescription>
         </DialogHeader>
         {/* Header strip */}
-        <div className="bg-gradient-to-r from-primary to-primary/70 p-5 relative">
+        <div className="bg-gradient-to-r from-primary to-primary/70 p-5 relative shrink-0">
           <div className="flex items-center gap-2 text-white">
             <BookOpen className="h-5 w-5" />
             <span className="text-sm font-semibold tracking-wide uppercase">Devocional do Dia</span>
@@ -96,65 +96,67 @@ const DevotionalWelcome = () => {
           </Button>
         </div>
 
-        {/* Content */}
-        <div className="p-6">
-          <h2 className="text-xl font-bold mb-1">{devotional.title}</h2>
-          <p className="text-xs text-muted-foreground mb-6">
-            {safeFormat(devotional.publishDate, "dd 'de' MMMM 'de' yyyy")}
-          </p>
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
+          <div className="p-6">
+            <h2 className="text-xl font-bold mb-1">{devotional.title}</h2>
+            <p className="text-xs text-muted-foreground mb-6">
+              {safeFormat(devotional.publishDate, "dd 'de' MMMM 'de' yyyy")}
+            </p>
 
-          <div className="flex flex-col md:flex-row gap-6">
-            {/* Text column */}
-            <div className="flex-1 order-1">
-              <div className="max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
-                <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                  {devotional.content}
-                </p>
+            <div className="flex flex-col md:flex-row gap-6">
+              {/* Text column */}
+              <div className="flex-1 order-1">
+                <div className="max-h-[none] md:max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
+                  <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                    {devotional.content}
+                  </p>
+                </div>
               </div>
+
+              {/* Media column */}
+              {((devotional as any).videoUrl || devotional.mediaUrl) && (() => {
+                const url = (devotional as any).videoUrl || devotional.mediaUrl || "";
+                const isYoutube = url.includes("youtube") || url.includes("youtu.be");
+                const isVideoFile = (devotional as any).isVideoUpload || url.match(/\.(mp4|webm|mov)(\?.*)?$/i);
+                return (
+                  <div className="md:w-[350px] md:shrink-0 order-2">
+                    <div className="rounded-xl overflow-hidden shadow-md bg-muted/10 border border-border/50">
+                      {isYoutube ? (
+                        <VideoPlayer url={url} isUpload={false} />
+                      ) : isVideoFile ? (
+                        <VideoPlayer url={url} isUpload={true} />
+                      ) : (
+                        <img
+                          src={url}
+                          alt={devotional.title}
+                          className="w-full object-cover max-h-[300px]"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        />
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
-            {/* Media column */}
-            {((devotional as any).videoUrl || devotional.mediaUrl) && (() => {
-              const url = (devotional as any).videoUrl || devotional.mediaUrl || "";
-              const isYoutube = url.includes("youtube") || url.includes("youtu.be");
-              const isVideoFile = (devotional as any).isVideoUpload || url.match(/\.(mp4|webm|mov)(\?.*)?$/i);
-              return (
-                <div className="md:w-[350px] md:shrink-0 order-2">
-                  <div className="rounded-xl overflow-hidden shadow-md bg-muted/10 border border-border/50">
-                    {isYoutube ? (
-                      <VideoPlayer url={url} isUpload={false} />
-                    ) : isVideoFile ? (
-                      <VideoPlayer url={url} isUpload={true} />
-                    ) : (
-                      <img
-                        src={url}
-                        alt={devotional.title}
-                        className="w-full object-cover max-h-[300px]"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                      />
-                    )}
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
+            {/* Footer */}
+            <div className="flex items-center justify-between border-t pt-4 mt-6">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`gap-2 transition-colors ${myLike ? "text-rose-500" : "text-muted-foreground"}`}
+                onClick={() => likeMutation.mutate()}
+                disabled={likeMutation.isPending}
+              >
+                <Heart className={`h-5 w-5 ${myLike ? "fill-rose-500" : ""}`} />
+                <span className="text-sm font-medium">{likeCount ?? 0}</span>
+              </Button>
 
-          {/* Footer */}
-          <div className="flex items-center justify-between border-t pt-4 mt-6">
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`gap-2 transition-colors ${myLike ? "text-rose-500" : "text-muted-foreground"}`}
-              onClick={() => likeMutation.mutate()}
-              disabled={likeMutation.isPending}
-            >
-              <Heart className={`h-5 w-5 ${myLike ? "fill-rose-500" : ""}`} />
-              <span className="text-sm font-medium">{likeCount ?? 0}</span>
-            </Button>
-
-            <Button onClick={() => setOpen(false)} className="px-8">
-              Fechar
-            </Button>
+              <Button onClick={() => setOpen(false)} className="px-8">
+                Fechar
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>
