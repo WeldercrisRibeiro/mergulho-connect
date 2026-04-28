@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Heart, X, BookOpen } from "lucide-react";
 import { safeFormat } from "@/lib/dateUtils";
@@ -75,39 +75,41 @@ const DevotionalWelcome = () => {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="w-[94vw] md:max-w-[850px] max-h-[90vh] p-0 overflow-hidden gap-0 flex flex-col">
+      <DialogContent className="w-[94vw] md:max-w-[850px] max-h-[90vh] p-0 overflow-hidden gap-0 flex flex-col [&>button]:hidden">
         <DialogHeader className="sr-only">
           <DialogTitle>Devocional do Dia</DialogTitle>
           <DialogDescription>Leia o devocional de hoje.</DialogDescription>
         </DialogHeader>
+        
         {/* Header strip */}
-        <div className="bg-gradient-to-r from-primary to-primary/70 p-5 relative shrink-0">
+        <div className="bg-gradient-to-r from-primary to-primary/70 p-4 md:p-5 relative shrink-0">
           <div className="flex items-center gap-2 text-white">
             <BookOpen className="h-5 w-5" />
             <span className="text-sm font-semibold tracking-wide uppercase">Devocional do Dia</span>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute right-3 top-3 text-white hover:bg-white/20 h-7 w-7"
-            onClick={() => setOpen(false)}
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          <DialogClose asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-3 top-2.5 md:top-3 text-white hover:bg-white/20 h-8 w-8"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </DialogClose>
         </div>
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto custom-scrollbar">
-          <div className="p-6">
+          <div className="p-5 md:p-6">
             <h2 className="text-xl font-bold mb-1">{devotional.title}</h2>
-            <p className="text-xs text-muted-foreground mb-6">
+            <p className="text-xs text-muted-foreground mb-4 md:mb-6">
               {safeFormat(devotional.publishDate, "dd 'de' MMMM 'de' yyyy")}
             </p>
 
-            <div className="flex flex-col md:flex-row gap-6">
+            <div className="flex flex-col md:flex-row gap-5 md:gap-6">
               {/* Text column */}
               <div className="flex-1 order-1">
-                <div className="max-h-[none] md:max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
+                <div className="max-h-none md:max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
                   <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
                     {devotional.content}
                   </p>
@@ -130,7 +132,7 @@ const DevotionalWelcome = () => {
                         <img
                           src={url}
                           alt={devotional.title}
-                          className="w-full object-cover max-h-[300px]"
+                          className="w-full object-cover max-h-[220px] md:max-h-[350px]"
                           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                         />
                       )}
@@ -153,9 +155,11 @@ const DevotionalWelcome = () => {
                 <span className="text-sm font-medium">{likeCount ?? 0}</span>
               </Button>
 
-              <Button onClick={() => setOpen(false)} className="px-8">
-                Fechar
-              </Button>
+              <DialogClose asChild>
+                <Button className="px-8">
+                  Fechar
+                </Button>
+              </DialogClose>
             </div>
           </div>
         </div>
