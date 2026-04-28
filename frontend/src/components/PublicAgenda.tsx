@@ -83,7 +83,7 @@ export const PublicAgenda = () => {
 
                 {/* Banner thumbnail (if exists) */}
                 {event.bannerUrl && (
-                  <div className="w-24 h-24 shrink-0 overflow-hidden">
+                  <div className="w-28 sm:w-40 shrink-0 overflow-hidden relative">
                     <img
                       src={event.bannerUrl}
                       alt={event.title}
@@ -97,57 +97,57 @@ export const PublicAgenda = () => {
                     <div className="flex-1 min-w-0">
                       {/* Type + Price badges */}
                       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${EVENT_TYPE_COLORS[event.eventType] || EVENT_TYPE_COLORS.simple}`}>
-                          {emoji} {EVENT_TYPE_LABELS[event.eventType] || "Compromisso"}
+                        <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full ${EVENT_TYPE_COLORS[event.eventType] || EVENT_TYPE_COLORS.simple}`}>
+                          <span className="text-sm">{emoji}</span> {EVENT_TYPE_LABELS[event.eventType] || "Compromisso"}
                         </span>
                         {/* Badge de departamento para eventos não-gerais que foram tornados públicos */}
                         {!event.isGeneral && event.isPublic && event.group?.name && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">
+                          <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">
                             🏷️ {event.group.name}
                           </span>
                         )}
                         {isPaid && (
-                          <Badge variant="outline" className="text-[10px] border-emerald-300 text-emerald-600 font-bold">
+                          <Badge variant="outline" className="text-xs border-emerald-300 text-emerald-600 font-bold px-3 py-0.5">
                             R$ {Number(event.price).toFixed(2)}
                           </Badge>
                         )}
                         {!isPaid && isComplex && (
-                          <Badge variant="outline" className="text-[10px] border-emerald-300 text-emerald-600 font-bold">
+                          <Badge variant="outline" className="text-xs border-emerald-300 text-emerald-600 font-bold px-3 py-0.5">
                             Gratuito
                           </Badge>
                         )}
                       </div>
 
                       {/* Title */}
-                      <h4 className="font-bold text-sm leading-tight truncate">{event.title}</h4>
+                      <h4 className="font-extrabold text-base md:text-lg leading-snug text-foreground mb-2 group-hover:text-primary transition-colors">{event.title}</h4>
 
                       {/* Date */}
-                      <div className="flex items-center gap-1.5 mt-1.5 text-xs text-muted-foreground">
-                        <Calendar className="h-3 w-3 shrink-0 text-primary" />
-                        <span className="font-medium text-foreground/80">
+                      <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+                        <Calendar className="h-4 w-4 shrink-0 text-primary" />
+                        <span className="font-semibold text-foreground/90">
                           {safeFormat(event.eventDate, "dd/MM/yyyy 'às' HH:mm")}
                         </span>
                       </div>
 
                       {/* Location */}
                       {event.location && (
-                        <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
-                          <MapPin className="h-3 w-3 shrink-0" />
+                        <div className="flex items-center gap-2 mt-1.5 text-sm text-muted-foreground">
+                          <MapPin className="h-4 w-4 shrink-0" />
                           <span className="truncate">{event.location}</span>
                         </div>
                       )}
 
                       {/* Speakers */}
                       {event.speakers && (
-                        <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
-                          <Mic2 className="h-3 w-3 shrink-0" />
+                        <div className="flex items-center gap-2 mt-1.5 text-sm text-muted-foreground">
+                          <Mic2 className="h-4 w-4 shrink-0" />
                           <span className="truncate">{event.speakers}</span>
                         </div>
                       )}
-                      <p className="mt-2 text-[11px] text-primary/80 font-medium">Toque para solicitar acesso e confirmar presença</p>
+                      <p className="mt-3 text-xs md:text-sm text-primary font-bold">Toque para solicitar acesso e confirmar presença</p>
                     </div>
 
-                    <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0 group-hover:text-primary group-hover:translate-x-0.5 transition-all mt-1" />
+                    <ChevronRight className="h-5 w-5 text-muted-foreground/40 shrink-0 group-hover:text-primary group-hover:translate-x-1 transition-all mt-1" />
                   </div>
                 </CardContent>
               </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
-import { Moon, Sun, KeyRound, AlertCircle, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { Moon, Sun, KeyRound, AlertCircle, ArrowLeft, Eye, EyeOff, Users, ArrowRight } from "lucide-react";
 import api from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/components/ThemeProvider";
@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { maskPhone } from "@/lib/phoneUtils";
+import { cn } from "@/lib/utils";
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
@@ -161,98 +162,124 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex w-full bg-background relative">
+    <div className={cn(
+      "min-h-screen flex w-full relative overflow-hidden transition-colors duration-500",
+      theme === 'light' ? "bg-[#f8faff]" : "bg-[#0a0c10]"
+    )}>
+      {/* Dynamic Animated Background */}
+      <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-500/10 rounded-full blur-[140px] animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] bg-cyan-400/10 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '4s' }} />
+      </div>
 
       {/* Left Column (Brand/Image) - Hidden on small screens */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-primary/90 to-primary/60 overflow-hidden items-center justify-center p-12">
-        <div className="absolute inset-0 bg-black/10"></div>
-        {/* Usando a logo grandona à esquerda */}
-        <div className="z-10 bg-white/10 backdrop-blur-md p-10 rounded-[2rem] shadow-2xl border border-white/20 flex flex-col items-center max-w-lg w-full transform transition-transform hover:scale-105 duration-500 text-white">
-          <img
-            src="/idvmergulho/logo-white.png"
-            alt="Logo CC Mergulho"
-            className="w-full h-auto drop-shadow-xl mb-6"
-          />
-        </div>
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center p-12 bg-gradient-to-br from-[#0052cc] via-[#0747a6] to-[#002152] shadow-[inset_-20px_0_50px_rgba(0,0,0,0.2)]">
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.4) 1px, transparent 0)', backgroundSize: '40px 40px' }} />
+        
+        {/* Decorative glows */}
+        <div className="absolute top-[-10%] left-[-10%] w-[80%] h-[80%] bg-blue-400/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[80%] h-[80%] bg-blue-300/5 rounded-full blur-[120px]" />
+        
+        <div className="
+  group
+  z-10 glass-morphism p-20 rounded-[3rem]
+  flex items-center justify-center
+  max-w-2xl w-full
+  transition-all duration-500 ease-out
+  hover:scale-105 hover:-translate-y-2
+">
+  <img
+    src="/idvmergulho/logo-white.png"
+    alt="Logo CC Mergulho"
+    className="
+  w-[120%] max-w-[750px] h-auto
+  drop-shadow-[0_30px_80px_rgba(0,0,0,0.7)]
+  transition-all duration-500
+  group-hover:scale-115
+"
+  />
+</div>
       </div>
 
       {/* Right Column (Form) */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center px-4 py-12 bg-background/50 relative">
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-6 py-12 relative">
         {/* Botão voltar à Landing */}
         <Link
           to="/landing"
-          className="absolute top-6 left-6 z-30 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          className="absolute top-8 left-8 z-30 inline-flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-primary transition-all group"
         >
-          <ArrowLeft className="h-4 w-4" />
-          Voltar
+          <ArrowLeft className="h-4 w-4 transform group-hover:-translate-x-1 transition-transform" />
+          <span>Voltar ao Início</span>
         </Link>
-        <Card className="w-full max-w-md border-0 shadow-none bg-transparent">
-          <CardHeader className="text-center pb-8">
-            {/* Logo para telas pequenas, já que a esquerda vai sumir */}
+        
+        <div className="hidden lg:block absolute top-8 right-8 z-20">
+          <button
+            onClick={toggleTheme}
+            className="p-3 rounded-2xl bg-card/40 backdrop-blur-md border border-white/10 shadow-xl hover:bg-card/60 transition-all transform hover:rotate-12 active:scale-95"
+            title="Alternar Tema"
+          >
+            {theme === "light" ? <Moon size={20} className="text-slate-700" /> : <Sun size={20} className="text-yellow-400" />}
+          </button>
+        </div>
+
+        <Card className="w-full max-w-md border-0 shadow-xl bg-card/40 backdrop-blur-xl rounded-2xl p-2 animate-fade-in-up border border-white/10">
+          <CardHeader className="text-center pb-4 pt-4">
+            {/* Logo para telas pequenas */}
             <div className="lg:hidden flex justify-center mb-6 relative">
               <img
-                src={theme === "dark" ? "/idvmergulho/logo-horizontal.png" : "/idvmergulho/logo-horizontal-azul.png"}
+                src={theme === "dark" ? "/idvmergulho/logo-white.png" : "/idvmergulho/logo.png"}
                 alt="Logo"
-                className="h-16 w-auto"
+                className="h-12 w-auto drop-shadow-sm"
               />
               <button
                 onClick={toggleTheme}
-                className="absolute -right-4 -top-4 p-2 rounded-full bg-muted hover:bg-muted/80 transition-colors"
+                className="absolute -right-1 -top-1 p-2 rounded-full bg-card/80 border border-white/10 shadow-md"
                 title="Alternar Tema"
               >
-                {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
+                {theme === "light" ? <Moon size={14} /> : <Sun size={14} />}
               </button>
             </div>
 
-            <div className="hidden lg:block absolute top-[5%] right-[5%] z-20">
-              <button
-                onClick={toggleTheme}
-                className="p-3 rounded-full bg-card/50 backdrop-blur-md shadow-lg border hover:bg-card/80 transition-all transform hover:rotate-12"
-                title="Alternar Tema"
-              >
-                {theme === "light" ? <Moon size={20} className="text-slate-700" /> : <Sun size={20} className="text-yellow-400" />}
-              </button>
-            </div>
-
-            <CardTitle className="text-3xl font-bold tracking-tight text-foreground flex items-center justify-center gap-2">
+            <CardTitle className="text-2xl md:text-3xl font-bold text-foreground">
               {isRequesting ? (
-                <>Cadastro</>
+                "Criar Cadastro"
               ) : isChangingPass ? (
-                <> <KeyRound className="h-7 w-7 text-primary" /> Trocar Senha</>
+                "Trocar Senha"
               ) : (
-                <>Acesso ao Sistema</>
+                "Acesso ao Sistema"
               )}
             </CardTitle>
-            <CardDescription className="text-base mt-2">
+            <CardDescription className="text-sm font-medium mt-1 opacity-80">
               {isRequesting ? (
-                "Preencha seus dados para receber o acesso."
+                "Preencha para receber o acesso."
               ) : isChangingPass ? (
-                "Informe sua senha atual e a nova senha que deseja usar."
+                "Informe sua senha atual e a nova."
               ) : (
-                "Entre na sua conta para acessar a comunidade."
+                "Entre para acessar a comunidade."
               )}
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4 px-6 pb-6">
             {isRequesting ? (
-              <form onSubmit={handleRequestAccess} className="space-y-5">
-                <div className="space-y-2 text-left">
-                  <Label htmlFor="name">Nome completo</Label>
+              <form onSubmit={handleRequestAccess} className="space-y-4">
+                <div className="space-y-1 text-left">
+                  <Label htmlFor="name" className="text-xs font-medium ml-1 opacity-70">Nome completo</Label>
                   <Input
                     id="name"
-                    className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium"
+                    className="h-11 bg-white/5 border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium px-4"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Seu nome completo"
                     required
                   />
                 </div>
-                <div className="space-y-2 text-left">
-                  <Label htmlFor="reqPhone">WhatsApp com DDD</Label>
+                <div className="space-y-1 text-left">
+                  <Label htmlFor="reqPhone" className="text-xs font-medium ml-1 opacity-70">WhatsApp com DDD</Label>
                   <Input
                     id="reqPhone"
                     type="tel"
-                    className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium"
+                    className="h-11 bg-white/5 border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium px-4"
                     value={reqPhone}
                     onChange={(e) => setReqPhone(maskPhone(e.target.value))}
                     placeholder="(85) 99266-4889"
@@ -260,34 +287,34 @@ const Auth = () => {
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full h-12 bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 text-white rounded-xl shadow-md hover:shadow-lg transition-all text-base mt-4" disabled={loading}>
+                <Button type="submit" className="w-full h-11 bg-primary hover:bg-primary/90 text-white rounded-xl shadow-lg transition-all text-sm font-bold mt-2" disabled={loading}>
                   {loading ? "Enviando..." : "Enviar Solicitação"}
                 </Button>
-                <div className="mt-8 text-center text-sm">
-                  <button type="button" onClick={() => setIsRequesting(false)} className="text-muted-foreground hover:text-primary transition-colors font-medium border-b border-transparent hover:border-primary pb-0.5">
-                    Já tem acesso? Volte para o Login
+                <div className="text-center text-xs">
+                  <button type="button" onClick={() => setIsRequesting(false)} className="text-muted-foreground hover:text-primary transition-colors font-medium hover:underline">
+                    Já tem acesso? Faça Login
                   </button>
                 </div>
               </form>
             ) : isChangingPass ? (
-              <form onSubmit={handleChangePassword} className="space-y-5">
-                <div className="space-y-2 text-left">
-                  <Label htmlFor="ch-username">Seu Nome de Usuário</Label>
+              <form onSubmit={handleChangePassword} className="space-y-4">
+                <div className="space-y-1 text-left">
+                  <Label htmlFor="ch-username" className="text-xs font-medium ml-1 opacity-70">Nome de Usuário</Label>
                   <Input
                     id="ch-username"
-                    className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium"
+                    className="h-11 bg-white/5 border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium px-4"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="usuário"
                     required
                   />
                 </div>
-                <div className="space-y-2 text-left">
-                  <Label htmlFor="ch-oldpass">Senha Atual</Label>
+                <div className="space-y-1 text-left">
+                  <Label htmlFor="ch-oldpass" className="text-xs font-medium ml-1 opacity-70">Senha Atual</Label>
                   <Input
                     id="ch-oldpass"
                     type={showPassword ? "text" : "password"}
-                    className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium pr-10"
+                    className="h-11 bg-white/5 border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium px-4 pr-12"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Sua senha atual"
@@ -296,12 +323,12 @@ const Auth = () => {
                     required
                   />
                 </div>
-                <div className="space-y-2 text-left">
-                  <Label htmlFor="ch-newpass">Nova Senha</Label>
+                <div className="space-y-1 text-left">
+                  <Label htmlFor="ch-newpass" className="text-xs font-medium ml-1 opacity-70">Nova Senha</Label>
                   <Input
                     id="ch-newpass"
                     type={showPassword ? "text" : "password"}
-                    className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium pr-10"
+                    className="h-11 bg-white/5 border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium px-4 pr-12"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Mínimo 6 caracteres"
@@ -312,51 +339,48 @@ const Auth = () => {
                     autoComplete="new-password"
                   />
                 </div>
-                <Button type="submit" className="w-full h-12 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl shadow-md hover:shadow-lg transition-all text-base mt-4" disabled={loading}>
+                <Button type="submit" className="w-full h-11 bg-primary text-white rounded-xl shadow-lg transition-all text-sm font-bold mt-2" disabled={loading}>
                   {loading ? "Processando..." : "Alterar Senha"}
                 </Button>
-                <div className="mt-8 text-center text-sm">
-                  <button type="button" onClick={() => setIsChangingPass(false)} className="text-muted-foreground hover:text-primary transition-colors font-medium border-b border-transparent hover:border-primary pb-0.5">
+                <div className="text-center text-xs">
+                  <button type="button" onClick={() => setIsChangingPass(false)} className="text-muted-foreground hover:text-primary transition-colors font-medium hover:underline">
                     Voltar para o Login
                   </button>
                 </div>
               </form>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="space-y-2 text-left">
-                  <Label htmlFor="username">Nome de Usuário</Label>
+                <div className="space-y-1 text-left">
+                  <Label htmlFor="username" className="text-xs font-medium ml-1 opacity-70">Nome de Usuário</Label>
                   <Input
                     id="username"
                     type="text"
-                    className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium"
+                    className="h-11 bg-white/5 border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium px-4"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="Seu usuário"
                     required
                     autoComplete="username"
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Use seu usuário.
-                  </p>
                 </div>
-                <div className="space-y-2 text-left">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Senha</Label>
+                <div className="space-y-1 text-left">
+                  <div className="flex items-center justify-between ml-1">
+                    <Label htmlFor="password" className="text-xs font-medium opacity-70">Senha</Label>
                     <button
                       type="button"
                       onClick={() => setIsChangingPass(true)}
-                      className="text-xs text-primary hover:underline font-medium"
+                      className="text-xs text-primary hover:underline font-bold"
                     >
-                      Trocar Senha?
+                      Esqueceu?
                     </button>
                   </div>
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Senha"
+                    placeholder="Sua senha"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium pr-10"
+                    className="h-11 bg-white/5 border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium px-4 pr-12"
                     eyeButton={true}
                     onEyeClick={() => setShowPassword(!showPassword)}
                     required
@@ -364,18 +388,30 @@ const Auth = () => {
                     autoComplete="current-password"
                   />
                 </div>
-                <Button type="submit" className="w-full h-12 bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 text-white rounded-xl shadow-md hover:shadow-lg transition-all text-base mt-4" disabled={loading}>
-                  {loading ? "Aguarde..." : "Entrar na Comunidade"}
+                <Button type="submit" className="w-full h-11 bg-primary hover:bg-primary/90 text-white rounded-xl shadow-lg transition-all text-base font-bold mt-2" disabled={loading}>
+                  {loading ? "Entrando..." : "Entrar"}
                 </Button>
 
-                <div className="mt-8 text-center text-sm">
-                  <button type="button" onClick={() => setIsRequesting(true)} className="text-muted-foreground hover:text-primary transition-colors font-medium border-b border-transparent hover:border-primary pb-0.5">
-                    Não tem acesso? Solicite aos Administradores
+                <div className="pt-4 text-center">
+                  <button type="button" onClick={() => setIsRequesting(true)} className="group flex items-center justify-between p-3 w-full rounded-xl bg-muted/30 border border-white/5 hover:bg-muted/50 transition-all">
+                    <div className="flex items-center gap-3">
+                      <div className="p-1.5 bg-primary/10 rounded-lg text-primary">
+                        <Users size={16} />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-xs font-bold text-foreground">Não tem acesso?</p>
+                        <p className="text-[10px] text-muted-foreground font-medium">Solicite Cadastro</p>
+                      </div>
+                    </div>
+                    <ArrowRight size={14} className="text-muted-foreground group-hover:translate-x-1 transition-transform" />
                   </button>
                 </div>
               </form>
             )}
           </CardContent>
+          <div className="text-center pb-4 opacity-30">
+            <p className="text-[10px] font-medium">CC Mergulho - {new Date().getFullYear()}</p>
+          </div>
         </Card>
       </div>
     </div>

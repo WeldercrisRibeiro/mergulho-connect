@@ -17,6 +17,7 @@ import MapViewer from "@/components/MapViewer";
 import { PhotoCarousel } from "@/components/PhotoCarousel";
 import { WhatsAppWidget } from "@/components/WhatsAppWidget";
 import { VersionIndicator } from "@/components/VersionIndicator";
+import { maskPhone, normalizePhoneForDB } from "@/lib/phoneUtils";
 
 const Landing = () => {
   const [formData, setFormData] = useState({ name: "", phone: "", subject: "Quero me tornar Membro", message: "" });
@@ -58,8 +59,9 @@ const Landing = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
+      const normalizedPhone = normalizePhoneForDB(formData.phone) || formData.phone;
       await api.post('/contact-messages', {
-        name: formData.name, phone: formData.phone, subject: formData.subject, message: formData.message
+        name: formData.name, phone: normalizedPhone, subject: formData.subject, message: formData.message
       });
     } catch (err) {
       console.error("Erro ao salvar mensagem:", err);
@@ -85,9 +87,9 @@ const Landing = () => {
           <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-muted-foreground">
             <a href="#inicio" className="hover:text-primary transition-colors">Início</a>
             <a href="#sobre" className="hover:text-primary transition-colors">Sobre Nós</a>
+            <a href="#servicos" className="hover:text-primary transition-colors">Experiências</a>
             <a href="#agenda" className="hover:text-primary transition-colors">Agenda</a>
-            <a href="#servicos" className="hover:text-primary transition-colors">Estrutura</a>
-            <a href="#projetos" className="hover:text-primary transition-colors">Projetos</a>
+            {/*<a href="#projetos" className="hover:text-primary transition-colors">Projetos</a>*/}
             <a href="#contato" className="hover:text-primary transition-colors">Contato</a>
           </nav>
 
@@ -100,9 +102,9 @@ const Landing = () => {
             >
               {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
             </button>
-            <Button asChild className="rounded-full px-6 bg-primary hover:bg-primary/90 text-white border-0 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 transition-all hover:-translate-y-0.5">
+            {/* <Button asChild className="rounded-full px-6 bg-primary hover:bg-primary/90 text-white border-0 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 transition-all hover:-translate-y-0.5">
               <Link to="/auth">Entrar</Link>
-            </Button>
+            </Button> */}
           </div>
         </div>
       </header>
@@ -116,8 +118,8 @@ const Landing = () => {
             alt="Comunidade CC Mergulho"
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-background/90 md:bg-background/80 backdrop-blur-[2px]" />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/50" />
+          <div className="absolute inset-0 bg-background/60 md:bg-background/40 backdrop-blur-[1px]" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/30" />
         </div>
 
         <div className="mx-auto max-w-4xl flex flex-col items-center relative z-10 text-center px-4">
@@ -125,55 +127,27 @@ const Landing = () => {
             <Star className="h-3 w-3 fill-primary" /> Bem-vindo à nossa comunidade
           </div>
 
-          <h1 className="text-4xl md:text-7xl font-black tracking-tighter mb-6 leading-[0.9] text-foreground">
-            <span className="text-primary block mb-2">AMAR | CUIDAR</span>
-            <span className="block italic opacity-90">SERVIR</span>
+          <h1 className="text-2xl sm:text-4xl md:text-6xl lg:text-7xl font-black tracking-tighter mb-8 leading-none text-foreground flex flex-wrap justify-center items-center gap-x-4 md:gap-x-8">
+            <span className="text-primary dark:text-white whitespace-nowrap">AMAR | CUIDAR | SERVIR</span>
           </h1>
           
-          <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl font-medium mb-12">
+          <p className="text-xl md:text-2xl text-muted-foreground leading-relaxed max-w-2xl font-medium mb-12">
             Uma comunidade cristã interligada. Junte-se aos nossos departamentos, envolva-se em projetos e conecte-se com seus irmãos com um clique.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center w-full max-w-md">
-            <Button size="lg" asChild className="rounded-full sm:flex-1 h-14 text-base bg-primary hover:bg-primary/90 shadow-2xl shadow-primary/40 hover:shadow-primary/60 transition-all hover:-translate-y-1 font-bold">
+            <Button size="lg" asChild className="rounded-full sm:flex-1 h-14 text-lg bg-primary hover:bg-primary/90 shadow-2xl shadow-primary/40 hover:shadow-primary/60 transition-all hover:-translate-y-1 font-bold">
               <Link to="/auth">Entrar Agora</Link>
             </Button>
-            <Button variant="outline" size="lg" asChild className="rounded-full sm:flex-1 h-14 text-base border-2 bg-background/50 backdrop-blur-md hover:bg-muted shadow-xl transition-all hover:-translate-y-1 font-bold">
+            <Button 
+              variant="outline" 
+              size="lg" 
+              asChild 
+              className="rounded-full sm:flex-1 h-14 text-lg border-2 bg-background/50 backdrop-blur-md hover:bg-muted dark:bg-white dark:text-primary dark:border-white dark:hover:bg-white/90 shadow-xl transition-all hover:-translate-y-1 font-bold"
+            >
               <Link to="/auth?request=true">Solicitar Cadastro</Link>
             </Button>
           </div>
-        </div>
-      </section>
-
-      {/* ── SEÇÃO AGENDA PÚBLICA ─────────────────────────────────────────────── */}
-      <section id="agenda" className="scroll-mt-24 py-20 bg-gradient-to-b from-background to-primary/5 border-t border-border/40">
-        <div className="container mx-auto px-4 max-w-3xl">
-          {/* Header da seção */}
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-full mb-4">
-              <Calendar className="h-6 w-6 text-primary" />
-            </div>
-            <h2 className="text-3xl md:text-4xl font-extrabold mb-3">Próximos Eventos</h2>
-            <p className="text-muted-foreground text-base max-w-xl mx-auto">
-              Fique por dentro da programação da CC Mergulho. Eventos em tempo real, atualizados pelos nossos líderes.
-            </p>
-          </div>
-
-          {/* Agenda component */}
-          <PublicAgenda />
-        </div>
-      </section>
-
-      {/* Projetos */}
-      <section id="projetos" className="scroll-mt-24 py-24 bg-gradient-to-b from-primary/5 to-background border-t border-border/50">
-        <div className="container mx-auto px-4 text-center max-w-3xl">
-          <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-full mb-6">
-            <Heart className="h-6 w-6 text-primary" />
-          </div>
-          <h3 className="text-3xl md:text-4xl font-extrabold mb-6">Nossos Projetos</h3>
-          <p className="text-lg text-muted-foreground leading-relaxed">
-            Acompanhe em breve as novidades e campanhas solidárias de expansão da nossa igreja. Estamos preparando um espaço para conectar corações abertos com necessidades reais.
-          </p>
         </div>
       </section>
 
@@ -269,6 +243,40 @@ const Landing = () => {
         </div>
       </section>
 
+      {/* ── SEÇÃO AGENDA PÚBLICA ─────────────────────────────────────────────── */}
+      <section id="agenda" className="scroll-mt-24 py-20 bg-gradient-to-b from-background to-primary/5 border-t border-border/40">
+        <div className="container mx-auto px-4 max-w-3xl">
+          {/* Header da seção */}
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-full mb-4">
+              <Calendar className="h-6 w-6 text-primary" />
+            </div>
+            <h2 className="text-3xl md:text-4xl font-extrabold mb-3">Próximos Eventos</h2>
+            <p className="text-muted-foreground text-base max-w-xl mx-auto">
+              Fique por dentro da programação da CC Mergulho. Eventos em tempo real, atualizados pelos nossos líderes.
+            </p>
+          </div>
+
+          {/* Agenda component */}
+          <PublicAgenda />
+        </div>
+      </section>
+
+      {/* Projetos 
+      <section id="projetos" className="scroll-mt-24 py-24 bg-gradient-to-b from-primary/5 to-background border-t border-border/50">
+        <div className="container mx-auto px-4 text-center max-w-3xl">
+          <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-full mb-6">
+            <Heart className="h-6 w-6 text-primary" />
+          </div>
+          <h3 className="text-3xl md:text-4xl font-extrabold mb-6">Nossos Projetos</h3>
+          <p className="text-lg text-muted-foreground leading-relaxed">
+            Acompanhe em breve as novidades e campanhas solidárias de expansão da nossa igreja. Estamos preparando um espaço para conectar corações abertos com necessidades reais.
+          </p>
+        </div>
+      </section>*/}
+
+      
+
       {/* Contato */}
       <section id="contato" className="scroll-mt-24 container mx-auto px-4 py-24 mb-10">
         <div className="bg-card/50 backdrop-blur-xl border border-white/10 rounded-[3rem] shadow-2xl p-8 md:p-14 overflow-hidden relative">
@@ -282,7 +290,14 @@ const Landing = () => {
               <form className="space-y-5" onSubmit={handleSubmit}>
                 <div className="grid sm:grid-cols-2 gap-5">
                   <Input className="h-12 bg-background/50 border-white/20 shadow-inner rounded-xl focus:ring-primary/50 text-base" placeholder="Seu Nome Completo" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required />
-                  <Input type="tel" className="h-12 bg-background/50 border-white/20 shadow-inner rounded-xl focus:ring-primary/50 text-base" placeholder="DDD + WhatsApp" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} required />
+                  <Input 
+                    type="tel" 
+                    className="h-12 bg-background/50 border-white/20 shadow-inner rounded-xl focus:ring-primary/50 text-base" 
+                    placeholder="(00) 00000-0000" 
+                    value={formData.phone} 
+                    onChange={e => setFormData({ ...formData, phone: maskPhone(e.target.value) })} 
+                    required 
+                  />
                 </div>
                 <Select value={formData.subject} onValueChange={(val) => setFormData({ ...formData, subject: val })}>
                   <SelectTrigger className="h-12 bg-background/50 border-white/20 shadow-inner rounded-xl focus:ring-primary/50 text-base">
@@ -372,7 +387,6 @@ const Landing = () => {
                 <a href="#inicio" className="hover:text-primary transition-colors">Início</a>
                 <a href="#sobre" className="hover:text-primary transition-colors">Sobre Nós</a>
                 <a href="#agenda" className="hover:text-primary transition-colors">Agenda</a>
-                <a href="/auth" className="hover:text-primary transition-colors">Entrar</a>
               </nav>
             </div>
 

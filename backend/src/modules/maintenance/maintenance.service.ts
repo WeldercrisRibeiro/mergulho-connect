@@ -218,12 +218,12 @@ export class MaintenanceService {
         name: 'Criar Novo Usuário/Admin',
         description: 'Cria um novo usuário com perfil e cargo definidos.',
         fields: [
-          { name: 'email', label: 'Login', type: 'text', required: true },
+          { name: 'username', label: 'Nome de Usuário', type: 'text', required: true },
           { name: 'password', label: 'Senha', type: 'password', required: true },
           { name: 'fullName', label: 'Nome Completo', type: 'text', required: true },
-          { name: 'username', label: 'Nome de Usuário', type: 'text', required: true },
+          
           { name: 'whatsappPhone', label: 'WhatsApp', type: 'text', required: false },
-          { name: 'role', label: 'Cargo (Role)', type: 'select', options: ['admin', 'admin_ccm', 'gerente', 'lider', 'pastor', 'membro'], required: true },
+          { name: 'role', label: 'Função', type: 'select', options: ['admin', 'admin_ccm', 'gerente', 'lider', 'pastor', 'membro'], required: true },
         ],
       },
       {

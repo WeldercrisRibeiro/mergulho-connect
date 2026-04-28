@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
       proxy: {
         "/api": {
           target: "http://localhost:3001",
-          //se em produção usar https://mergulho-connect.onrender.com:3001
+          // Em produção, a URL seria https://mergulho-connect-eh6j.onrender.com
           changeOrigin: true,
         },
       },
