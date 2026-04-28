@@ -15,7 +15,7 @@ import { JwtStrategy } from './jwt.strategy';
       useFactory: (config: ConfigService) => ({
         secret: config.getOrThrow<string>('JWT_SECRET'),
         signOptions: { 
-          expiresIn: config.get('JWT_EXPIRES_IN') || '7d' 
+          expiresIn: config.get('JWT_EXPIRES_IN') || '24h'  // para colocar horas basta trocar o d por h e o numero. O tempo ideal é 
         },
       }),
     }),

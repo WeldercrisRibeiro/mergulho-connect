@@ -17,20 +17,20 @@ export class AuthService {
     if (dto.email && !dto.email.includes('@')) {
       dto.email = dto.email.trim().toLowerCase() + "@ccmergulho.com";
     }
-    console.log(`🔑 Tentativa de login para: ${dto.email}`);
+    //console.log(`🔑 Tentativa de login para: ${dto.email}`);
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
       include: { profile: true, userRole: true },
     });
 
     if (!user) {
-      console.log(`❌ Usuário não encontrado: ${dto.email}`);
+      //console.log(`❌ Usuário não encontrado: ${dto.email}`);
       throw new UnauthorizedException('E-mail ou senha incorretos.');
     }
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
     if (!isPasswordValid) {
-      console.log(`❌ Senha incorreta para: ${dto.email}`);
+      //console.log(`❌ Senha incorreta para: ${dto.email}`);
       throw new UnauthorizedException('E-mail ou senha incorretos.');
     }
 
