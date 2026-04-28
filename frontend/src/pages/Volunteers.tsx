@@ -15,9 +15,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { VolunteerScheduleNotifyDialog } from "@/components/VolunteerScheduleNotifyDialog";
 import { HandHeart, Plus, Trash2, User, CalendarDays, ClipboardList, Clock, CheckCircle2, Loader2, Edit2, ShieldCheck } from "lucide-react";
-import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
+import { safeFormat } from "@/lib/dateUtils";
 import { cn } from "@/lib/utils";
 import { getErrorMessage } from "@/lib/errorMessages";
 
@@ -33,7 +33,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }>
 };
 
 const Volunteers = () => {
-  const { user, isAdmin, isGerente, userGroupIds, profile } = useAuth();
+  const { user, isAdmin, IsLider, userGroupIds, profile } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -66,7 +66,7 @@ const Volunteers = () => {
     queryKey: ["volunteer-schedules", userGroupIds, isAdmin],
     queryFn: async () => {
       const params: any = {};
-      if (!isAdmin && userGroupIds.length > 0) params.groupIds = userGroupIds.join(',');
+      if (!isAdmin && userGroupIds && userGroupIds.length > 0) params.groupIds = userGroupIds.join(',');
       else if (!isAdmin) return [];
 
       const { data } = await api.get('/volunteer-schedules', { params });
@@ -80,7 +80,7 @@ const Volunteers = () => {
         scheduleDate: s.scheduleDate,
         roleFunction: s.roleFunction,
         createdBy: s.createdBy,
-        profiles: { fullName: s.user?.profile?.fullName || '—' },
+        profiles: { fullName: s.itemUser?.fullName || '—' },
         groups: { name: s.group?.name || 'Geral' },
       }));
     },
@@ -98,12 +98,7 @@ const Volunteers = () => {
     queryKey: ["volunteer-groups"],
     queryFn: async () => {
       const { data } = await api.get('/groups');
-      let all = data || [];
-      if (!isAdmin && userGroupIds.length > 0) {
-        all = all.filter((g: any) => userGroupIds.includes(g.id));
-      } else if (!isAdmin) {
-        return [];
-      }
+      const all = data || [];
       return all.map((g: any) => ({ id: g.id, name: g.name }));
     },
   });
@@ -183,6 +178,10 @@ const Volunteers = () => {
 
   const saveScheduleMutation = useMutation({
     mutationFn: async () => {
+      if (!scheduleDate || !scheduleRole || !scheduleVolunteerId) {
+        throw new Error("Preencha todos os campos obrigatórios (Data, Função e Voluntário).");
+      }
+
       const finalGroupId = scheduleGroupId === "general" || !scheduleGroupId ? null : scheduleGroupId;
       const volRecord = volunteers?.find((v: any) =>
         v.userId === scheduleVolunteerId
@@ -251,7 +250,8 @@ const Volunteers = () => {
 
   // Matrix Grouping
   const groupedSchedules = schedules?.reduce((acc: any, s: any) => {
-    const key = `${s.scheduleDate}_${s.groupId}`;
+    const dKey = s.scheduleDate ? (typeof s.scheduleDate === 'string' ? s.scheduleDate.split('T')[0] : s.scheduleDate.toISOString().split('T')[0]) : 'no-date';
+    const key = `${dKey}_${s.groupId}`;
     if (!acc[key]) {
       acc[key] = {
         id: key,
@@ -270,7 +270,7 @@ const Volunteers = () => {
   );
 
   // Non-volunteer view
-  if (!isVolunteer && !isAdmin && !isGerente) {
+  if (!isVolunteer && !isAdmin && !IsLider) {
     return (
       <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
@@ -304,7 +304,7 @@ const Volunteers = () => {
   }
 
   // Pending volunteer view
-  if (isVolunteer && volunteerStatus === "pending" && !isAdmin && !isGerente) {
+  if (isVolunteer && volunteerStatus === "pending" && !isAdmin && !IsLider) {
     const StatusIcon = STATUS_CONFIG.pending.icon;
     return (
       <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
@@ -327,8 +327,8 @@ const Volunteers = () => {
     );
   }
 
-  const showAdmin = isAdmin || isGerente;
-  const showUser = isActive || isAdmin || isGerente;
+  const showAdmin = isAdmin || IsLider;
+  const showUser = isActive || isAdmin || IsLider;
   const showTrain = volunteerStatus === "in_progress" && !isAdmin;
 
   const activeTabsCount = [showUser, showTrain, showAdmin, showAdmin].filter(Boolean).length;
@@ -357,15 +357,15 @@ const Volunteers = () => {
         </Card>
       )}
 
-      <Tabs defaultValue={(isAdmin || isGerente) ? "gerenciar" : "escala"}>
+      <Tabs defaultValue={(isAdmin || IsLider) ? "gerenciar" : "escala"}>
         <TabsList className={cn(
           "grid w-full max-w-2xl bg-muted/50 p-1 rounded-2xl gap-1",
           activeTabsCount === 1 && "grid-cols-1",
           activeTabsCount === 2 && "grid-cols-2",
-          activeTabsCount === 3 && "grid-cols-3",
-          activeTabsCount === 4 && "grid-cols-4",
+          activeTabsCount === 3 && "grid-cols-2 sm:grid-cols-3",
+          activeTabsCount === 4 && "grid-cols-2 sm:grid-cols-4",
         )}>
-          {(isActive || isAdmin || isGerente) && (
+          {(isActive || isAdmin || IsLider) && (
             <TabsTrigger value="escala" className="rounded-xl flex items-center gap-1 text-xs">
               <CalendarDays className="h-3.5 w-3.5" /> Escala
             </TabsTrigger>
@@ -375,12 +375,12 @@ const Volunteers = () => {
               <ClipboardList className="h-3.5 w-3.5" /> Treinamento
             </TabsTrigger>
           )}
-          {(isAdmin || isGerente) && (
+          {(isAdmin || IsLider) && (
             <TabsTrigger value="gerenciar" className="rounded-xl flex items-center gap-1 text-xs">
               <User className="h-3.5 w-3.5" /> Gerenciar
             </TabsTrigger>
           )}
-          {(isAdmin || isGerente) && (
+          {(isAdmin || IsLider) && (
             <TabsTrigger value="escalas-adm" className="rounded-xl flex items-center gap-1 text-xs">
               <CalendarDays className="h-3.5 w-3.5" /> Escalas
             </TabsTrigger>
@@ -404,7 +404,7 @@ const Volunteers = () => {
                     <div className="flex items-center gap-2">
                       <CalendarDays className="h-4 w-4 text-primary" />
                       <span className="font-bold text-sm uppercase">
-                        {format(new Date(group.date + "T12:00:00"), "dd/MM (EEEE)", { locale: ptBR })}
+                        {safeFormat(group.date, "dd/MM (EEEE)")}
                       </span>
                     </div>
                     <Badge variant="secondary" className="text-[9px] uppercase tracking-tighter">{group.groupName}</Badge>
@@ -416,7 +416,7 @@ const Volunteers = () => {
                           <div className="flex-1">
                             <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{s.roleFunction}</p>
                             <p className="font-bold text-base text-primary mr-2">
-                              {s.profiles?.fullName || "—"}
+                              {s.itemUser?.fullName || "—"}
                             </p>
                           </div>
                           {s.volunteerId && (
@@ -487,7 +487,7 @@ const Volunteers = () => {
                       </div>
                       {v.availability && <p className="text-[10px] text-muted-foreground mt-1 truncate">📅 {v.availability}</p>}
                       <p className="text-[9px] font-medium text-muted-foreground/60">
-                        Inscrito em {format(new Date(v.createdAt), "dd/MM/yyyy", { locale: ptBR })}
+                        Inscrito em {safeFormat(v.createdAt, "dd/MM/yyyy")}
                       </p>
                     </div>
                     <div className="flex gap-1">
@@ -525,7 +525,7 @@ const Volunteers = () => {
                   <div className="flex items-center gap-2">
                     <CalendarDays className="h-3.5 w-3.5 text-primary" />
                     <span className="font-bold text-xs uppercase text-muted-foreground">
-                      {format(new Date(group.date + "T12:00:00"), "dd/MM (EEEE)", { locale: ptBR })}
+                      {safeFormat(group.date, "dd/MM (EEEE)")}
                     </span>
                   </div>
                   <Badge variant="outline" className="text-[9px] uppercase tracking-tighter bg-background">{group.groupName}</Badge>
@@ -535,7 +535,7 @@ const Volunteers = () => {
                     <div key={s.id} className="flex items-center justify-between p-3 px-4 hover:bg-muted/20 transition-colors">
                       <div className="space-y-1">
                         <p className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-wider leading-none mb-1">{s.roleFunction}</p>
-                        <p className="font-bold text-sm">{s.profiles?.fullName || "—"}</p>
+                        <p className="font-bold text-sm">{s.itemUser?.fullName || "—"}</p>
                       </div>
                       <div className="flex gap-1">
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenSchedule(s)}>
@@ -549,7 +549,7 @@ const Volunteers = () => {
                           title="Notificar via WhatsApp"
                         >
                           <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
                           </svg>
                         </Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => deleteScheduleMutation.mutate(s.id)}>
@@ -578,7 +578,7 @@ const Volunteers = () => {
 
       {/* Edit Status Dialog */}
       <Dialog open={!!editingStatus} onOpenChange={v => !v && setEditingStatus(null)}>
-        <DialogContent className="sm:max-w-md rounded-3xl border-0 shadow-2xl">
+        <DialogContent className="w-[95vw] sm:max-w-md rounded-3xl border-0 shadow-2xl">
           <DialogHeader><DialogTitle className="text-xl font-bold">Alterar Status: {editingStatus?.fullName}</DialogTitle></DialogHeader>
           <div className="py-6 space-y-4 text-center">
             <div className={cn("h-16 w-16 mx-auto rounded-full flex items-center justify-center mb-2", STATUS_CONFIG[editingStatus?.status || "pending"]?.color)}>
@@ -597,8 +597,8 @@ const Volunteers = () => {
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setEditingStatus(null)} className="rounded-xl border-2">Cancelar</Button>
-            <Button onClick={() => updateStatusMutation.mutate({ id: editingStatus.id, status: editingStatus.status })} className="rounded-xl px-8 font-bold">
+            <Button variant="outline" onClick={() => setEditingStatus(null)} className="w-full rounded-xl border-2 sm:w-auto">Cancelar</Button>
+            <Button onClick={() => updateStatusMutation.mutate({ id: editingStatus.id, status: editingStatus.status })} className="w-full rounded-xl px-8 font-bold sm:w-auto">
               Atualizar Status
             </Button>
           </DialogFooter>
@@ -607,7 +607,7 @@ const Volunteers = () => {
 
       {/* Create/Edit Schedule Dialog */}
       <Dialog open={creatingSchedule} onOpenChange={v => { if (!v) { setCreatingSchedule(false); setEditingSchedule(null); } }}>
-        <DialogContent className="sm:max-w-[600px] rounded-3xl border-0 shadow-2xl">
+        <DialogContent className="w-[95vw] sm:max-w-[600px] rounded-3xl border-0 shadow-2xl max-h-[90svh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">{editingSchedule ? "Editar Escala" : "Nova Escala de Voluntários"}</DialogTitle>
           </DialogHeader>
@@ -656,12 +656,12 @@ const Volunteers = () => {
               </div>
             </div>
           </div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setCreatingSchedule(false)} className="rounded-xl border-2">Cancelar</Button>
+          <DialogFooter className="sticky bottom-0 gap-2 bg-background/95 pt-2 pb-safe backdrop-blur-sm">
+            <Button variant="outline" onClick={() => setCreatingSchedule(false)} className="w-full rounded-xl border-2 sm:w-auto">Cancelar</Button>
             <Button
               onClick={() => saveScheduleMutation.mutate()}
               disabled={(!isAdmin && !scheduleGroupId) || !scheduleVolunteerId || !scheduleDate || !scheduleRole || saveScheduleMutation.isPending}
-              className="rounded-xl px-8 font-bold"
+              className="w-full rounded-xl px-8 font-bold sm:w-auto"
             >
               {saveScheduleMutation.isPending ? "Salvando..." : "Salvar Escala"}
             </Button>
@@ -694,7 +694,7 @@ const SignupDialog = ({ open, onClose, fullName, setFullName, phone, setPhone, a
 
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
-      <DialogContent className="sm:max-w-[700px] rounded-3xl border-0 shadow-2xl overflow-y-auto max-h-[90vh]">
+      <DialogContent className="w-[95vw] sm:max-w-[700px] rounded-3xl border-0 shadow-2xl overflow-y-auto max-h-[90svh]">
         <DialogHeader><DialogTitle className="text-xl font-bold text-primary">Inscrição de Voluntário</DialogTitle></DialogHeader>
         <div className="space-y-6 py-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -734,8 +734,8 @@ const SignupDialog = ({ open, onClose, fullName, setFullName, phone, setPhone, a
           </div>
         </div>
         <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={onClose} className="rounded-xl border-2">Cancelar</Button>
-          <Button onClick={onSave} disabled={!fullName?.trim() || isPending} className="rounded-xl px-12 font-bold shadow-lg">
+          <Button variant="outline" onClick={onClose} className="w-full rounded-xl border-2 sm:w-auto">Cancelar</Button>
+          <Button onClick={onSave} disabled={!fullName?.trim() || isPending} className="w-full rounded-xl px-12 font-bold shadow-lg sm:w-auto">
             {isPending ? "Processando..." : "Confirmar Inscrição"}
           </Button>
         </DialogFooter>

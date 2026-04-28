@@ -12,9 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { BookOpen, Plus, Edit2, Trash2, Heart, Users, Image as ImageIcon, Video, Loader2, MessageCircle } from "lucide-react";
-import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
+import { safeFormat } from "@/lib/dateUtils";
 import { Switch } from "@/components/ui/switch";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -241,17 +241,15 @@ const Devotionals = () => {
   });
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <BookOpen className="h-6 w-6 text-primary" />
-          Devocionais
-        </h1>
-        {isAdmin && (
-          <Button onClick={() => { resetForm(); setCreatingDev(true); }}>
-            <Plus className="h-4 w-4 mr-1" /> Novo Devocional
-          </Button>
-        )}
+    <div className="px-4 pt-0 md:p-8 max-w-4xl mx-auto space-y-2 md:space-y-6 pb-20 md:pb-8">
+      <div className="sticky top-0 z-20 -mx-4 px-4 pt-0 pb-1 md:static md:p-0 bg-background/95 backdrop-blur-sm border-b md:border-0">
+        <div className="flex items-center justify-end py-2">
+          {isAdmin && (
+            <Button onClick={() => { resetForm(); setCreatingDev(true); }} size="sm" className="h-8 md:h-10 text-xs md:text-sm px-3 md:px-4">
+              <Plus className="h-3.5 w-3.5 mr-1" /> Novo Devocional
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="space-y-4">
@@ -266,8 +264,7 @@ const Devotionals = () => {
                     <CardTitle className="text-lg">{dev.title}</CardTitle>
                     <div className="flex items-center gap-2 mt-1">
                       <p className="text-xs text-muted-foreground">
-                        {dev.publishDate &&
-                          format(new Date(dev.publishDate), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                        {safeFormat(dev.publishDate, "dd 'de' MMMM 'de' yyyy")}
                       </p>
                       {isAdmin && (
                         <div className="flex gap-1">
@@ -302,27 +299,34 @@ const Devotionals = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="whitespace-pre-wrap text-sm text-muted-foreground mb-4">{dev.content}</p>
-                {dev.mediaUrl && (
-                  <div className="mt-2 mb-4 rounded-lg overflow-hidden">
-                    {dev.mediaUrl.includes("youtube") || dev.mediaUrl.includes("youtu.be") ? (
-                      <iframe
-                        className="w-full aspect-video rounded-lg"
-                        src={dev.mediaUrl.replace("watch?v=", "embed/")}
-                        allowFullScreen
-                      />
-                    ) : dev.isVideoUpload || (dev.mediaUrl && dev.mediaUrl.match(/\.(mp4|webm|mov)(\?.*)?$/i)) ? (
-                      <video
-                        src={dev.mediaUrl}
-                        controls
-                        className="w-full rounded-lg max-h-[400px]"
-                      />
-                    ) : (
-                      <img src={dev.mediaUrl} alt={dev.title} className="w-full rounded-lg" />
-                    )}
+                <div className="flex flex-col md:flex-row gap-6">
+                  <div className="flex-1 order-1">
+                    <p className="whitespace-pre-wrap text-sm text-muted-foreground mb-4">{dev.content}</p>
                   </div>
-                )}
-                <div className="flex items-center gap-4 border-t pt-3">
+                  
+                  {dev.mediaUrl && (
+                    <div className="md:w-[350px] md:shrink-0 order-2">
+                      <div className="rounded-lg overflow-hidden shadow-sm border border-border/50">
+                        {dev.mediaUrl.includes("youtube") || dev.mediaUrl.includes("youtu.be") ? (
+                          <iframe
+                            className="w-full aspect-video"
+                            src={dev.mediaUrl.replace("watch?v=", "embed/")}
+                            allowFullScreen
+                          />
+                        ) : dev.isVideoUpload || (dev.mediaUrl && dev.mediaUrl.match(/\.(mp4|webm|mov)(\?.*)?$/i)) ? (
+                          <video
+                            src={dev.mediaUrl}
+                            controls
+                            className="w-full max-h-[300px] object-cover"
+                          />
+                        ) : (
+                          <img src={dev.mediaUrl} alt={dev.title} className="w-full object-cover max-h-[300px]" />
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-3 border-t pt-3">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -355,13 +359,14 @@ const Devotionals = () => {
 
       {/* Create Dialog */}
       <Dialog open={creatingDev} onOpenChange={(val) => !val && setCreatingDev(false)}>
-        <DialogContent className="sm:max-w-[750px] max-h-[90vh] overflow-y-auto rounded-3xl border-0 shadow-2xl custom-scrollbar">
-          <DialogHeader>
+        <DialogContent className="w-[95vw] sm:max-w-[750px] max-h-[90svh] overflow-y-auto rounded-3xl border-0 p-0 shadow-2xl custom-scrollbar">
+          <DialogHeader className="px-5 pt-6 sm:px-6">
             <DialogTitle className="text-2xl font-bold text-primary flex items-center gap-2">
               <Plus className="h-6 w-6" /> Novo Devocional
             </DialogTitle>
           </DialogHeader>
-          <DevForm
+          <div className="px-5 sm:px-6">
+            <DevForm
             title={title} setTitle={setTitle}
             content={content} setContent={setContent}
             status={status} setStatus={setStatus}
@@ -373,15 +378,16 @@ const Devotionals = () => {
             sendViaWhatsapp={sendViaWhatsapp} setSendViaWhatsapp={setSendViaWhatsapp}
             signEnabled={signEnabled} setSignEnabled={setSignEnabled}
             signatureName={signatureName}
-          />
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setCreatingDev(false)} className="rounded-xl border-2">
+            />
+          </div>
+          <DialogFooter className="sticky bottom-0 gap-2 bg-background/95 px-5 py-4 pb-safe backdrop-blur-sm sm:px-6">
+            <Button variant="outline" onClick={() => setCreatingDev(false)} className="w-full rounded-xl border-2 sm:w-auto">
               Cancelar
             </Button>
             <Button
               onClick={() => saveMutation.mutate()}
               disabled={!title || !content || saveMutation.isPending}
-              className="rounded-xl px-12 font-bold shadow-lg shadow-primary/20"
+              className="w-full rounded-xl px-12 font-bold shadow-lg shadow-primary/20 sm:w-auto"
             >
               {saveMutation.isPending ? "Salvando..." : "Publicar Devocional"}
             </Button>
@@ -391,13 +397,14 @@ const Devotionals = () => {
 
       {/* Edit Dialog */}
       <Dialog open={!!editingDev} onOpenChange={(val) => !val && setEditingDev(null)}>
-        <DialogContent className="sm:max-w-[750px] max-h-[90vh] overflow-y-auto rounded-3xl border-0 shadow-2xl custom-scrollbar">
-          <DialogHeader>
+        <DialogContent className="w-[95vw] sm:max-w-[750px] max-h-[90svh] overflow-y-auto rounded-3xl border-0 p-0 shadow-2xl custom-scrollbar">
+          <DialogHeader className="px-5 pt-6 sm:px-6">
             <DialogTitle className="text-2xl font-bold text-primary flex items-center gap-2">
               <Edit2 className="h-6 w-6" /> Editar Devocional
             </DialogTitle>
           </DialogHeader>
-          <DevForm
+          <div className="px-5 sm:px-6">
+            <DevForm
             title={title} setTitle={setTitle}
             content={content} setContent={setContent}
             status={status} setStatus={setStatus}
@@ -410,15 +417,16 @@ const Devotionals = () => {
             signEnabled={signEnabled} setSignEnabled={setSignEnabled}
             signatureName={signatureName}
             isEditing
-          />
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setEditingDev(null)} className="rounded-xl border-2">
+            />
+          </div>
+          <DialogFooter className="sticky bottom-0 gap-2 bg-background/95 px-5 py-4 pb-safe backdrop-blur-sm sm:px-6">
+            <Button variant="outline" onClick={() => setEditingDev(null)} className="w-full rounded-xl border-2 sm:w-auto">
               Cancelar
             </Button>
             <Button
               onClick={() => saveMutation.mutate()}
               disabled={!title || !content || saveMutation.isPending}
-              className="rounded-xl px-12 font-bold shadow-lg shadow-primary/20"
+              className="w-full rounded-xl px-12 font-bold shadow-lg shadow-primary/20 sm:w-auto"
             >
               {saveMutation.isPending ? "Salvando..." : "Salvar Alterações"}
             </Button>
@@ -615,33 +623,35 @@ const DevForm = ({
         <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
           Mídia e Anexos (Imagem, Vídeo ou YouTube)
         </Label>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <Input
             value={mediaUrl}
             onChange={(e: any) => { setMediaUrl(e.target.value); if (setIsVideoUpload) setIsVideoUpload(false); }}
             placeholder="Cole uma URL ou use os botões ao lado"
             className="flex-1 rounded-xl h-11"
           />
-          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-          <input ref={videoRef} type="file" accept="video/*" className="hidden" onChange={handleVideoUpload} />
-          <Button
-            type="button"
-            variant="secondary"
-            className="h-11 w-11 rounded-xl"
-            onClick={() => fileRef.current?.click()}
-            disabled={uploading}
-          >
-            <ImageIcon className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            className="h-11 w-11 rounded-xl"
-            onClick={() => videoRef.current?.click()}
-            disabled={uploading}
-          >
-            <Video className="h-4 w-4" />
-          </Button>
+          <div className="flex gap-2 sm:flex-none">
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+            <input ref={videoRef} type="file" accept="video/*" className="hidden" onChange={handleVideoUpload} />
+            <Button
+              type="button"
+              variant="secondary"
+              className="h-11 flex-1 rounded-xl sm:w-11 sm:flex-none"
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+            >
+              <ImageIcon className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              className="h-11 flex-1 rounded-xl sm:w-11 sm:flex-none"
+              onClick={() => videoRef.current?.click()}
+              disabled={uploading}
+            >
+              <Video className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
         {uploading && (
           <p className="text-xs text-primary font-medium animate-pulse flex items-center gap-2">

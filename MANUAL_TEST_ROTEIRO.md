@@ -16,7 +16,7 @@ Este roteiro resume as funcoes principais e orienta como testar manualmente cada
 
 Use pelo menos 3 usuarios:
 - `admin`: acesso total
-- `gerente/lider`: acesso parcial por departamento
+- `lider`: acesso parcial por departamento
 - `membro`: acesso basico
 
 ## 3) Pre-condicoes
@@ -101,7 +101,7 @@ Use pelo menos 3 usuarios:
 ## Etapa C - Permissao por perfil
 
 1. Logado como `membro`, tente acessar tela/acao administrativa.
-2. Logado como `gerente`, valide apenas funcoes do escopo dele.
+2. Logado como `lider`, valide apenas funcoes do escopo dele.
 3. Logado como `admin`, valide acesso completo.
 
 **Esperado:** menus, telas e acoes respeitam o perfil.

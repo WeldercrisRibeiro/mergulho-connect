@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Shield, Plus, Users, Calendar, BookOpen, Trash2, Edit2, Key, Archive, User, Camera, Upload } from "lucide-react";
+import { Shield, Plus, Users, Calendar, BookOpen, Trash2, Edit2, Key, Archive, User, Camera, Upload, Phone } from "lucide-react";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -151,18 +151,18 @@ const AdminGroups = () => {
         </CardContent>
       </Card>
       <div className="space-y-2">
-        <input 
-          type="file" 
-          hidden 
-          ref={fileInputRef} 
-          onChange={handleIconUpload} 
+        <input
+          type="file"
+          hidden
+          ref={fileInputRef}
+          onChange={handleIconUpload}
           accept="image/*"
         />
         {groups?.map((g) => (
           <Card key={g.id} className="border-0 bg-muted/30 hover:bg-muted/50 transition-colors">
             <CardContent className="flex items-center justify-between p-4">
               <div className="flex items-center gap-4">
-                <div 
+                <div
                   className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden border-2 border-primary/20 cursor-pointer group relative"
                   onClick={() => triggerUpload(g.id)}
                 >
@@ -204,7 +204,7 @@ const AdminGroups = () => {
 const AdminEvents = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { user, isAdmin, isGerente, isAdminCCM } = useAuth();
+  const { user, isAdmin, IsLider, isAdminCCM } = useAuth();
 
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [title, setTitle] = useState("");
@@ -623,12 +623,12 @@ const AdminMembers = () => {
     setEditingMember(m);
     setEditName(m.fullName || "");
     setEditPhone(formatPhoneForDisplay(m.whatsappPhone || ""));
-    
+
     // Suggest name slug if current username is empty or just a phone number
     const isPhoneLike = /^\d{8,}$/.test(m.username || "");
     const nameSlug = (m.fullName || "").trim().toLowerCase().replace(/\s+/g, ".");
     setEditUsername(m.username && !isPhoneLike ? m.username : (nameSlug || m.username || ""));
-    
+
     setEditRole(m.roles?.[0]?.role || "membro");
     setSelectedGroups(m.groupIds || []);
     setRemovePhoto(false);
@@ -636,6 +636,8 @@ const AdminMembers = () => {
 
   const updateMutation = useMutation({
     mutationFn: async () => {
+      const phoneDigits = editPhone.replace(/\D/g, "");
+      const cleanUsername = (editUsername || "").trim().toLowerCase().replace(/\s+/g, ".") || phoneDigits;
       await api.patch(`/admin/users/${editingMember.userId}`, {
         fullName: editName,
         whatsappPhone: normalizePhoneForDB(editPhone),
@@ -670,9 +672,9 @@ const AdminMembers = () => {
     },
     onSuccess: () => {
       setResettingPasswordMember(null);
-      toast({ 
-        title: "Senha resetada!", 
-        description: "A senha do usuário voltou para o padrão: 123456" 
+      toast({
+        title: "Senha resetada!",
+        description: "A senha do usuário voltou para o padrão: 123456"
       });
     },
     onError: (err: any) => {
@@ -685,7 +687,7 @@ const AdminMembers = () => {
       const phoneDigits = editPhone.replace(/\D/g, "");
       const cleanUsername = (editUsername || "").trim().toLowerCase().replace(/\s+/g, ".") || phoneDigits;
       const email = cleanUsername + "@ccmergulho.com";
-      
+
       await api.post("/admin/users", {
         email,
         password: "123456",
@@ -730,21 +732,21 @@ const AdminMembers = () => {
                     {m.fullName || "Sem nome"}
                   </h3>
                 </div>
-                
+
                 {/* Metadata row: Phone and Username/Email */}
                 <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
                   <div className="flex items-center gap-1 bg-background/50 px-2 py-0.5 rounded-lg border border-border/10">
                     <Phone className="h-3 w-3" />
                     <span>{formatPhoneForDisplay(m.whatsappPhone || "")}</span>
                   </div>
-                  
+
                   {/* Smart Display Username */}
                   {(m.username || m.email) && (
                     <div className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-0.5 rounded-lg border border-primary/20 font-bold">
                       <User className="h-3 w-3" />
                       <span>
-                        @{((m.username && !/^\d{8,}$/.test(m.username)) 
-                          ? m.username 
+                        @{((m.username && !/^\d{8,}$/.test(m.username))
+                          ? m.username
                           : (m.email?.split('@')[0] || m.username)).toLowerCase()}
                       </span>
                     </div>
@@ -769,14 +771,14 @@ const AdminMembers = () => {
               </div>
 
               <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" 
+                <Button variant="ghost" size="icon"
                   className="hover:bg-amber-500/10"
                   onClick={() => setResettingPasswordMember(m)}
                   title="Resetar Senha"
                 >
                   <Key className="h-4 w-4 text-amber-500" />
                 </Button>
-                <Button variant="ghost" size="icon" 
+                <Button variant="ghost" size="icon"
                   className="hover:bg-primary/10"
                   onClick={() => handleEdit(m)}
                 >
@@ -817,9 +819,9 @@ const AdminMembers = () => {
             </div>
             <div className="space-y-2">
               <Label>Login / Nome de Usuário</Label>
-              <Input 
-                value={editUsername} 
-                onChange={e => setEditUsername(e.target.value)} 
+              <Input
+                value={editUsername}
+                onChange={e => setEditUsername(e.target.value)}
                 placeholder="Ex: joao.silva"
               />
               <p className="text-[10px] text-muted-foreground">O e-mail será {editUsername || "..."}@ccmergulho.com</p>
@@ -834,7 +836,7 @@ const AdminMembers = () => {
                   {isAdminCCM && (
                     <SelectItem value="admin_ccm">Administrador CCM (Gestor Master)</SelectItem>
                   )}
-                  <SelectItem value="gerente">Líder / Gerente</SelectItem>
+                  <SelectItem value="lider">Líder</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -867,18 +869,18 @@ const AdminMembers = () => {
             </div>
 
             {isAdminCCM && editingMember?.avatarUrl && !removePhoto && (
-               <div className="pt-2">
-                 <Button 
-                   variant="outline" 
-                   size="sm" 
-                   className="w-full text-destructive border-destructive/20 hover:bg-destructive/10 gap-2 h-10 rounded-xl"
-                   onClick={() => setRemovePhoto(true)}
-                 >
-                   <Trash2 className="h-4 w-4" /> Remover Foto do Usuário
-                 </Button>
-               </div>
+              <div className="pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-destructive border-destructive/20 hover:bg-destructive/10 gap-2 h-10 rounded-xl"
+                  onClick={() => setRemovePhoto(true)}
+                >
+                  <Trash2 className="h-4 w-4" /> Remover Foto do Usuário
+                </Button>
+              </div>
             )}
-            
+
             {removePhoto && (
               <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-center">
                 <p className="text-xs font-bold text-rose-600">A foto será apagada ao salvar.</p>
@@ -922,7 +924,7 @@ const AdminMembers = () => {
                   {isAdminCCM && (
                     <SelectItem value="admin_ccm">Administrador CCM (Gestor Master)</SelectItem>
                   )}
-                  <SelectItem value="gerente">Líder / Gerente</SelectItem>
+                  <SelectItem value="lider">Líder</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1027,13 +1029,13 @@ const AdminMessages = () => {
     mutationFn: async (m: any) => {
       const isArchived = m.status === 'archived';
       if (isArchived) {
-         // Excluir definitivamente
-         await api.delete(`/contact-messages/${m.id}`); const error = null;
-         if (error) throw error;
+        // Excluir definitivamente
+        await api.delete(`/contact-messages/${m.id}`); const error = null;
+        if (error) throw error;
       } else {
-         // Arquivar
-         await api.patch(`/contact-messages/${m.id}`, { status: "archived" }); const error = null;
-         if (error) throw error;
+        // Arquivar
+        await api.patch(`/contact-messages/${m.id}`, { status: "archived" }); const error = null;
+        if (error) throw error;
       }
     },
     onSuccess: () => {
@@ -1064,37 +1066,37 @@ const AdminMessages = () => {
             </Card>
           )}
           {filteredMessages.map((m: any) => (
-        <Card key={m.id} className="border-0 bg-muted/30">
-          <CardContent className="p-4">
-            <div className="flex flex-col gap-2">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="font-semibold">{m.name}</p>
-                  <p className="text-sm font-medium text-primary mt-1">Whatsapp: {m.phone}</p>
+            <Card key={m.id} className="border-0 bg-muted/30">
+              <CardContent className="p-4">
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-semibold">{m.name}</p>
+                      <p className="text-sm font-medium text-primary mt-1">Whatsapp: {m.phone}</p>
+                    </div>
+                    {m.createdAt && (
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(m.createdAt).toLocaleDateString("pt-BR")}
+                      </span>
+                    )}
+                  </div>
+                  <div className="bg-background rounded-md p-3 mt-2 text-sm border neo-shadow-sm mb-2">
+                    <p className="font-medium mb-1 border-b pb-1">Assunto: {m.subject}</p>
+                    <p className="text-muted-foreground whitespace-pre-wrap">{m.message}</p>
+                  </div>
+                  <div className="flex justify-end gap-2 mt-2">
+                    <Button variant="outline" size="sm" onClick={() => deleteMsgMutation.mutate(m)} disabled={deleteMsgMutation.isPending}>
+                      {m.status === 'archived' ? 'Excluir Definitivamente' : 'Arquivar Mensagem'}
+                    </Button>
+                    {m.status !== 'archived' && (m.subject === "Quero me tornar Membro" || m.subject === "Contribuir/Servir") && (
+                      <Button size="sm" onClick={() => approveMutation.mutate(m)} disabled={approveMutation.isPending} className="bg-emerald-500 hover:bg-emerald-600">
+                        Aprovar Acesso
+                      </Button>
+                    )}
+                  </div>
                 </div>
-                {m.createdAt && (
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(m.createdAt).toLocaleDateString("pt-BR")}
-                  </span>
-                )}
-              </div>
-              <div className="bg-background rounded-md p-3 mt-2 text-sm border neo-shadow-sm mb-2">
-                <p className="font-medium mb-1 border-b pb-1">Assunto: {m.subject}</p>
-                <p className="text-muted-foreground whitespace-pre-wrap">{m.message}</p>
-              </div>
-              <div className="flex justify-end gap-2 mt-2">
-                <Button variant="outline" size="sm" onClick={() => deleteMsgMutation.mutate(m)} disabled={deleteMsgMutation.isPending}>
-                  {m.status === 'archived' ? 'Excluir Definitivamente' : 'Arquivar Mensagem'}
-                </Button>
-                {m.status !== 'archived' && (m.subject === "Quero me tornar Membro" || m.subject === "Contribuir/Servir") && (
-                  <Button size="sm" onClick={() => approveMutation.mutate(m)} disabled={approveMutation.isPending} className="bg-emerald-500 hover:bg-emerald-600">
-                    Aprovar Acesso
-                  </Button>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
           ))}
         </TabsContent>
       </Tabs>

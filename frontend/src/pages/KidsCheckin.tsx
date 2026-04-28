@@ -20,10 +20,10 @@ import QRScanner from "@/components/QRScanner";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 const KidsCheckin = () => {
-  const { user, isAdmin, isGerente } = useAuth();
+  const { user, isAdmin, IsLider } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  
+
   const [category, setCategory] = useState<"kids" | "volume">("kids");
   const [selectedEventId, setSelectedEventId] = useState<string>("");
   const [childName, setChildName] = useState("");
@@ -51,7 +51,7 @@ const KidsCheckin = () => {
     queryFn: async () => {
       if (!guardianSearch || guardianSearch.length < 3) return [];
       const response = await api.get("/profiles");
-      return response.data.filter((p: any) => 
+      return response.data.filter((p: any) =>
         p.fullName?.toLowerCase().includes(guardianSearch.toLowerCase()) ||
         p.whatsappPhone?.includes(guardianSearch)
       );
@@ -60,10 +60,10 @@ const KidsCheckin = () => {
   });
 
   const { data: activeCheckins, isLoading: loadingCheckins } = useQuery({
-    queryKey: ["kids-checkins", selectedEventId],
+    queryKey: ["checkins", selectedEventId],
     queryFn: async () => {
       if (!selectedEventId) return [];
-      const response = await api.get(`/kids-checkins?eventId=${selectedEventId}&status=active`);
+      const response = await api.get(`/checkins?eventId=${selectedEventId}&status=active`);
       return response.data;
     },
     enabled: !!selectedEventId,
@@ -82,14 +82,14 @@ const KidsCheckin = () => {
         validationToken: token,
         category: category,
       };
-      return api.post("/kids-checkins", payload);
+      return api.post("/checkins", payload);
     },
     onSuccess: () => {
       toast({ title: "✅ Check-in realizado!", description: `${childName} registrado com sucesso.` });
       setChildName("");
       setItemsInfo("");
       setSelectedGuardian(null);
-      queryClient.invalidateQueries({ queryKey: ["kids-checkins"] });
+      queryClient.invalidateQueries({ queryKey: ["checkins"] });
     },
     onError: (err: any) => {
       toast({ title: "Erro no check-in", description: getErrorMessage(err), variant: "destructive" });
@@ -98,11 +98,11 @@ const KidsCheckin = () => {
 
   const checkoutMutation = useMutation({
     mutationFn: async (id: string) => {
-      return api.patch(`/kids-checkins/${id}`, { status: "retirado" });
+      return api.patch(`/checkins/${id}`, { status: "retirado" });
     },
     onSuccess: () => {
       toast({ title: "✅ Retirada confirmada!", description: "O registro foi finalizado." });
-      queryClient.invalidateQueries({ queryKey: ["kids-checkins"] });
+      queryClient.invalidateQueries({ queryKey: ["checkins"] });
     },
     onError: (err: any) => {
       toast({ title: "Erro na retirada", description: getErrorMessage(err), variant: "destructive" });
@@ -111,12 +111,12 @@ const KidsCheckin = () => {
 
   const callGuardianMutation = useMutation({
     mutationFn: async (item: any) => {
-      return api.patch(`/kids-checkins/${item.id}`, { callRequested: true });
+      return api.patch(`/checkins/${item.id}`, { callRequested: true });
     },
     onSuccess: () => {
       toast({ title: "🔔 Chamada enviada!", description: "O responsável foi notificado." });
       setCallingItem(null);
-      queryClient.invalidateQueries({ queryKey: ["kids-checkins"] });
+      queryClient.invalidateQueries({ queryKey: ["checkins"] });
     },
     onError: (err: any) => {
       toast({ title: "Erro ao chamar", description: getErrorMessage(err), variant: "destructive" });
@@ -135,7 +135,7 @@ const KidsCheckin = () => {
     }
   };
 
-  if (!isAdmin && !isGerente) return <div className="p-8 text-center text-muted-foreground font-medium bg-card rounded-2xl border border-dashed">Acesso restrito ao ministério de segurança e líderes.</div>;
+  if (!isAdmin && !IsLider) return <div className="p-8 text-center text-muted-foreground font-medium bg-card rounded-2xl border border-dashed">Acesso restrito ao ministério de segurança e líderes.</div>;
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-8 pb-24">
@@ -164,7 +164,7 @@ const KidsCheckin = () => {
               </SelectContent>
             </Select>
           </div>
-          
+
           <Tabs value={category} onValueChange={(v: any) => setCategory(v)} className="w-full sm:w-auto">
             <TabsList className="grid grid-cols-2 h-10 p-1 bg-muted/50 rounded-xl">
               <TabsTrigger value="kids" className="rounded-lg gap-2">
@@ -184,11 +184,11 @@ const KidsCheckin = () => {
             <UserPlus className="h-4 w-4" /> Entrada / Nova Liberação
           </TabsTrigger>
           <TabsTrigger value="retirada" className="rounded-xl font-bold flex items-center gap-2 relative group">
-            <ClipboardList className="h-4 w-4" /> 
+            <ClipboardList className="h-4 w-4" />
             <span>Ativos / Retirada</span>
             {activeCheckins && activeCheckins.length > 0 && (
-              <Badge 
-                variant="destructive" 
+              <Badge
+                variant="destructive"
                 className="absolute -top-2 -right-2 px-1.5 py-0 min-w-[1.2rem] h-5 justify-center rounded-full text-[10px] border-2 border-background shadow-lg animate-pulse"
               >
                 {activeCheckins.length}
@@ -211,9 +211,9 @@ const KidsCheckin = () => {
                 <CardContent className="space-y-6">
                   <div className="space-y-2">
                     <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{category === 'kids' ? 'Nome da Criança' : 'Identificação do Volume'}</Label>
-                    <Input 
-                      placeholder="Ex: Joãozinho, Bolsa azul etc" 
-                      value={childName} 
+                    <Input
+                      placeholder="Ex: Joãozinho, Bolsa azul etc"
+                      value={childName}
                       onChange={(e) => setChildName(e.target.value)}
                       className="h-12 rounded-xl focus:ring-2 ring-primary/20 border-border/50 text-base font-medium"
                     />
@@ -223,9 +223,9 @@ const KidsCheckin = () => {
                     <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Localizar Responsável</Label>
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                        placeholder="Nome ou telefone..." 
-                        value={guardianSearch} 
+                      <Input
+                        placeholder="Nome ou telefone..."
+                        value={guardianSearch}
                         onChange={(e) => setGuardianSearch(e.target.value)}
                         className="h-12 pl-10 rounded-xl focus:ring-2 ring-primary/20 border-border/50 text-base"
                       />
@@ -233,8 +233,8 @@ const KidsCheckin = () => {
                     {guardians && guardians.length > 0 && !selectedGuardian && (
                       <div className="mt-2 space-y-1 bg-muted/30 p-2 rounded-2xl border border-dashed border-primary/20 max-h-48 overflow-y-auto shadow-inner">
                         {guardians.map((g: any) => (
-                          <div 
-                            key={g.userId} 
+                          <div
+                            key={g.userId}
                             onClick={() => { setSelectedGuardian(g); setGuardianSearch(""); }}
                             className="p-3 hover:bg-card rounded-xl cursor-pointer transition-all flex items-center justify-between group"
                           >
@@ -270,16 +270,16 @@ const KidsCheckin = () => {
 
                   <div className="space-y-2">
                     <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Observações (Geral)</Label>
-                    <Input 
-                      placeholder="Alguma observação extra?" 
-                      value={itemsInfo} 
+                    <Input
+                      placeholder="Alguma observação extra?"
+                      value={itemsInfo}
                       onChange={(e) => setItemsInfo(e.target.value)}
                       className="h-12 rounded-xl focus:ring-2 ring-primary/20 border-border/50 text-sm"
                     />
                   </div>
 
-                  <Button 
-                    className={cn("w-full h-14 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]", category === "volume" ? "bg-orange-500 hover:bg-orange-600" : "bg-primary hover:bg-primary/90")} 
+                  <Button
+                    className={cn("w-full h-14 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]", category === "volume" ? "bg-orange-500 hover:bg-orange-600" : "bg-primary hover:bg-primary/90")}
                     onClick={() => checkinMutation.mutate()}
                     disabled={!childName || !selectedGuardian || !selectedEventId || checkinMutation.isPending}
                   >
@@ -305,16 +305,16 @@ const KidsCheckin = () => {
                   </p>
                 </div>
               </Card>
-              
+
               <div className="grid grid-cols-2 gap-4">
-                 <div className="bg-card p-6 rounded-[2rem] border shadow-sm flex flex-col items-center justify-center text-center">
-                    <h4 className="text-3xl font-black text-primary">{activeCheckins?.filter((c: any) => c.category === 'kids').length || 0}</h4>
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Crianças Ativas</p>
-                 </div>
-                 <div className="bg-card p-6 rounded-[2rem] border shadow-sm flex flex-col items-center justify-center text-center">
-                    <h4 className="text-3xl font-black text-orange-500">{activeCheckins?.filter((c: any) => c.category === 'volume').length || 0}</h4>
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Volumes Ativos</p>
-                 </div>
+                <div className="bg-card p-6 rounded-[2rem] border shadow-sm flex flex-col items-center justify-center text-center">
+                  <h4 className="text-3xl font-black text-primary">{activeCheckins?.filter((c: any) => c.category === 'kids').length || 0}</h4>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Crianças Ativas</p>
+                </div>
+                <div className="bg-card p-6 rounded-[2rem] border shadow-sm flex flex-col items-center justify-center text-center">
+                  <h4 className="text-3xl font-black text-orange-500">{activeCheckins?.filter((c: any) => c.category === 'volume').length || 0}</h4>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Volumes Ativos</p>
+                </div>
               </div>
             </div>
           </div>
@@ -355,7 +355,7 @@ const KidsCheckin = () => {
                           </p>
                         </div>
                         <div className="shrink-0 h-14 w-14 bg-muted rounded-2xl flex items-center justify-center font-black text-xl text-muted-foreground/50 border-2 border-dashed border-muted-foreground/20">
-                          {item.id.substring(0,2)}
+                          {item.id.substring(0, 2)}
                         </div>
                       </div>
 
@@ -367,8 +367,8 @@ const KidsCheckin = () => {
                       </div>
 
                       <div className="grid grid-cols-2 gap-3 pt-2">
-                        <Button 
-                          variant="secondary" 
+                        <Button
+                          variant="secondary"
                           className="h-14 rounded-2xl gap-2 font-black uppercase text-xs tracking-tighter"
                           onClick={() => {
                             setCallingItem(item);
@@ -378,7 +378,7 @@ const KidsCheckin = () => {
                           <Phone className="h-4 w-4" />
                           Chamar
                         </Button>
-                        <Button 
+                        <Button
                           className="h-14 rounded-2xl gap-2 bg-emerald-600 hover:bg-emerald-700 font-black shadow-lg text-white uppercase text-xs tracking-tighter ring-emerald-500/10 ring-4"
                           onClick={() => {
                             setRetrievalItem(item);
@@ -413,7 +413,7 @@ const KidsCheckin = () => {
 
       {/* modal de Chamar Responsável */}
       <Dialog open={!!callingItem} onOpenChange={(val) => { if (!val) setCallingItem(null); }}>
-        <DialogContent 
+        <DialogContent
           className="sm:max-w-[500px] rounded-3xl border-0 shadow-2xl"
           onInteractOutside={(e) => e.preventDefault()}
         >
@@ -429,7 +429,7 @@ const KidsCheckin = () => {
             </p>
             <div className="space-y-2">
               <Label>Mensagem Padrão (pode ser ajustada)</Label>
-              <Textarea 
+              <Textarea
                 value={callMessage}
                 onChange={(e) => setCallMessage(e.target.value)}
                 className="h-28 rounded-xl resize-none"
@@ -440,8 +440,8 @@ const KidsCheckin = () => {
             <Button variant="outline" onClick={() => setCallingItem(null)} className="rounded-xl" disabled={callGuardianMutation.isPending}>
               Cancelar
             </Button>
-            <Button 
-              className="rounded-xl px-6 bg-amber-500 hover:bg-amber-600 font-bold text-white shadow-md gap-2" 
+            <Button
+              className="rounded-xl px-6 bg-amber-500 hover:bg-amber-600 font-bold text-white shadow-md gap-2"
               onClick={() => callingItem && callGuardianMutation.mutate(callingItem)}
               disabled={callGuardianMutation.isPending || !callMessage.trim()}
             >
@@ -450,10 +450,10 @@ const KidsCheckin = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       {/* modal de Confirmação de Retirada */}
       <Dialog open={!!retrievalItem} onOpenChange={(val) => { if (!val) setRetrievalItem(null); }}>
-        <DialogContent 
+        <DialogContent
           className="sm:max-w-[450px] rounded-3xl border-0 shadow-2xl"
           onInteractOutside={(e) => e.preventDefault()}
         >
@@ -469,11 +469,11 @@ const KidsCheckin = () => {
               <p className="text-2xl font-black text-emerald-700">{retrievalItem?.childName?.toUpperCase()}</p>
               <p className="text-xs text-emerald-600 mt-1">Responsável: {retrievalItem?.guardian?.fullName}</p>
             </div>
-            
+
             <div className="space-y-2">
               <Label className="text-xs font-bold uppercase text-muted-foreground">Token de Segurança (6 dígitos)</Label>
               <div className="flex gap-2">
-                <Input 
+                <Input
                   autoFocus
                   placeholder="123456"
                   maxLength={6}
@@ -497,8 +497,8 @@ const KidsCheckin = () => {
             <Button variant="outline" onClick={() => setRetrievalItem(null)} className="rounded-xl" disabled={checkoutMutation.isPending}>
               Cancelar
             </Button>
-            <Button 
-              className="rounded-xl px-6 bg-emerald-600 hover:bg-emerald-700 font-bold text-white shadow-md" 
+            <Button
+              className="rounded-xl px-6 bg-emerald-600 hover:bg-emerald-700 font-bold text-white shadow-md"
               onClick={() => handleValidateToken(retrievalToken)}
               disabled={checkoutMutation.isPending || retrievalToken.length < 6}
             >

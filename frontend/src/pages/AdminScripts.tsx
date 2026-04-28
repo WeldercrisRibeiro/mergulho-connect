@@ -120,7 +120,35 @@ const AdminScripts = () => {
   };
 
   const handleInputChange = (name: string, value: any) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => {
+      const newData = { ...prev, [name]: value };
+
+      // Lógica "Smart" para facilitar o preenchimento
+      if (selectedScript?.id === 'create-user') {
+        // 1. Se digitar o Nome Completo e o Usuário estiver vazio, sugere um usuário
+        if (name === 'fullName' && value && !prev.username) {
+          const suggestedUsername = value.trim().toLowerCase().split(' ')[0].replace(/\s+/g, ".");
+          newData.username = suggestedUsername;
+          if (!prev.email || prev.email.endsWith('@ccmergulho.com')) {
+            newData.email = suggestedUsername + "@ccmergulho.com";
+          }
+        }
+
+        // 2. Se digitar o Usuário, atualiza o e-mail automaticamente se ele estiver vazio ou for o padrão
+        if (name === 'username' && value) {
+          const cleanUser = value.trim().toLowerCase().replace(/\s+/g, ".");
+          if (!prev.email || prev.email.endsWith('@ccmergulho.com')) {
+            newData.email = cleanUser + "@ccmergulho.com";
+          }
+        }
+
+        // 3. Se digitar no campo E-mail e não tiver @, podemos tratar na saída ou aqui
+        // Mas para não atrapalhar a digitação, vamos apenas garantir que ao trocar de campo
+        // ou ao digitar algo que pareça um login, ele funcione.
+      }
+
+      return newData;
+    });
   };
 
   const handleFileUpload = async (fieldName: string, file: File) => {
@@ -160,12 +188,22 @@ const AdminScripts = () => {
 
   const executeScript = async () => {
     if (!selectedScript) return;
+
+    // Garante que campos de email sem @ sejam completados antes de enviar
+    const submissionData = { ...formData };
+    selectedScript.fields.forEach(field => {
+      const isEmailField = field.type === 'email' || field.name.toLowerCase() === 'email' || field.name.toLowerCase() === 'login';
+      if (isEmailField && submissionData[field.name] && !submissionData[field.name].includes('@')) {
+        submissionData[field.name] = submissionData[field.name].trim().toLowerCase() + "@ccmergulho.com";
+      }
+    });
+
     setConfirmOpen(false);
     setLoading(true);
     addLog(`Iniciando execução de: ${selectedScript.name}...`);
 
     try {
-      const response = await api.post(`/maintenance/run/${selectedScript.id}`, formData);
+      const response = await api.post(`/maintenance/run/${selectedScript.id}`, submissionData);
       addLog(`SUCESSO: ${response.data.message || "Script concluído"}`);
       toast({
         title: "Executado com sucesso!",
@@ -304,7 +342,7 @@ const AdminScripts = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="p-8">
-                  <form onSubmit={handleExecuteRequest} className="space-y-6">
+                  <form onSubmit={handleExecuteRequest} className="space-y-6" noValidate>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {selectedScript.fields.map((field) => (
                         <div key={field.name} className={`space-y-2 ${field.type === 'password' ? 'md:col-span-2' : ''}`}>
@@ -375,15 +413,32 @@ const AdminScripts = () => {
                               />
                             </div>
                           ) : (
-                            <Input
-                              id={field.name}
-                              type={field.type}
-                              required={field.required}
-                              className="h-12 bg-background/50 border-primary/10"
-                              placeholder={field.label}
-                              value={formData[field.name] || ""}
-                              onChange={(e) => handleInputChange(field.name, e.target.value)}
-                            />
+                            <div className="relative flex items-center">
+                              <Input
+                                id={field.name}
+                                type={(field.type === 'email' || field.name === 'email') ? 'text' : field.type}
+                                required={field.required}
+                                className={cn(
+                                  "h-12 bg-background/50 border-primary/10",
+                                  (field.type === 'email' || field.name === 'email') && !formData[field.name]?.includes('@') && "pr-[140px]"
+                                )}
+                                placeholder={field.label}
+                                value={formData[field.name] || ""}
+                                onChange={(e) => handleInputChange(field.name, e.target.value)}
+                                onBlur={(e) => {
+                                  const val = e.target.value;
+                                  const isEmailField = field.type === 'email' || field.name === 'email';
+                                  if (isEmailField && val && !val.includes('@')) {
+                                    handleInputChange(field.name, val.trim().toLowerCase() + "@ccmergulho.com");
+                                  }
+                                }}
+                              />
+                              {(field.type === 'email' || field.name === 'email') && !formData[field.name]?.includes('@') && formData[field.name]?.length > 0 && (
+                                <span className="absolute right-3 text-muted-foreground pointer-events-none font-medium">
+                                  @ccmergulho.com
+                                </span>
+                              )}
+                            </div>
                           )}
                         </div>
                       ))}

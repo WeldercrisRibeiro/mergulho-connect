@@ -14,6 +14,7 @@ import { MessageCircle, Send, Users, ArrowLeft, Plus, Trash2 } from "lucide-reac
 import { cn } from "@/lib/utils";
 import { isToday, isYesterday } from "date-fns";
 import { safeFormat, safeFormatTime } from "@/lib/dateUtils";
+import { getErrorMessage } from "@/lib/errorMessages";
 
 type ChatView =
   | { type: "list" }
@@ -140,7 +141,7 @@ const Chat = () => {
   const { data: groups } = useQuery({
     queryKey: ["my-groups"],
     queryFn: async () => {
-      const { data } = await api.get('/member-groups');
+      const { data } = await api.get('/member-groups/my');
       const groups = (data || []).map((mg: any) => mg.group).filter(Boolean);
       const uniqueGroups = new Map<string, any>();
       groups.forEach((group: any) => {
@@ -427,12 +428,12 @@ const { data: conversations } = useQuery({
   if (view.type === "list") {
     return (
       <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6 pb-20 md:pb-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <MessageCircle className="h-6 w-6 text-primary" />
             Chat
           </h1>
-          <Button onClick={() => { setMemberSearch(""); setNewChatOpen(true); }}>
+          <Button className="w-full sm:w-auto" onClick={() => { setMemberSearch(""); setNewChatOpen(true); }}>
             <Plus className="h-4 w-4 mr-1" /> Novo Chat
           </Button>
         </div>

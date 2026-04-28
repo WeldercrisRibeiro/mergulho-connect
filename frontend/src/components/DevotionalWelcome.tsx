@@ -75,7 +75,7 @@ const DevotionalWelcome = () => {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-[540px] p-0 overflow-hidden gap-0">
+      <DialogContent className="md:max-w-[850px] p-0 overflow-hidden gap-0">
         <DialogHeader className="sr-only">
           <DialogTitle>Devocional do Dia</DialogTitle>
           <DialogDescription>Leia o devocional de hoje.</DialogDescription>
@@ -99,40 +99,48 @@ const DevotionalWelcome = () => {
         {/* Content */}
         <div className="p-6">
           <h2 className="text-xl font-bold mb-1">{devotional.title}</h2>
-          <p className="text-xs text-muted-foreground mb-4">
+          <p className="text-xs text-muted-foreground mb-6">
             {safeFormat(devotional.publishDate, "dd 'de' MMMM 'de' yyyy")}
           </p>
 
-          <div className="max-h-52 overflow-y-auto pr-1 mb-4">
-            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-              {devotional.content}
-            </p>
+          <div className="flex flex-col md:flex-row gap-6">
+            {/* Text column */}
+            <div className="flex-1 order-1">
+              <div className="max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
+                <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                  {devotional.content}
+                </p>
+              </div>
+            </div>
+
+            {/* Media column */}
+            {((devotional as any).videoUrl || devotional.mediaUrl) && (() => {
+              const url = (devotional as any).videoUrl || devotional.mediaUrl || "";
+              const isYoutube = url.includes("youtube") || url.includes("youtu.be");
+              const isVideoFile = (devotional as any).isVideoUpload || url.match(/\.(mp4|webm|mov)(\?.*)?$/i);
+              return (
+                <div className="md:w-[350px] md:shrink-0 order-2">
+                  <div className="rounded-xl overflow-hidden shadow-md bg-muted/10 border border-border/50">
+                    {isYoutube ? (
+                      <VideoPlayer url={url} isUpload={false} />
+                    ) : isVideoFile ? (
+                      <VideoPlayer url={url} isUpload={true} />
+                    ) : (
+                      <img
+                        src={url}
+                        alt={devotional.title}
+                        className="w-full object-cover max-h-[300px]"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                      />
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
-          {((devotional as any).videoUrl || devotional.mediaUrl) && (() => {
-            const url = (devotional as any).videoUrl || devotional.mediaUrl || "";
-            const isYoutube = url.includes("youtube") || url.includes("youtu.be");
-            const isVideoFile = (devotional as any).isVideoUpload || url.match(/\.(mp4|webm|mov)(\?.*)?$/i);
-            return (
-              <div className="rounded-xl overflow-hidden mb-4 shadow-md bg-muted/10">
-                {isYoutube ? (
-                  <VideoPlayer url={url} isUpload={false} />
-                ) : isVideoFile ? (
-                  <VideoPlayer url={url} isUpload={true} />
-                ) : (
-                  <img
-                    src={url}
-                    alt={devotional.title}
-                    className="w-full max-h-56 object-cover"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                  />
-                )}
-              </div>
-            );
-          })()}
-
           {/* Footer */}
-          <div className="flex items-center justify-between border-t pt-4 mt-2">
+          <div className="flex items-center justify-between border-t pt-4 mt-6">
             <Button
               variant="ghost"
               size="sm"
@@ -144,7 +152,7 @@ const DevotionalWelcome = () => {
               <span className="text-sm font-medium">{likeCount ?? 0}</span>
             </Button>
 
-            <Button onClick={() => setOpen(false)}>
+            <Button onClick={() => setOpen(false)} className="px-8">
               Fechar
             </Button>
           </div>

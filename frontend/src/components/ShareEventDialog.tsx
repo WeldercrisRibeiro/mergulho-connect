@@ -32,8 +32,8 @@ export const ShareEventDialog = ({ event, open, onClose, landingPageUrl }: Share
   //const eventUrl = `${baseUrl}/landing#agenda`; para acessar direto a agenda
 
   // ── Data formatada ─────────────────────────────────────────────────────────
-  const dataFormatada = event.event_date
-    ? safeFormat(event.event_date, "dd/MM/yyyy 'às' HH:mm")
+  const dataFormatada = (event.eventDate || event.event_date)
+    ? safeFormat(event.eventDate || event.event_date, "dd/MM/yyyy 'às' HH:mm")
     : "Data a confirmar";
 
   // ── Tipo do evento ─────────────────────────────────────────────────────────
@@ -43,7 +43,8 @@ export const ShareEventDialog = ({ event, open, onClose, landingPageUrl }: Share
     conference: "🎤",
   };
 
-  const tipo = tipoEmoji[event.event_type] || "📌";
+  const tipoChave = event.eventType || event.event_type;
+  const tipo = tipoEmoji[tipoChave] || "📌";
 
   // ── Mensagem do WhatsApp formatada corretamente ────────────────────────────
   const buildWhatsAppMessage = () => {
@@ -93,7 +94,7 @@ export const ShareEventDialog = ({ event, open, onClose, landingPageUrl }: Share
 
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
-      <DialogContent className="sm:max-w-2xl rounded-3xl border-0 shadow-2xl p-0 overflow-hidden bg-background">
+      <DialogContent className="w-[95vw] sm:max-w-2xl rounded-3xl border-0 shadow-2xl p-0 overflow-y-auto max-h-[90svh] bg-background custom-scrollbar">
         <DialogHeader className="px-6 pt-8 pb-2">
           <DialogTitle className="text-2xl font-bold text-center bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
             Compartilhar Evento
@@ -103,7 +104,7 @@ export const ShareEventDialog = ({ event, open, onClose, landingPageUrl }: Share
           </p>
         </DialogHeader>
 
-        <div className="px-6 pb-8 pt-4 grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+        <div className="grid grid-cols-1 items-start gap-4 px-5 pb-6 pt-4 sm:px-6 md:grid-cols-2 md:gap-6">
           {/* Left Column: Event Card Preview */}
           <div className="space-y-4 h-full">
             <div className="relative group overflow-hidden bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-3xl p-6 shadow-xl backdrop-blur-md h-full flex flex-col justify-between">
@@ -113,9 +114,9 @@ export const ShareEventDialog = ({ event, open, onClose, landingPageUrl }: Share
               
               <div className="space-y-3 relative z-10">
                 <Badge variant="secondary" className="bg-primary/20 text-primary border-0 font-bold px-3 py-1">
-                  {event.event_type === 'course' ? 'CURSO' : event.event_type === 'conference' ? 'CONFERÊNCIA' : 'EVENTO'}
+                  {tipoChave === 'course' ? 'CURSO' : tipoChave === 'conference' ? 'CONFERÊNCIA' : 'EVENTO'}
                 </Badge>
-                <h3 className="font-extrabold text-2xl leading-tight tracking-tight">{event.title}</h3>
+                <h3 className="text-xl font-extrabold leading-tight tracking-tight sm:text-2xl">{event.title}</h3>
                 
                 <div className="space-y-2.5 pt-2">
                   <div className="flex items-center gap-3 text-sm font-medium text-foreground/80">
@@ -153,11 +154,11 @@ export const ShareEventDialog = ({ event, open, onClose, landingPageUrl }: Share
 
           {/* Right Column: QR Code & Actions */}
           <div className="space-y-6">
-            <div className="flex flex-col items-center gap-3 border-2 border-dashed border-primary/20 rounded-3xl p-6 bg-white dark:bg-zinc-900 shadow-inner">
+            <div className="flex flex-col items-center gap-3 rounded-3xl border-2 border-dashed border-primary/20 bg-white p-5 shadow-inner dark:bg-zinc-900 sm:p-6">
               <div className="p-2 bg-white rounded-xl shadow-sm">
                 <QRCodeSVG
                   value={eventUrl}
-                  size={150}
+                  size={132}
                   level="H"
                   includeMargin={false}
                 />

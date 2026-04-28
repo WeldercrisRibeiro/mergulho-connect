@@ -67,28 +67,28 @@ function AudioBubblePlayer({ src }: { src: string }) {
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const toggle = () => { const a = audioRef.current; if (!a) return; if (playing) a.pause(); else a.play(); setPlaying(!playing); };
-  const fmt = (s: number) => { if (!s || !isFinite(s)) return "0:00"; return `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`; };
-  const handleTimeUpdate = () => { const a = audioRef.current; if (!a) return; setCurrentTime(a.currentTime); setProgress(a.duration?(a.currentTime/a.duration)*100:0); };
-  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => { const a = audioRef.current; if (!a||!a.duration) return; const r=e.currentTarget.getBoundingClientRect(); a.currentTime=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*a.duration; };
-  const heights = [6,10,14,8,16,12,18,10,6,14,18,10,8,16,12,6,14,10,18,8,12,16,6,10,14,8,18,12];
+  const fmt = (s: number) => { if (!s || !isFinite(s)) return "0:00"; return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`; };
+  const handleTimeUpdate = () => { const a = audioRef.current; if (!a) return; setCurrentTime(a.currentTime); setProgress(a.duration ? (a.currentTime / a.duration) * 100 : 0); };
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => { const a = audioRef.current; if (!a || !a.duration) return; const r = e.currentTarget.getBoundingClientRect(); a.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * a.duration; };
+  const heights = [6, 10, 14, 8, 16, 12, 18, 10, 6, 14, 18, 10, 8, 16, 12, 6, 14, 10, 18, 8, 12, 16, 6, 10, 14, 8, 18, 12];
   return (
     <div className="flex items-center gap-2.5 px-2 py-1.5 min-w-[220px]">
-      <audio ref={audioRef} src={src} preload="metadata" onTimeUpdate={handleTimeUpdate} onLoadedMetadata={()=>setDuration(audioRef.current?.duration||0)} onEnded={()=>{setPlaying(false);setProgress(0);setCurrentTime(0);}} />
+      <audio ref={audioRef} src={src} preload="metadata" onTimeUpdate={handleTimeUpdate} onLoadedMetadata={() => setDuration(audioRef.current?.duration || 0)} onEnded={() => { setPlaying(false); setProgress(0); setCurrentTime(0); }} />
       <button type="button" onClick={toggle} className="h-10 w-10 shrink-0 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-md hover:bg-[#1DA851] transition-colors">
         {playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
       </button>
       <div className="flex-1 flex flex-col gap-1">
-        <div className="flex items-center gap-1.5 h-[18px]" onClick={handleSeek} style={{cursor:"pointer"}}>
-          {Array.from({length:28}).map((_,i)=><div key={i} className="rounded-full" style={{width:2.5,height:heights[i%heights.length],backgroundColor:((i/28)*100)<=progress?"#25D366":"#B0B0B0",opacity:((i/28)*100)<=progress?1:0.45}} />)}
+        <div className="flex items-center gap-1.5 h-[18px]" onClick={handleSeek} style={{ cursor: "pointer" }}>
+          {Array.from({ length: 28 }).map((_, i) => <div key={i} className="rounded-full" style={{ width: 2.5, height: heights[i % heights.length], backgroundColor: ((i / 28) * 100) <= progress ? "#25D366" : "#B0B0B0", opacity: ((i / 28) * 100) <= progress ? 1 : 0.45 }} />)}
         </div>
-        <span className="text-[10px] text-[#666] font-medium leading-none">{playing||currentTime>0?fmt(currentTime):fmt(duration)}</span>
+        <span className="text-[10px] text-[#666] font-medium leading-none">{playing || currentTime > 0 ? fmt(currentTime) : fmt(duration)}</span>
       </div>
     </div>
   );
 }
 
 const AdminNotices = () => {
-  const { user, profile, isAdmin, isGerente, managedGroupIds } = useAuth();
+  const { user, profile, isAdmin, IsLider, managedGroupIds } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [title, setTitle] = useState("");
@@ -105,7 +105,7 @@ const AdminNotices = () => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const cursorPositionRef = useRef<number>(0);
   const [signEnabled, setSignEnabled] = useState(false);
-  const signatureName = useMemo(() => profile?.fullName || profile?.full_name || user?.user_metadata?.full_name || "", [profile, user]);
+  const signatureName = useMemo(() => profile?.fullName || user?.user_metadata?.full_name || "", [profile, user]);
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -360,18 +360,18 @@ const AdminNotices = () => {
     return <span dangerouslySetInnerHTML={{ __html: html }} />;
   };
 
-  const canCreate = isAdmin || isGerente;
+  const canCreate = isAdmin || IsLider;
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-8 pb-safe animate-fade-in">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="h-14 w-14 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shadow-[inset_0_0_20px_rgba(16,185,129,0.1)] border border-emerald-500/20">
-            <Megaphone className="h-7 w-7" />
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shadow-[inset_0_0_20px_rgba(16,185,129,0.1)] border border-emerald-500/20 shrink-0">
+            <Megaphone className="h-6 w-6 sm:h-7 sm:w-7" />
           </div>
-          <div>
-            <h1 className="text-2xl font-black tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">Disparos (WhatsApp)</h1>
-            <p className="text-sm text-muted-foreground/80 font-medium">Envio rico em mídia com integração ao bot Baileys.</p>
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent truncate">Disparos (WhatsApp)</h1>
+            <p className="text-[11px] sm:text-sm text-muted-foreground/80 font-medium truncate">Envio rico em mídia com integração ao bot Baileys.</p>
           </div>
         </div>
 
@@ -383,10 +383,10 @@ const AdminNotices = () => {
                   <CalendarClock className="h-4 w-4" /> Novo Disparo
                 </Button>
               </DialogTrigger>
-              <DialogContent className="w-[95vw] max-w-[1300px] p-0 rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden flex flex-col md:flex-row h-auto max-h-[95vh] md:h-[min(90vh, 850px)] bg-[#0b141a] dark:bg-[#0b141a] animate-in zoom-in-95 duration-300">
+              <DialogContent className="w-[95vw] max-w-[1300px] p-0 rounded-[2rem] sm:rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden flex flex-col md:flex-row h-[95dvh] md:h-[min(90vh, 850px)] bg-[#0b141a] dark:bg-[#0b141a] animate-in zoom-in-95 duration-300">
 
                 {/* LADO ESQUERDO: FORMULÁRIO */}
-                <div className="flex-1 flex flex-col bg-card min-w-0">
+                <div className="flex-1 flex flex-col bg-card min-w-0 overflow-y-auto md:overflow-hidden custom-scrollbar">
                   <div className="p-8 pb-4 border-b border-white/5 bg-card/50">
                     <DialogTitle className="text-2xl font-black flex items-center gap-3 text-emerald-500">
                       {editId ? <Edit3 className="h-6 w-6" /> : <Send className="h-6 w-6" />}
@@ -395,7 +395,7 @@ const AdminNotices = () => {
                     <p className="text-muted-foreground/60 text-sm mt-1 font-medium">Configure os detalhes do seu envio via bot.</p>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar">
+                  <div className="flex-none md:flex-1 md:overflow-y-auto p-6 space-y-5 custom-scrollbar">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
                         <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Público Alvo</Label>
@@ -404,7 +404,7 @@ const AdminNotices = () => {
                           <SelectContent>
                             {isAdmin && <SelectItem value="general">Geral (Igreja)</SelectItem>}
                             <SelectItem value="group">Departamento</SelectItem>
-                            {(isAdmin || isGerente) && <SelectItem value="individual">Membro Específico</SelectItem>}
+                            {(isAdmin || IsLider) && <SelectItem value="individual">Membro Específico</SelectItem>}
                           </SelectContent>
                         </Select>
                       </div>
@@ -460,9 +460,9 @@ const AdminNotices = () => {
                           {attachments.map((att) => (
                             <div key={att.id} className="relative shrink-0 border bg-white rounded-lg p-1 group w-16 h-16 flex items-center justify-center overflow-hidden shadow-sm">
                               {att.type === "image" ? <img src={att.url} className="w-full h-full object-cover rounded" /> :
-                               att.type === "video" ? <Video className="h-6 w-6 text-blue-500" /> :
-                               att.type === "audio" ? <Mic className="h-6 w-6 text-purple-500" /> :
-                               <FileText className="h-6 w-6 text-rose-500" />}
+                                att.type === "video" ? <Video className="h-6 w-6 text-blue-500" /> :
+                                  att.type === "audio" ? <Mic className="h-6 w-6 text-purple-500" /> :
+                                    <FileText className="h-6 w-6 text-rose-500" />}
                               <button type="button" onClick={() => removeAttachment(att.id)} className="absolute top-0 right-0 bg-rose-500 text-white rounded-bl-lg p-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <X className="h-3 w-3" />
                               </button>
@@ -627,7 +627,7 @@ const AdminNotices = () => {
             <div className="grid grid-cols-1 gap-4">
               {dispatches.map((dispatch) => (
                 <Card key={dispatch.id} className={cn(
-                  "border-0 shadow-xl rounded-[2rem] overflow-hidden group hover:scale-[1.01] transition-all duration-500 bg-card/40 backdrop-blur-xl border border-white/5", 
+                  "border-0 shadow-xl rounded-[2rem] overflow-hidden group hover:scale-[1.01] transition-all duration-500 bg-card/40 backdrop-blur-xl border border-white/5",
                   dispatch.status === "error" && "ring-1 ring-rose-500/20"
                 )}>
                   <CardContent className="p-0 flex flex-col md:flex-row gap-0 relative">
@@ -639,7 +639,7 @@ const AdminNotices = () => {
                       dispatch.status === "sent" && "bg-emerald-500",
                       dispatch.status === "error" && "bg-rose-500"
                     )} />
-                    
+
                     <div className="flex-1 p-6">
                       <div className="flex flex-col sm:flex-row justify-between gap-2 mb-3">
                         <div className="flex flex-wrap items-center gap-2">

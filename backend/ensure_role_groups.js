@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 async function main() {
   const roles = [
     { name: 'Administrador', slug: 'admin' },
-    { name: 'Líder', slug: 'gerente' },
+    { name: 'Líder', slug: 'lider' },
     { name: 'Membro', slug: 'membro' },
   ];
 

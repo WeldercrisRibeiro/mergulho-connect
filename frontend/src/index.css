@@ -4,10 +4,10 @@
 
 @layer base {
   :root {
-    --background: 200 33% 98%;
+    --background: 0 0% 100%;
     --foreground: 210 40% 11%;
 
-    --card: 200 33% 98%;
+    --card: 0 0% 100%;
     --card-foreground: 210 40% 11%;
 
     --popover: 0 0% 100%;
@@ -16,35 +16,35 @@
     --primary: 210 100% 31%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 200 90% 86%;
+    --secondary: 210 20% 96%;
     --secondary-foreground: 210 40% 11%;
 
-    --muted: 200 20% 94%;
+    --muted: 210 20% 96%;
     --muted-foreground: 210 10% 46%;
 
-    --accent: 207 90% 76%;
+    --accent: 210 20% 96%;
     --accent-foreground: 210 40% 11%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 200 20% 90%;
-    --input: 200 20% 90%;
-    --ring: 205 90% 40%;
+    --border: 210 20% 90%;
+    --input: 210 20% 90%;
+    --ring: 210 100% 31%;
 
-    --neo-shadow-dark: 200 20% 85%;
+    --neo-shadow-dark: 210 20% 90%;
     --neo-shadow-light: 0 0% 100%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 200 33% 96%;
+    --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 210 10% 26%;
-    --sidebar-primary: 205 90% 40%;
+    --sidebar-primary: 210 100% 31%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 207 90% 92%;
+    --sidebar-accent: 210 20% 96%;
     --sidebar-accent-foreground: 210 40% 11%;
-    --sidebar-border: 200 20% 90%;
-    --sidebar-ring: 205 90% 40%;
+    --sidebar-border: 210 20% 90%;
+    --sidebar-ring: 210 100% 31%;
   }
 
   .dark {
@@ -126,12 +126,19 @@
 }
 
 @layer base {
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
   * {
     @apply border-border;
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    overflow-x: hidden;
   }
 }
 
@@ -144,5 +151,36 @@
   }
   .neo-inset {
     box-shadow: inset 3px 3px 6px hsl(var(--neo-shadow-dark)), inset -3px -3px 6px hsl(var(--neo-shadow-light));
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 9999px;
+  }
+  .pb-safe {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+  .pt-safe {
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+  }
+  .mb-safe {
+    margin-bottom: env(safe-area-inset-bottom);
   }
 }

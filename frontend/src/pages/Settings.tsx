@@ -17,14 +17,14 @@ import { useToast } from "@/hooks/use-toast";
 import VideoPlayer from "@/components/VideoPlayer";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { cn } from "@/lib/utils";
+import { cn, getUploadUrl } from "@/lib/utils";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { normalizePhoneForDB } from "@/lib/phoneUtils";
 import { Switch } from "@/components/ui/switch";
 import { MapPin, ExternalLink } from "lucide-react";
 
 const SettingsPage = () => {
-  const { user, profile, isAdmin, isGerente, isAdminCCM, refreshProfile } = useAuth();
+  const { user, profile, isAdmin, IsLider, isAdminCCM, refreshProfile } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -81,13 +81,7 @@ const SettingsPage = () => {
     },
   });
 
-  const { data: permissions } = useQuery({
-    queryKey: ["all-role-routines"],
-    queryFn: async () => {
-      const { data } = await api.get('/group-routines', { params: { includeRoles: true } });
-      return data || [];
-    },
-  });
+
 
   // Photo state
   const [photoCaption, setPhotoCaption] = useState("");
@@ -119,35 +113,15 @@ const SettingsPage = () => {
   const [tempVideoUrl, setTempVideoUrl] = useState("");
   const [tempIsVideoUpload, setTempIsVideoUpload] = useState(false);
 
-  // Routine Permissions state
-  const [selectedRole, setSelectedRole] = useState<string | null>(null);
 
-  const ROUTINES = [
-    { id: "agenda", label: "Agenda", icon: Calendar, description: "Gestão de eventos e compromissos" },
-    { id: "devocionais", label: "Devocionais", icon: BookOpen, description: "Leituras e meditações diárias" },
-    { id: "voluntarios", label: "Voluntários", icon: HandHeart, description: "Escalas e gestão de equipes" },
-    { id: "membros", label: "Membros", icon: Users, description: "Acesso ao cadastro de pessoas" },
-    { id: "relatorios", label: "Relatórios", icon: BarChart3, description: "Dados, gráficos e estatísticas" },
-    { id: "chat", label: "Chat", icon: MessageCircle, description: "Mensagens e comunicação interna" },
-    { id: "kids", label: "Check-in", icon: ShieldCheck, description: "Check-in e proteção infantil" },
-    { id: "Disparos", label: "Disparos", icon: Megaphone, description: "Mural de avisos e notificações" },
-    { id: "tesouraria", label: "Tesouraria", icon: Wallet, description: "Gestão financeira e dízimos" },
-  ];
 
-  const CCM_ONLY_ROUTINES = [
-    { id: "ajustes", label: "Configurações", icon: Settings, description: "Ajustes gerais da plataforma" },
-  ];
 
-  const ROLE_TYPES = [
-    { id: "c1f324b3-45ed-453a-941c-d030e22d7721", label: "Administrador", description: "Acesso total ao sistema", color: "bg-primary" },
-    { id: "3e4bce2a-7856-4801-b466-7b8e3d12a74b", label: "Líder", description: "Líderes de departamento", color: "bg-emerald-500" },
-    { id: "071c2037-fa67-43ab-9d1b-4480fe15fd92", label: "Membro", description: "Acesso básico", color: "bg-slate-500" },
-  ];
 
   const [editWhatsApp, setEditWhatsApp] = useState("");
   const [editInstagram, setEditInstagram] = useState("");
   const [editFacebook, setEditFacebook] = useState("");
   const [editPixKey, setEditPixKey] = useState("");
+  const [editYoutube, setEditYoutube] = useState("");
   const [editMapsUrl, setEditMapsUrl] = useState("");
 
   useEffect(() => {
@@ -155,6 +129,7 @@ const SettingsPage = () => {
       setEditWhatsApp(siteSettings.whatsapp_number || "");
       setEditInstagram(siteSettings.instagram_url || "");
       setEditFacebook(siteSettings.facebook_url || "");
+      setEditYoutube(siteSettings.youtube_url || "");
       setEditPixKey(siteSettings.pix_key || "");
       setEditMapsUrl(siteSettings.maps_embed_url || "");
       setTempVideoUrl(siteSettings.about_us_video_url || "");
@@ -170,6 +145,7 @@ const SettingsPage = () => {
         { id: "whatsapp_number", value: editWhatsApp },
         { id: "instagram_url", value: editInstagram },
         { id: "facebook_url", value: editFacebook },
+        { id: "youtube_url", value: editYoutube },
         { id: "pix_key", value: editPixKey },
         { id: "maps_embed_url", value: editMapsUrl },
       ];
@@ -201,35 +177,7 @@ const SettingsPage = () => {
     onError: (err: any) => toast({ title: "Erro ao salvar vídeo", description: getErrorMessage(err), variant: "destructive" }),
   });
 
-  const toggleRoutineMutation = useMutation({
-    mutationFn: async ({ roleId, routineKey, enabled }: { roleId: string, routineKey: string, enabled: boolean }) => {
-      const normalizedRoutineKey = routineKey.toLowerCase();
-      const existing = permissions?.find((p: any) =>
-        (p.roleId ?? p.role_id) === roleId &&
-        String(p.routineKey ?? p.routine_key).toLowerCase() === normalizedRoutineKey
-      );
-      if (existing) {
-        await api.patch(`/group-routines/${existing.id}`, { isEnabled: enabled });
-      } else {
-        await api.post('/group-routines', { roleId, routineKey: normalizedRoutineKey, isEnabled: enabled });
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["all-role-routines"] });
-      toast({ title: "Permissão atualizada!" });
-    },
-    onError: (err: any) => toast({ title: "Erro ao salvar", description: getErrorMessage(err), variant: "destructive" }),
-  });
 
-  const getPermStatus = (roleId: string, routineKey: string): boolean => {
-    const normalizedRoutineKey = routineKey.toLowerCase();
-    const perm = permissions?.find((p: any) =>
-      (p.roleId ?? p.role_id) === roleId &&
-      String(p.routineKey ?? p.routine_key).toLowerCase() === normalizedRoutineKey
-    );
-    if (!perm) return false;
-    return (p => p.isEnabled ?? p.is_enabled ?? false)(perm);
-  };
 
 
   const loadSettings = () => {
@@ -437,7 +385,6 @@ const SettingsPage = () => {
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="security" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all px-4">🛡️ Segurança</TabsTrigger>
         </TabsList>
 
         <TabsContent value="inbox" className="space-y-6">
@@ -534,7 +481,7 @@ const SettingsPage = () => {
                   <div className="aspect-[16/5] w-full rounded-xl overflow-hidden border-2 border-dashed relative bg-muted/30 group">
                     {siteSettings?.homepage_banner ? (
                       <>
-                        <img src={siteSettings.homepage_banner} alt="Desktop" className="w-full h-full object-cover" />
+                        <img src={getUploadUrl(siteSettings.homepage_banner) || ""} alt="Desktop" className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                           <Label className="cursor-pointer bg-primary text-white p-2 rounded-full" title="Trocar imagem">
                             <ImagePlus className="h-5 w-5" />
@@ -559,7 +506,7 @@ const SettingsPage = () => {
                   <div className="aspect-square md:aspect-[16/5] w-full max-w-[300px] md:max-w-none mx-auto md:mx-0 rounded-xl overflow-hidden border-2 border-dashed relative bg-muted/30 group">
                     {siteSettings?.homepage_banner_mobile ? (
                       <>
-                        <img src={siteSettings.homepage_banner_mobile} alt="Mobile" className="w-full h-full object-cover" />
+                        <img src={getUploadUrl(siteSettings.homepage_banner_mobile) || ""} alt="Mobile" className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                           <Label className="cursor-pointer bg-primary text-white p-2 rounded-full" title="Trocar imagem">
                             <ImagePlus className="h-5 w-5" />
@@ -608,7 +555,7 @@ const SettingsPage = () => {
                   {photos && photos.length > 0 && (
                     <div className="flex items-center justify-center mb-4">
                       <div className="w-full max-w-3xl aspect-[16/9] md:aspect-[21/9] rounded-2xl overflow-hidden relative shadow-lg group">
-                        <img src={photos[carouselIdx]?.url} alt={photos[carouselIdx]?.caption} className="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-105" />
+                        <img src={getUploadUrl(photos[carouselIdx]?.url) || ""} alt={photos[carouselIdx]?.caption} className="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-105" />
                         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6 pt-12 flex items-end justify-between">
                           <div>
                             <Badge className="bg-primary hover:bg-primary border-0 mb-2">Destaque {carouselIdx + 1}</Badge>
@@ -636,7 +583,7 @@ const SettingsPage = () => {
                   <div className="flex justify-center gap-2 mt-4 flex-wrap">
                     {photos?.map((photo: any, i: number) => (
                       <button key={photo.id} onClick={() => setCarouselIdx(i)} className={cn("w-16 h-16 rounded-xl overflow-hidden border-2 transition-all", carouselIdx === i ? "border-primary scale-110 shadow-md ring-2 ring-primary/30 ring-offset-2" : "border-transparent opacity-60 hover:opacity-100")}>
-                        <img src={photo.url} alt="" className="w-full h-full object-cover" />
+                        <img src={getUploadUrl(photo.url) || ""} alt="" className="w-full h-full object-cover" />
                       </button>
                     ))}
                   </div>
@@ -717,6 +664,10 @@ const SettingsPage = () => {
                   <Label>Facebook URL</Label>
                   <Input value={editFacebook} onChange={(e) => setEditFacebook(e.target.value)} placeholder="https://facebook.com/..." />
                 </div>
+                <div className="space-y-2">
+                  <Label>Youtube URL</Label>
+                  <Input value={editYoutube} onChange={(e) => setEditYoutube(e.target.value)} placeholder="https://youtube.com/..." />
+                </div>
               </div>
 
               {/* Google Maps Embed */}
@@ -755,142 +706,6 @@ const SettingsPage = () => {
               </div>
 
               <Button onClick={() => saveSettingsMutation.mutate()} disabled={saveSettingsMutation.isPending} className="mt-4"><Edit2 className="h-4 w-4 mr-2" /> Salvar Links</Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="security" className="space-y-6">
-          <Card className="border-0 shadow-lg overflow-hidden ring-1 ring-border/30">
-            <CardHeader className="bg-gradient-to-r from-slate-700 to-slate-900 text-white border-b py-6">
-              <CardTitle className="text-xl flex items-center gap-2">
-                <div className="p-2 bg-white/10 rounded-xl backdrop-blur-md">
-                  <Shield className="h-5 w-5 text-white" />
-                </div>
-                Gestão de Acesso por Perfil
-              </CardTitle>
-              <p className="text-slate-300 text-sm mt-1">Configure quais funcionalidades cada nível de usuário pode visualizar e interagir.</p>
-            </CardHeader>
-            <CardContent className="pt-8 space-y-8">
-              {/* Seleção de Role */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {ROLE_TYPES.map((role) => (
-                  <button
-                    key={role.id}
-                    onClick={() => setSelectedRole(role.id)}
-                    className={cn(
-                      "flex flex-col items-start p-4 rounded-2xl border-2 transition-all text-left group",
-                      selectedRole === role.id
-                        ? "border-primary bg-primary/5 ring-4 ring-primary/10 shadow-md"
-                        : "border-border/40 hover:border-border bg-muted/20"
-                    )}
-                  >
-                    <div className="flex items-center justify-between w-full mb-2">
-                      <div className={cn("px-2 py-0.5 rounded-md text-[10px] font-bold uppercase text-white shadow-sm", role.color)}>
-                        {role.label}
-                      </div>
-                      {selectedRole === role.id && <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />}
-                    </div>
-                    <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{role.description}</p>
-                  </button>
-                ))}
-              </div>
-
-              {selectedRole ? (
-                <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-                  <div className="flex items-center justify-between border-b pb-4">
-                    <div>
-                      <h3 className="text-lg font-bold flex items-center gap-2">
-                        Permissões para <span className="text-primary">{ROLE_TYPES.find(r => r.id === selectedRole)?.label}</span>
-                      </h3>
-                      <p className="text-sm text-muted-foreground">Marque as rotinas que este perfil terá acesso.</p>
-                    </div>
-                    <Badge variant="outline" className="bg-muted font-mono">{ROUTINES.length + (selectedRole === 'c1f324b3-45ed-453a-941c-d030e22d7721' ? CCM_ONLY_ROUTINES.length : 0)} Módulos</Badge>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {/* Rotinas Gerais */}
-                    {ROUTINES.map((routine) => {
-                      const Icon = routine.icon;
-                      const isEnabled = getPermStatus(selectedRole!, routine.id);
-
-                      return (
-                        <div
-                          key={routine.id}
-                          className={cn(
-                            "group relative flex items-center gap-4 p-4 rounded-2xl border transition-all cursor-pointer",
-                            isEnabled ? "bg-primary/5 border-primary/20 shadow-sm" : "bg-background border-border/40 hover:border-border"
-                          )}
-                          onClick={() => toggleRoutineMutation.mutate({ roleId: selectedRole!, routineKey: routine.id, enabled: !isEnabled })}
-                        >
-                          <div className={cn(
-                            "p-3 rounded-xl transition-colors",
-                            isEnabled ? "bg-primary text-white shadow-md" : "bg-muted text-muted-foreground group-hover:bg-muted/80"
-                          )}>
-                            <Icon className="h-5 w-5" />
-                          </div>
-                          <div className="flex-1 pr-8">
-                            <p className="font-bold text-sm">{routine.label}</p>
-                            <p className="text-[11px] text-muted-foreground leading-tight line-clamp-1">{routine.description}</p>
-                          </div>
-                          <div className="absolute right-4">
-                            <Switch
-                              checked={isEnabled}
-                              onCheckedChange={(checked) => toggleRoutineMutation.mutate({ roleId: selectedRole!, routineKey: routine.id, enabled: checked })}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-
-                    {/* Rotinas Administrativas (Apenas se Admin estiver selecionado) */}
-                    {selectedRole === 'c1f324b3-45ed-453a-941c-d030e22d7721' && CCM_ONLY_ROUTINES.map((routine) => {
-                      const Icon = routine.icon;
-                      const isEnabled = getPermStatus(selectedRole!, routine.id);
-
-                      return (
-                        <div
-                          key={routine.id}
-                          className={cn(
-                            "group relative flex items-center gap-4 p-4 rounded-2xl border border-dashed transition-all cursor-pointer",
-                            isEnabled ? "bg-slate-900 text-white border-slate-700 shadow-md" : "bg-background border-border/40 hover:border-border"
-                          )}
-                          onClick={() => toggleRoutineMutation.mutate({ roleId: selectedRole!, routineKey: routine.id, enabled: !isEnabled })}
-                        >
-                          <div className={cn(
-                            "p-3 rounded-xl transition-colors",
-                            isEnabled ? "bg-slate-700 text-white" : "bg-muted text-muted-foreground group-hover:bg-muted/80"
-                          )}>
-                            <Icon className="h-5 w-5" />
-                          </div>
-                          <div className="flex-1 pr-8">
-                            <p className="font-bold text-sm flex items-center gap-1.5">
-                              {routine.label}
-                              <Lock className="h-3 w-3 opacity-50" />
-                            </p>
-                            <p className={cn("text-[11px] leading-tight line-clamp-1", isEnabled ? "text-slate-400" : "text-muted-foreground")}>{routine.description}</p>
-                          </div>
-                          <div className="absolute right-4">
-                            <Switch
-                              checked={isEnabled}
-                              onCheckedChange={(checked) => toggleRoutineMutation.mutate({ roleId: selectedRole!, routineKey: routine.id, enabled: checked })}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 bg-muted/20 rounded-3xl border border-dashed">
-                  <div className="p-4 bg-background rounded-full shadow-inner ring-1 ring-border">
-                    <Shield className="h-10 w-10 text-muted-foreground opacity-20" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold text-muted-foreground">Selecione um perfil acima</p>
-                    <p className="text-sm text-muted-foreground/60">Para começar a configurar as permissões de acesso.</p>
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
         </TabsContent>

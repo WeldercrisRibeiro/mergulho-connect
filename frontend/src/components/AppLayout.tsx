@@ -22,10 +22,10 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
     const pollInterval = setInterval(async () => {
       try {
         // Poll Checkins
-        const { data: checkins } = await api.get('/kids-checkins', { params: { status: 'active' } });
+        const { data: checkins } = await api.get('/checkins', { params: { status: 'active' } });
         const myCheckin = checkins?.find((c: any) => c.guardian_id === user.id && c.call_requested);
         if (myCheckin) {
-           // We would need to track if we already alerted, but skipping for simplicity
+          // We would need to track if we already alerted, but skipping for simplicity
         }
       } catch (e) {
         // ignore

@@ -1,8 +1,8 @@
-import { IsString, IsOptional, IsUUID } from 'class-validator';
+import { IsString, IsOptional, IsUUID, IsNotEmpty } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateVolunteerScheduleDto {
-  @ApiProperty() scheduleDate: string | Date;
+  @ApiProperty() @IsNotEmpty() @IsString() scheduleDate: string;
   @ApiProperty() @IsString() roleFunction: string;
   @ApiPropertyOptional() @IsOptional() @IsUUID() volunteerId?: string;
   @ApiPropertyOptional() @IsOptional() @IsUUID() itemUserId?: string;

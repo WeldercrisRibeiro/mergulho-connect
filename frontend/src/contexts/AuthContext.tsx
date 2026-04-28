@@ -10,10 +10,11 @@ interface AuthContextType {
   loading: boolean;
   isAdmin: boolean;
   isAdminCCM: boolean;
-  isGerente: boolean;
+  IsLider: boolean;
   managedGroupIds: string[];
   userGroupIds: string[];
   profile: { fullName: string; avatarUrl: string | null; whatsappPhone: string | null; username: string | null; createdAt: string | null } | null;
+  setProfile: (profile: AuthContextType["profile"]) => void;
   routinePermissions: Record<string, boolean>;
   unreadAnnouncements: number;
   signIn: (email: string, pass: string) => Promise<void>;
@@ -27,15 +28,16 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   isAdmin: false,
   isAdminCCM: false,
-  isGerente: false,
+  IsLider: false,
   managedGroupIds: [],
   userGroupIds: [],
   profile: null,
+  setProfile: () => { },
   routinePermissions: {},
   unreadAnnouncements: 0,
-  signIn: async () => {},
-  signOut: async () => {},
-  refreshProfile: async () => {},
+  signIn: async () => { },
+  signOut: async () => { },
+  refreshProfile: async () => { },
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -43,9 +45,9 @@ export const useAuth = () => useContext(AuthContext);
 const setAppBadge = (count: number) => {
   if (!("setAppBadge" in navigator)) return;
   if (count > 0) {
-    (navigator as any).setAppBadge(count).catch(() => {});
+    (navigator as any).setAppBadge(count).catch(() => { });
   } else {
-    (navigator as any).clearAppBadge().catch(() => {});
+    (navigator as any).clearAppBadge().catch(() => { });
   }
 };
 
@@ -61,7 +63,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isAdminCCM, setIsAdminCCM] = useState(false);
-  const [isGerente, setIsGerente] = useState(false);
+  const [IsLider, setIsLider] = useState(false);
   const [managedGroupIds, setManagedGroupIds] = useState<string[]>([]);
   const [userGroupIds, setUserGroupIds] = useState<string[]>([]);
   const [profile, setProfile] = useState<AuthContextType["profile"]>(null);
@@ -69,7 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [unreadAnnouncements, setUnreadAnnouncements] = useState(0);
 
   const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const signOutRef = useRef<() => Promise<void>>(async () => {});
+  const signOutRef = useRef<() => Promise<void>>(async () => { });
 
   const playNotificationSound = () => {
     const isNotifyEnabled = localStorage.getItem("notify_enabled") !== "false";
@@ -78,7 +80,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
       audio.volume = 0.5;
       audio.play().catch((e) => devLog("warn", "Audio bloqueado pelo browser:", e));
-    } catch (_) {}
+    } catch (_) { }
   };
 
   // ─── Init: auth state ────────────────────────────────────────────────────
@@ -110,7 +112,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
     setProfile(null);
     setIsAdmin(false);
-    setIsGerente(false);
+    setIsLider(false);
     setManagedGroupIds([]);
     setUserGroupIds([]);
     setRoutinePermissions({});
@@ -142,43 +144,68 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const checkRoles = async (userId: string) => {
     try {
       const { data: roleData } = await api.get(`/user-roles/user/${userId}`);
-      
-      const rolesList = roleData ? [roleData.role] : [];
+
+      const currentRole = roleData?.role || "membro";
+      const rolesList = roleData ? [currentRole] : [];
       const hasAdminCCM = rolesList.includes("admin_ccm");
       const hasAdmin = rolesList.includes("admin") || rolesList.includes("pastor") || hasAdminCCM;
-      const hasGerente = rolesList.includes("gerente");
+      const hasLeaderRole = rolesList.includes("lider");
 
       setIsAdminCCM(hasAdminCCM);
       setIsAdmin(hasAdmin);
 
       const { data: managedGroups } = await api.get(`/member-groups/user/${userId}`);
 
-      const allGroupIds = Array.from(new Set((managedGroups || []).map((m: any) => m.groupId || m.group_id)));
+      const allGroupIds: string[] = Array.from(
+        new Set<string>(
+          (managedGroups || [])
+            .map((m: any) => m.groupId || m.group_id)
+            .filter((id: string | null | undefined): id is string => Boolean(id))
+        )
+      );
       setUserGroupIds(allGroupIds);
 
-      const managedIds = (managedGroups || [])
-        .filter((mg: any) => {
-          const role = (mg.role || "").toLowerCase();
-          return role !== "" && role !== "member" && role !== "membro";
-        })
-        .map((m: any) => m.groupId || m.group_id);
+      const managedIds: string[] = Array.from(
+        new Set<string>(
+          (managedGroups || [])
+            .filter((mg: any) => {
+              const role = (mg.role || "").toLowerCase();
+              return role !== "" && role !== "member" && role !== "membro";
+            })
+            .map((m: any) => m.groupId || m.group_id)
+            .filter((id: string | null | undefined): id is string => Boolean(id))
+        )
+      );
 
       setManagedGroupIds(managedIds);
-      setIsGerente(hasAdmin || hasGerente || managedIds.length > 0);
+      setIsLider(hasAdmin || hasLeaderRole || managedIds.length > 0);
 
       try {
-        if (allGroupIds.length > 0) {
-          const { data: routines } = await api.get(`/group-routines/groups`, { params: { groupIds: allGroupIds.join(",") } });
-          const perms: Record<string, boolean> = {};
-          (routines || []).forEach((r: any) => {
-            const key = r.routineKey || r.routine_key;
-            const enabled = r.isEnabled !== undefined ? r.isEnabled : r.is_enabled;
-            if (perms[key] !== true) perms[key] = enabled;
-          });
-          setRoutinePermissions(perms);
-        } else {
-          setRoutinePermissions({});
-        }
+        const roleMapping: Record<string, string> = {
+          "admin": "c1f324b3-45ed-453a-941c-d030e22d7721",
+          "admin_ccm": "c1f324b3-45ed-453a-941c-d030e22d7721",
+          "pastor": "c1f324b3-45ed-453a-941c-d030e22d7721",
+          "lider": "3e4bce2a-7856-4801-b466-7b8e3d12a74b",
+          "membro": "071c2037-fa67-43ab-9d1b-4480fe15fd92"
+        };
+
+        const roleId = roleMapping[currentRole] || roleMapping.membro;
+        
+        const params: any = {};
+        if (allGroupIds.length > 0) params.groupIds = allGroupIds.join(",");
+        if (roleId) params.roleId = roleId;
+        
+        const { data: routines } = await api.get(`/group-routines/groups`, { params });
+        const perms: Record<string, boolean> = {};
+        
+        (routines || []).forEach((r: any) => {
+          const key = (r.routineKey || r.routine_key || "").toLowerCase();
+          const enabled = r.isEnabled !== undefined ? r.isEnabled : r.is_enabled;
+          // Se qualquer regra habilitar a rotina, o usuário tem acesso
+          if (enabled === true) perms[key] = true;
+        });
+
+        setRoutinePermissions(perms);
       } catch (e) {
         devError("Falha silenciosa na busca de rotinas:", e);
         setRoutinePermissions({});
@@ -204,10 +231,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setAppBadge(unread);
 
         if (previousCount !== -1 && unread > previousCount) {
-            playNotificationSound();
+          playNotificationSound();
         }
         previousCount = unread;
-      } catch (_) {}
+      } catch (_) { }
     };
 
     checkAnnouncements();
@@ -288,10 +315,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         loading,
         isAdmin,
         isAdminCCM,
-        isGerente,
+        IsLider,
         managedGroupIds: managedGroupIds || [],
         userGroupIds: userGroupIds || [],
         profile,
+        setProfile,
         routinePermissions,
         unreadAnnouncements,
         signIn,

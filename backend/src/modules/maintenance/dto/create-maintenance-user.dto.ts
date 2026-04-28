@@ -2,7 +2,7 @@ import { AppRole } from '@prisma/client';
 import { IsEmail, IsEnum, IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
 
 export class CreateMaintenanceUserDto {
-  @IsEmail({}, { message: 'Email inválido.' })
+  @IsString({ message: 'Login/Email inválido.' })
   email: string;
 
   @IsOptional()

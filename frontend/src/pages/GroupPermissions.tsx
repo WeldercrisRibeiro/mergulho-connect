@@ -4,7 +4,7 @@ import api from "@/lib/api";
 import {
   Calendar, BookOpen, HandHeart, Users, BarChart3,
   MessageCircle, ShieldCheck, Megaphone, Shield,
-  ChevronRight, Lock
+  ChevronRight, Lock, LayoutGrid, UserCircle
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -13,6 +13,7 @@ import { toast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const ROUTINES = [
   { id: "agenda", label: "Agenda", icon: Calendar, description: "Gestão de eventos e compromissos" },
@@ -25,9 +26,16 @@ const ROUTINES = [
   { id: "Disparos", label: "Disparos", icon: Megaphone, description: "Mural de avisos e notificações" },
 ];
 
+const ROLE_TYPES = [
+  { id: "c1f324b3-45ed-453a-941c-d030e22d7721", label: "Administrador", description: "Acesso total ao sistema", color: "bg-primary" },
+  { id: "3e4bce2a-7856-4801-b466-7b8e3d12a74b", label: "Líder", description: "Líderes de departamento", color: "bg-emerald-500" },
+  { id: "071c2037-fa67-43ab-9d1b-4480fe15fd92", label: "Membro", description: "Acesso básico", color: "bg-slate-500" },
+];
+
 const GroupPermissions = () => {
   const queryClient = useQueryClient();
-  const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("groups");
 
   const { data: groups } = useQuery({
     queryKey: ["all-groups"],
@@ -46,17 +54,22 @@ const GroupPermissions = () => {
   });
 
   const toggleMutation = useMutation({
-    mutationFn: async ({ roleId, routineKey, enabled }: { roleId: string, routineKey: string, enabled: boolean }) => {
+    mutationFn: async ({ id, routineKey, enabled, isRole }: { id: string, routineKey: string, enabled: boolean, isRole: boolean }) => {
       const normalizedRoutineKey = routineKey.toLowerCase();
-      // Tenta encontrar registro existente para fazer update, senão cria
+      
       const existing = permissions?.find((p: any) =>
-        (p.groupId ?? p.group_id) === roleId &&
-        String(p.routineKey ?? p.routine_key).toLowerCase() === normalizedRoutineKey
+        isRole 
+          ? (p.roleId === id && String(p.routineKey || p.routine_key).toLowerCase() === normalizedRoutineKey)
+          : ((p.groupId || p.group_id) === id && String(p.routineKey || p.routine_key).toLowerCase() === normalizedRoutineKey)
       );
+
       if (existing) {
         await api.patch(`/group-routines/${existing.id}`, { isEnabled: enabled });
       } else {
-        await api.post('/group-routines', { groupId: roleId, routineKey: normalizedRoutineKey, isEnabled: enabled });
+        const payload = isRole 
+          ? { roleId: id, routineKey: normalizedRoutineKey, isEnabled: enabled }
+          : { groupId: id, routineKey: normalizedRoutineKey, isEnabled: enabled };
+        await api.post('/group-routines', payload);
       }
     },
     onSuccess: () => {
@@ -66,18 +79,20 @@ const GroupPermissions = () => {
     onError: (err: any) => toast({ title: "Erro ao salvar", description: getErrorMessage(err), variant: "destructive" }),
   });
 
-  const selectedGroupObj = groups?.find((g: any) => g.id === selectedRole);
-
-  const getPermStatus = (roleId: string, routineKey: string): boolean => {
+  const getPermStatus = (id: string, routineKey: string, isRole: boolean): boolean => {
     const normalizedRoutineKey = routineKey.toLowerCase();
     const perm = permissions?.find((p: any) =>
-      (p.groupId ?? p.group_id) === roleId &&
-      String(p.routineKey ?? p.routine_key).toLowerCase() === normalizedRoutineKey
+      isRole
+        ? (p.roleId === id && String(p.routineKey || p.routine_key).toLowerCase() === normalizedRoutineKey)
+        : ((p.groupId || p.group_id) === id && String(p.routineKey || p.routine_key).toLowerCase() === normalizedRoutineKey)
     );
-    // Se não houver registro, considera desabilitado por padrão
     if (!perm) return false;
     return (p => p.isEnabled ?? p.is_enabled ?? false)(perm);
   };
+
+  const selectedName = activeTab === "groups" 
+    ? groups?.find((g: any) => g.id === selectedId)?.name 
+    : ROLE_TYPES.find(r => r.id === selectedId)?.label;
 
   if (loadingPerms) {
     return (
@@ -94,90 +109,127 @@ const GroupPermissions = () => {
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-8 pb-12">
-      <header>
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Shield className="h-8 w-8 text-primary" />
-          Gestão de Rotinas por Tipo de Usuário
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Selecione um tipo de usuário para configurar suas permissões de acesso às rotinas do sistema.
-        </p>
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <Shield className="h-8 w-8 text-primary" />
+            Acessos
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Gerencie as permissões de acesso por departamento ou por nível de usuário.
+          </p>
+        </div>
       </header>
 
-      {/* Role Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {groups?.map((group: any) => (
-          <Card
-            key={group.id}
-            className={cn(
-              "cursor-pointer transition-all hover:shadow-md border-2",
-              selectedRole === group.id ? "border-primary bg-primary/5" : "border-transparent hover:bg-muted/50"
-            )}
-            onClick={() => setSelectedRole(group.id)}
-          >
-            <CardHeader className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="h-12 w-12 rounded-2xl flex items-center justify-center text-primary bg-primary/10">
-                  <Users className="h-6 w-6" />
-                </div>
-                {selectedRole === group.id && <ChevronRight className="h-5 w-5 text-primary" />}
-              </div>
-              <CardTitle className="mt-3 text-lg">{group.name}</CardTitle>
-              <CardDescription>{group.description || "Departamento"}</CardDescription>
-            </CardHeader>
-          </Card>
-        ))}
-        {groups?.length === 0 && (
-          <p className="text-muted-foreground text-sm col-span-3">Nenhum departamento cadastrado.</p>
-        )}
-      </div>
+      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setSelectedId(null); }} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2 max-w-md bg-muted/50 p-1 rounded-xl">
+          <TabsTrigger value="groups" className="rounded-lg flex gap-2">
+            <LayoutGrid className="h-4 w-4" /> Departamentos
+          </TabsTrigger>
+          <TabsTrigger value="roles" className="rounded-lg flex gap-2">
+            <UserCircle className="h-4 w-4" /> Perfis (Cargos)
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="groups" className="space-y-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {groups?.map((group: any) => (
+              <Card
+                key={group.id}
+                className={cn(
+                  "cursor-pointer transition-all hover:shadow-md border-2",
+                  selectedId === group.id ? "border-primary bg-primary/5" : "border-transparent hover:bg-muted/50"
+                )}
+                onClick={() => setSelectedId(group.id)}
+              >
+                <CardHeader className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="h-10 w-10 rounded-xl flex items-center justify-center text-primary bg-primary/10">
+                      <Users className="h-5 w-5" />
+                    </div>
+                    {selectedId === group.id && <ChevronRight className="h-5 w-5 text-primary" />}
+                  </div>
+                  <CardTitle className="mt-3 text-base">{group.name}</CardTitle>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="roles" className="space-y-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {ROLE_TYPES.map((role) => (
+              <Card
+                key={role.id}
+                className={cn(
+                  "cursor-pointer transition-all hover:shadow-md border-2",
+                  selectedId === role.id ? "border-primary bg-primary/5" : "border-transparent hover:bg-muted/50"
+                )}
+                onClick={() => setSelectedId(role.id)}
+              >
+                <CardHeader className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className={cn("px-2 py-0.5 rounded-md text-[10px] font-bold uppercase text-white shadow-sm", role.color)}>
+                      {role.label}
+                    </div>
+                    {selectedId === role.id && <ChevronRight className="h-5 w-5 text-primary" />}
+                  </div>
+                  <CardTitle className="mt-3 text-base">{role.label}</CardTitle>
+                  <CardDescription className="text-xs">{role.description}</CardDescription>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Permissions Panel */}
-      {selectedRole ? (
-        <div key={selectedRole} className="space-y-6">
-          <Card className="border-0 shadow-lg bg-card/50 backdrop-blur-sm">
+      {selectedId ? (
+        <div key={selectedId} className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <Card className="border-0 shadow-xl bg-card/50 backdrop-blur-md ring-1 ring-border/50">
             <CardHeader className="border-b bg-muted/20 pb-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-xl">Rotinas: {selectedGroupObj?.name}</CardTitle>
+                  <CardTitle className="text-xl">Configurando: {selectedName}</CardTitle>
                   <CardDescription>
-                    Ative ou desative os módulos que usuários com este perfil poderão acessar.
+                    Ative ou desative o acesso às rotinas do sistema para este {activeTab === "groups" ? "departamento" : "perfil"}.
                   </CardDescription>
                 </div>
-                <Badge variant="outline" className="bg-primary/10 text-primary">
-                  Configurando Acesso
+                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                  {activeTab === "groups" ? "Por Departamento" : "Por Perfil"}
                 </Badge>
               </div>
             </CardHeader>
             <CardContent className="p-0">
               <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:gap-px lg:bg-muted/20">
                 {ROUTINES.map((routine) => {
-                  const isEnabled = getPermStatus(selectedRole, routine.id);
+                  const isEnabled = getPermStatus(selectedId, routine.id, activeTab === "roles");
                   return (
-                    <div key={routine.id} className="p-6 bg-card flex items-center justify-between hover:bg-muted/10 transition-colors">
+                    <div key={routine.id} className="p-5 bg-card flex items-center justify-between hover:bg-muted/5 transition-colors">
                       <div className="flex items-center gap-4">
                         <div className={cn(
-                          "h-10 w-10 rounded-xl flex items-center justify-center transition-colors",
-                          isEnabled ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                          "h-10 w-10 rounded-xl flex items-center justify-center transition-all",
+                          isEnabled ? "bg-primary text-white shadow-md shadow-primary/20" : "bg-muted text-muted-foreground"
                         )}>
                           <routine.icon className="h-5 w-5" />
                         </div>
                         <div>
                           <p className="font-semibold text-sm leading-tight mb-0.5">{routine.label}</p>
-                          <p className="text-xs text-muted-foreground">{routine.description}</p>
+                          <p className="text-[11px] text-muted-foreground leading-relaxed">{routine.description}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className={cn("text-[10px] font-bold uppercase tracking-wider", isEnabled ? "text-primary" : "text-muted-foreground")}>
-                          {isEnabled ? "Ativado" : "Bloqueado"}
+                        <span className={cn("text-[9px] font-black uppercase tracking-widest", isEnabled ? "text-primary" : "text-muted-foreground")}>
+                          {isEnabled ? "Ativo" : "Off"}
                         </span>
                         <Switch
                           checked={isEnabled}
                           disabled={toggleMutation.isPending}
                           onCheckedChange={(checked) => toggleMutation.mutate({
-                            roleId: selectedRole,
+                            id: selectedId,
                             routineKey: routine.id,
-                            enabled: checked
+                            enabled: checked,
+                            isRole: activeTab === "roles"
                           })}
                         />
                       </div>
@@ -188,27 +240,27 @@ const GroupPermissions = () => {
             </CardContent>
           </Card>
 
-          <div className="bg-secondary/30 rounded-2xl p-6 border flex items-start gap-4">
+          <div className="bg-primary/5 rounded-2xl p-6 border border-primary/10 flex items-start gap-4">
             <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
               <ShieldCheck className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h4 className="font-semibold text-sm">Como as permissões funcionam?</h4>
+              <h4 className="font-semibold text-sm">Regra de Precedência</h4>
               <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                As alterações refletem nos acessos dos usuários com o perfil <b>{selectedGroupObj?.name}</b>.
-                Administradores Globais mantêm acesso total a todas as rotinas independente destas configurações.
+                As permissões são cumulativas. Se uma rotina estiver ativa no <b>Perfil</b> OU no <b>Departamento</b> do usuário, ele terá acesso.
+                Administradores globais ignoram estas restrições.
               </p>
             </div>
           </div>
         </div>
       ) : (
-        <div className="h-64 flex flex-col items-center justify-center text-center border-2 border-dashed rounded-3xl p-8 bg-muted/10">
-          <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
-            <Lock className="h-8 w-8 text-muted-foreground" />
+        <div className="h-64 flex flex-col items-center justify-center text-center border-2 border-dashed rounded-[2.5rem] p-8 bg-muted/5">
+          <div className="h-16 w-16 rounded-3xl bg-muted flex items-center justify-center mb-4">
+            <Lock className="h-8 w-8 text-muted-foreground/30" />
           </div>
-          <h3 className="text-lg font-semibold">Nenhum perfil selecionado</h3>
-          <p className="text-sm text-muted-foreground max-w-xs mt-2">
-            Clique em um dos cards acima para configurar os acessos às rotinas.
+          <h3 className="text-lg font-semibold text-muted-foreground">Nenhum alvo selecionado</h3>
+          <p className="text-sm text-muted-foreground/60 max-w-xs mt-2">
+            Escolha um departamento ou perfil acima para configurar os acessos.
           </p>
         </div>
       )}

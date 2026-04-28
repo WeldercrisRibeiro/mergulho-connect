@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -57,12 +57,23 @@ const Groups = () => {
     queryFn: async () => {
       if (!managingGroup) return [];
       const { data } = await api.get('/member-groups', { params: { groupId: managingGroup.id } });
-      const ids = data?.map((m: any) => m.userId) || [];
-      setSelectedMembers(ids);
-      return ids;
+      return data?.map((m: any) => m.userId) || [];
     },
     enabled: !!managingGroup,
   });
+
+  // Sincroniza a seleção quando os dados do grupo carregam
+  useEffect(() => {
+    if (groupMembers) {
+      setSelectedMembers(groupMembers);
+    }
+  }, [groupMembers]);
+
+  // Garante que a seleção é limpa ao fechar ou trocar de grupo
+  const handleOpenManageMembers = (group: any) => {
+    setSelectedMembers([]); // Limpa antes de carregar
+    setManagingGroup(group);
+  };
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -136,13 +147,13 @@ const Groups = () => {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6 pb-20 md:pb-8">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Shield className="h-6 w-6 text-primary" />
           Departamentos
         </h1>
-        <Button onClick={() => { setGroupName(""); setGroupDesc(""); setGroupIcon("🌊"); setCreatingGroup(true); }}>
+        <Button className="w-full sm:w-auto" onClick={() => { setGroupName(""); setGroupDesc(""); setGroupIcon("🌊"); setCreatingGroup(true); }}>
           <Plus className="h-4 w-4 mr-1" /> Novo Grupo
         </Button>
       </div>
@@ -169,8 +180,8 @@ const Groups = () => {
               </div>
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="flex items-center gap-2 mt-2">
-                <Button variant="outline" size="sm" onClick={() => { setManagingGroup(g); setSelectedMembers([]); }}>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => handleOpenManageMembers(g)}>
                   <Users className="h-3 w-3 mr-1" /> Gerenciar Membros
                 </Button>
                 <Button variant="ghost" size="icon" onClick={() => handleEdit(g)}>
@@ -190,7 +201,7 @@ const Groups = () => {
 
       {/* Create Dialog */}
       <Dialog open={creatingGroup} onOpenChange={val => !val && setCreatingGroup(false)}>
-        <DialogContent className="sm:max-w-[600px] rounded-3xl border-0 shadow-2xl">
+        <DialogContent className="w-[95vw] sm:max-w-[600px] max-h-[90svh] overflow-y-auto rounded-3xl border-0 shadow-2xl">
           <DialogHeader><DialogTitle className="text-xl font-bold">Novo Departamento</DialogTitle></DialogHeader>
           <GroupForm
             groupIcon={groupIcon} setGroupIcon={setGroupIcon}
@@ -200,9 +211,9 @@ const Groups = () => {
             uploading={uploading}
             fileInputRef={fileInputRef}
           />
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setCreatingGroup(false)} className="rounded-xl border-2">Cancelar</Button>
-            <Button onClick={() => saveMutation.mutate()} disabled={!groupName || saveMutation.isPending} className="rounded-xl px-8 font-bold">
+          <DialogFooter className="sticky bottom-0 gap-2 bg-background/95 pt-2 pb-safe sm:static sm:bg-transparent">
+            <Button variant="outline" onClick={() => setCreatingGroup(false)} className="w-full rounded-xl border-2 sm:w-auto">Cancelar</Button>
+            <Button onClick={() => saveMutation.mutate()} disabled={!groupName || saveMutation.isPending} className="w-full rounded-xl px-8 font-bold sm:w-auto">
               {saveMutation.isPending ? "Salvando..." : "Criar Departamento"}
             </Button>
           </DialogFooter>
@@ -222,7 +233,7 @@ const Groups = () => {
 
       {/* Edit Dialog */}
       <Dialog open={!!editingGroup} onOpenChange={val => !val && setEditingGroup(null)}>
-        <DialogContent className="sm:max-w-[600px] rounded-3xl border-0 shadow-2xl">
+        <DialogContent className="w-[95vw] sm:max-w-[600px] max-h-[90svh] overflow-y-auto rounded-3xl border-0 shadow-2xl">
           <DialogHeader><DialogTitle className="text-xl font-bold">Editar Departamento: {editingGroup?.name}</DialogTitle></DialogHeader>
           <GroupForm
             groupIcon={groupIcon} setGroupIcon={setGroupIcon}
@@ -232,9 +243,9 @@ const Groups = () => {
             uploading={uploading}
             fileInputRef={fileInputRef}
           />
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setEditingGroup(null)} className="rounded-xl border-2">Cancelar</Button>
-            <Button onClick={() => saveMutation.mutate()} disabled={!groupName || saveMutation.isPending} className="rounded-xl px-8 font-bold">
+          <DialogFooter className="sticky bottom-0 gap-2 bg-background/95 pt-2 pb-safe sm:static sm:bg-transparent">
+            <Button variant="outline" onClick={() => setEditingGroup(null)} className="w-full rounded-xl border-2 sm:w-auto">Cancelar</Button>
+            <Button onClick={() => saveMutation.mutate()} disabled={!groupName || saveMutation.isPending} className="w-full rounded-xl px-8 font-bold sm:w-auto">
               {saveMutation.isPending ? "Salvando..." : "Salvar Alterações"}
             </Button>
           </DialogFooter>
@@ -243,7 +254,7 @@ const Groups = () => {
 
       {/* Manage Members Dialog */}
       <Dialog open={!!managingGroup} onOpenChange={val => !val && setManagingGroup(null)}>
-        <DialogContent className="sm:max-w-[550px] rounded-3xl border-0 shadow-2xl max-h-[90vh]">
+        <DialogContent className="w-[95vw] sm:max-w-[550px] rounded-3xl border-0 shadow-2xl max-h-[90svh] overflow-hidden">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">Gerenciar Membros: {managingGroup?.name}</DialogTitle>
             <p className="text-xs text-muted-foreground mt-1">Selecione os membros que fazem parte deste departamento.</p>
@@ -269,9 +280,9 @@ const Groups = () => {
               </div>
             ))}
           </div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setManagingGroup(null)} className="rounded-xl border-2">Cancelar</Button>
-            <Button onClick={() => saveMembersMutation.mutate()} disabled={saveMembersMutation.isPending} className="rounded-xl px-8 font-bold">
+          <DialogFooter className="gap-2 border-t bg-background/95 pt-3 pb-safe sm:border-0 sm:bg-transparent">
+            <Button variant="outline" onClick={() => setManagingGroup(null)} className="w-full rounded-xl border-2 sm:w-auto">Cancelar</Button>
+            <Button onClick={() => saveMembersMutation.mutate()} disabled={saveMembersMutation.isPending} className="w-full rounded-xl px-8 font-bold sm:w-auto">
               {saveMembersMutation.isPending ? "Salvando..." : "Salvar Alterações"}
             </Button>
           </DialogFooter>

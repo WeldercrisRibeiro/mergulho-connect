@@ -8,13 +8,11 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// ... rest of the models ...
-
 model BaileysAuth {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   sessionId String   @map("session_id")
   key       String
-  value     String   @db.Text
+  value     String
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -371,6 +369,7 @@ model VolunteerSchedule {
   createdBy    String?  @map("created_by") @db.Uuid
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  status       String?  @default("pending")
   group        Group?   @relation(fields: [groupId], references: [id])
   itemUser     Profile? @relation(fields: [itemUserId], references: [userId], onDelete: Cascade)
 
@@ -450,12 +449,24 @@ model TreasuryEntry {
   @@map("treasury_entries")
 }
 
+model MaintenanceLog {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  scriptId   String   @map("script_id")
+  executorId String   @map("executor_id") @db.Uuid
+  details    String?
+  status     String   @default("success")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("maintenance_logs")
+}
+
 enum AppRole {
   admin
   admin_ccm
-  gerente
+  lider
   pastor
   membro
+  gerente
 
   @@map("app_role")
 }
@@ -466,15 +477,4 @@ enum PaymentStatus {
   cancelled
 
   @@map("payment_status")
-}
-
-model MaintenanceLog {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  scriptId  String   @map("script_id")
-  executorId String  @map("executor_id") @db.Uuid
-  details   String?
-  status    String   @default("success")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-
-  @@map("maintenance_logs")
 }

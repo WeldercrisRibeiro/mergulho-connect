@@ -178,7 +178,7 @@ User                    Profile
       ▼                 └── username
    UserRole
    ├── userId (FK)
-   └── role (admin|gerente|pastor|membro)
+   └── role (admin|lider|pastor|membro)
 
 Event                   KidsCheckin
 ├── id                  ├── id

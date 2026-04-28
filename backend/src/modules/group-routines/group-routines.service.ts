@@ -82,13 +82,17 @@ export class GroupRoutinesService {
       }
     });
   }
-  findByGroups(groupIds: string) {
-    if (!groupIds) return [];
-    const ids = groupIds.split(',');
+  async findByGroups(groupIds: string, roleId?: string) {
+    if (!groupIds && !roleId) return [];
+    
+    const ids = groupIds ? groupIds.split(',') : [];
+    
     return this.prisma.groupRoutine.findMany({
       where: {
-        groupId: { in: ids },
-        roleId: null,
+        OR: [
+          { groupId: { in: ids }, roleId: null },
+          { roleId: roleId || undefined, groupId: null }
+        ]
       },
     });
   }

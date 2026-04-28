@@ -14,13 +14,13 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { Users, Search, Phone, Edit2, Trash2, Plus, CheckCircle, Key, Monitor, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
-import { normalizePhoneForDB, formatPhoneForDisplay } from "@/lib/phoneUtils";
+import { cn, getUploadUrl } from "@/lib/utils";
+import { normalizePhoneForDB, formatPhoneForDisplay, maskPhone } from "@/lib/phoneUtils";
 import { getErrorMessage } from "@/lib/errorMessages";
 
 const Members = () => {
   const [search, setSearch] = useState("");
-  const { isAdmin, isGerente, isAdminCCM } = useAuth();
+  const { isAdmin, IsLider, isAdminCCM } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [nivelFilter, setNivelFilter] = useState("all");
@@ -36,7 +36,7 @@ const Members = () => {
   const [resettingPasswordMember, setResettingPasswordMember] = useState<any>(null);
   const [removePhoto, setRemovePhoto] = useState(false);
 
-  if (!isAdmin && !isGerente) {
+  if (!isAdmin && !IsLider) {
     return <Navigate to="/home" replace />;
   }
 
@@ -79,7 +79,7 @@ const Members = () => {
     setEditingMember(m);
     setEditName(m.fullName || "");
     setEditUsername(m.username || "");
-    setEditPhone(formatPhoneForDisplay(m.whatsappPhone || ""));
+    setEditPhone(maskPhone(formatPhoneForDisplay(m.whatsappPhone || "")));
     setEditRole(m.roles?.[0]?.role || "membro");
     setSelectedGroups(m.groupIds || []);
     setRemovePhoto(false);
@@ -178,7 +178,7 @@ const Members = () => {
               <label htmlFor={`mg-${g.id}`} className="text-sm font-medium">{g.name}</label>
             </div>
 
-            {isSelected && (editRole === "gerente" || editRole === "admin") && (
+            {isSelected && (editRole === "lider" || editRole === "admin") && (
               <div className="flex bg-muted rounded-md p-0.5 border">
                 <button
                   type="button"
@@ -211,10 +211,6 @@ const Members = () => {
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Users className="h-6 w-6 text-primary" />
-          Membros
-        </h1>
         {isAdmin && (
           <Button onClick={() => {
             setEditName(""); setEditPhone(""); setEditRole("membro"); setSelectedGroups([]);
@@ -242,7 +238,7 @@ const Members = () => {
           <SelectContent className="rounded-xl">
             <SelectItem value="all">Todos os Níveis</SelectItem>
             <SelectItem value="admin">Administradores</SelectItem>
-            <SelectItem value="gerente">Líderes (Gerentes)</SelectItem>
+            <SelectItem value="lider">Líderes</SelectItem>
             <SelectItem value="membro">Membros</SelectItem>
           </SelectContent>
         </Select>
@@ -257,7 +253,7 @@ const Members = () => {
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center shrink-0 shadow-inner border border-primary/20">
                     {member.avatarUrl ? (
-                      <img src={member.avatarUrl} alt="" className="h-full w-full rounded-full object-cover" />
+                      <img src={getUploadUrl(member.avatarUrl) || ""} alt="" className="h-full w-full rounded-full object-cover" />
                     ) : (
                       <span className="text-primary font-black text-lg sm:text-xl">
                         {(member.fullName || "?").charAt(0).toUpperCase()}
@@ -326,9 +322,9 @@ const Members = () => {
                     Pastor
                   </Badge>
                 )}
-                {member.roles?.some((r: any) => r.role === "gerente") && (
+                {member.roles?.some((r: any) => r.role === "lider") && (
                   <Badge variant="secondary" className="bg-emerald-500/15 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 uppercase text-[9px] px-2 py-0.5 rounded-md font-black border-0">
-                    Gerente
+                    Líder
                   </Badge>
                 )}
                 {(!member.roles || member.roles.length === 0 || member.roles.every((r: any) => r.role === "membro")) && (
@@ -381,20 +377,32 @@ const Members = () => {
               </div>
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Nome de Usuário (Login)</Label>
-                <Input
-                  value={editUsername}
-                  onChange={e => setEditUsername(e.target.value)}
-                  placeholder="ex: joao.silva"
-                  className="rounded-xl h-11"
-                  readOnly={!isAdminCCM}
-                />
+                <div className="relative flex items-center">
+                  <Input
+                    value={editUsername}
+                    onChange={e => setEditUsername(e.target.value)}
+                    placeholder="ex: joao.silva"
+                    className={cn("rounded-xl h-11", editUsername && "pr-[140px]")}
+                    readOnly={!isAdminCCM}
+                  />
+                  {editUsername && (
+                    <span className="absolute right-3 text-muted-foreground pointer-events-none font-medium text-xs">
+                      @ccmergulho.com
+                    </span>
+                  )}
+                </div>
                 {!isAdminCCM && <p className="text-[10px] text-amber-600 font-medium">Somente ADM CCM pode alterar o login/email.</p>}
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">WhatsApp</Label>
-                <Input value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="(11) 99999-9999" className="rounded-xl h-11" />
+                <Input 
+                  value={editPhone} 
+                  onChange={e => setEditPhone(maskPhone(e.target.value))} 
+                  placeholder="(11) 99999-9999" 
+                  className="rounded-xl h-11" 
+                />
               </div>
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Permissão Global</Label>
@@ -402,7 +410,7 @@ const Members = () => {
                   <SelectTrigger className="rounded-xl h-11"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="membro">Membro</SelectItem>
-                    <SelectItem value="gerente">Líder</SelectItem>
+                    <SelectItem value="lider">Líder</SelectItem>
                     <SelectItem value="pastor">Pastor</SelectItem>
                     <SelectItem value="admin">Administrador</SelectItem>
                     {isAdminCCM && (
@@ -442,7 +450,20 @@ const Members = () => {
               </div>
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Nome de Usuário (Login)</Label>
-                <Input value={editUsername} onChange={e => setEditUsername(e.target.value)} placeholder="ex: joao.silva" required className="rounded-xl h-11" />
+                <div className="relative flex items-center">
+                  <Input 
+                    value={editUsername} 
+                    onChange={e => setEditUsername(e.target.value)} 
+                    placeholder="ex: joao.silva" 
+                    required 
+                    className={cn("rounded-xl h-11", editUsername && "pr-[140px]")} 
+                  />
+                  {editUsername && (
+                    <span className="absolute right-3 text-muted-foreground pointer-events-none font-medium text-xs">
+                      @ccmergulho.com
+                    </span>
+                  )}
+                </div>
                 <p className="text-[10px] text-muted-foreground italic">Usado para entrar no sistema</p>
               </div>
             </div>
@@ -450,7 +471,12 @@ const Members = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">WhatsApp (opcional)</Label>
-                <Input value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="(11) 99999-9999" className="rounded-xl h-11" />
+                <Input 
+                  value={editPhone} 
+                  onChange={e => setEditPhone(maskPhone(e.target.value))} 
+                  placeholder="(11) 99999-9999" 
+                  className="rounded-xl h-11" 
+                />
               </div>
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Permissão Global</Label>
@@ -458,7 +484,7 @@ const Members = () => {
                   <SelectTrigger className="rounded-xl h-11"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="membro">Membro</SelectItem>
-                    <SelectItem value="gerente">Líder</SelectItem>
+                    <SelectItem value="lider">Líder</SelectItem>
                     <SelectItem value="pastor">Pastor</SelectItem>
                     <SelectItem value="admin">Administrador</SelectItem>
                     {isAdminCCM && (

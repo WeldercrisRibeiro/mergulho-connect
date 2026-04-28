@@ -23,7 +23,7 @@ import { getErrorMessage } from "@/lib/errorMessages";
 // ─── WhatsApp Icon SVG ────────────────────────────────────────────────────────
 const WhatsAppIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
   </svg>
 );
 
@@ -43,7 +43,7 @@ const generateSafeId = () => {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
     return crypto.randomUUID();
   }
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
     const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
   });
@@ -53,7 +53,7 @@ const WA_API = import.meta.env.VITE_WA_API_URL || "http://localhost:3002";
 
 // ─── Agenda principal ─────────────────────────────────────────────────────────
 const Agenda = () => {
-  const { user, isAdmin, isGerente, managedGroupIds, userGroupIds } = useAuth();
+  const { user, isAdmin, IsLider, managedGroupIds, userGroupIds } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [sharingEvent, setSharingEvent] = useState<any>(null);
@@ -95,7 +95,7 @@ const Agenda = () => {
     queryKey: ["user-groups", user?.id],
     enabled: !!user && !isAdmin,
     queryFn: async () => {
-      const { data } = await api.get('/member-groups');
+      const { data } = await api.get('/member-groups/my');
       return data?.map((m: any) => m.groupId) || [];
     },
   });
@@ -190,7 +190,7 @@ const Agenda = () => {
   const cancelRegistrationMutation = useMutation({
     mutationFn: async (eventId: string) => {
       await api.delete('/event-registrations', { params: { eventId, userId: user?.id } });
-      await api.delete('/event-checkins', { params: { eventId, userId: user?.id } }).catch(()=>{});
+      await api.delete('/event-checkins', { params: { eventId, userId: user?.id } }).catch(() => { });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["events"] });
@@ -303,19 +303,15 @@ const Agenda = () => {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6 pb-20 md:pb-8">
-      <div className="sticky top-14 z-20 -mx-4 px-4 py-3 md:static md:p-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/75 border-b md:border-0">
-        <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Calendar className="h-6 w-6 text-primary" />
-          Agenda
-        </h1>
-        {(isAdmin || isGerente) && (
-          <Button onClick={() => { resetForm(); setCreatingEvent(true); }} size="sm" className="md:h-10">
-            <Plus className="h-4 w-4 mr-1" /> Novo Evento
-          </Button>
-        )}
-      </div>
+    <div className="px-4 pt-0 md:p-8 max-w-4xl mx-auto space-y-2 md:space-y-6 pb-20 md:pb-8">
+      <div className="sticky top-0 z-20 -mx-4 px-4 pt-0 pb-1 md:static md:p-0 bg-background/95 backdrop-blur-sm border-b md:border-0">
+        <div className="flex items-center justify-end py-2">
+          {(isAdmin || IsLider) && (
+            <Button onClick={() => { resetForm(); setCreatingEvent(true); }} size="sm" className="h-8 md:h-10 text-xs md:text-sm px-3 md:px-4">
+              <Plus className="h-3.5 w-3.5 mr-1" /> Novo Evento
+            </Button>
+          )}
+        </div>
       </div>
 
       {showFilters && (
@@ -346,7 +342,7 @@ const Agenda = () => {
           const isPaid = event.price > 0;
           const isRegistered = event.registrations?.some((r: any) => r.userId === user?.id);
           const hasCheckedIn = event.checkins?.some((c: any) => c.userId === user?.id);
-          const canManageEvent = isAdmin || (isGerente && event.groupId && managedGroupIds.includes(event.groupId));
+          const canManageEvent = isAdmin || (IsLider && event.groupId && managedGroupIds.includes(event.groupId));
           const isSendingNotify = notifyingEvent?.id === event.id;
 
           return (
@@ -409,7 +405,7 @@ const Agenda = () => {
               </CardHeader>
               <CardContent>
                 {event.description && <p className="text-sm text-muted-foreground mb-3">{event.description}</p>}
-                <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="flex items-center gap-3 text-[10px] sm:text-xs">
                     {!event.requireCheckin && (
                       <>
@@ -432,14 +428,15 @@ const Agenda = () => {
                       </Button>
                     )}
                   </div>
-                  <div className="flex gap-2 flex-wrap">
-                    {event.eventType !== "conference" && !event.requireCheckin && (
+                  <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
+                    {event.eventType !== "conference" && (
                       <>
                         <Button
                           size="sm"
                           variant={userRsvp?.status === "confirmed" ? "default" : "outline"}
                           disabled={userRsvp?.status === "confirmed" || (pendingRsvp?.eventId === event.id && pendingRsvp.status === "confirmed")}
                           onClick={() => rsvpMutation.mutate({ eventId: event.id, status: "confirmed" })}
+                          className="w-full sm:w-auto"
                         >
                           {pendingRsvp?.eventId === event.id && pendingRsvp.status === "confirmed" ? (
                             <>
@@ -457,6 +454,7 @@ const Agenda = () => {
                           variant={userRsvp?.status === "declined" ? "destructive" : "outline"}
                           disabled={userRsvp?.status === "declined" || (pendingRsvp?.eventId === event.id && pendingRsvp.status === "declined")}
                           onClick={() => rsvpMutation.mutate({ eventId: event.id, status: "declined" })}
+                          className="w-full sm:w-auto"
                         >
                           {pendingRsvp?.eventId === event.id && pendingRsvp.status === "declined" ? (
                             <>
@@ -471,30 +469,30 @@ const Agenda = () => {
                       </>
                     )}
                     {isPaid && event.pixKey && (
-                      <Button size="sm" variant="outline" onClick={() => setPixDialogEvent(event)}>
+                      <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => setPixDialogEvent(event)}>
                         <QrCode className="h-4 w-4 mr-1" /> PIX
                       </Button>
                     )}
                     {isComplex && (
                       isRegistered ? (
-                        <Button size="sm" variant="destructive" onClick={() => setCancelingRegistration(event)}>
+                        <Button size="sm" variant="destructive" className="w-full sm:w-auto" onClick={() => setCancelingRegistration(event)}>
                           <X className="h-4 w-4 mr-1" /> Cancelar Inscrição
                         </Button>
                       ) : (
-                        <Button size="sm" variant="secondary" onClick={() => registerMutation.mutate(event.id)}>
+                        <Button size="sm" variant="secondary" className="w-full sm:w-auto" onClick={() => registerMutation.mutate(event.id)}>
                           <Ticket className="h-4 w-4 mr-1" /> Inscrever-se
                         </Button>
                       )
                     )}
 
-                    {/* ── Botão WhatsApp Aviso — visível apenas para admin/gerente ── */}
+                    {/* ── Botão WhatsApp Aviso — visível apenas para admin ── */}
                     {canManageEvent && (
                       <Button
                         size="sm"
                         variant="outline"
                         disabled={isSendingNotify}
                         onClick={() => handleNotifyWhatsApp(event)}
-                        className="gap-1.5 border-green-400 text-green-600 hover:bg-green-50 dark:hover:bg-green-950/30 hover:border-green-500"
+                        className="w-full gap-1.5 border-green-400 text-green-600 hover:bg-green-50 dark:hover:bg-green-950/30 hover:border-green-500 sm:w-auto"
                         title={`Avisar via WhatsApp (${event.isGeneral ? "Geral" : event.groups?.name || "Grupo"})`}
                       >
                         {isSendingNotify ? (
@@ -506,14 +504,14 @@ const Agenda = () => {
                       </Button>
                     )}
 
-                    <Button size="sm" variant="outline" onClick={() => setSharingEvent(event)} className="gap-1">
+                    <Button size="sm" variant="outline" onClick={() => setSharingEvent(event)} className="w-full gap-1 sm:w-auto">
                       <Share2 className="h-4 w-4" /> Compartilhar
                     </Button>
                     {event.requireCheckin && isRegistered && (
                       <Button
                         size="sm"
                         variant={hasCheckedIn ? "default" : "secondary"}
-                        className="gap-1"
+                        className="w-full gap-1 sm:w-auto"
                         disabled={hasCheckedIn}
                         onClick={() => !hasCheckedIn && setScanningEvent(event)}
                       >
@@ -549,7 +547,7 @@ const Agenda = () => {
       />
 
       {/* WhatsApp Notify Dialog */}
-      <EventNotifyDialog 
+      <EventNotifyDialog
         event={notifyingEvent}
         open={!!notifyingEvent}
         onClose={() => setNotifyingEvent(null)}
@@ -557,14 +555,14 @@ const Agenda = () => {
 
       {/* Create/Edit Dialog */}
       <Dialog open={creatingEvent || !!editingEvent} onOpenChange={val => { if (!val) { setCreatingEvent(false); setEditingEvent(null); } }}>
-        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto rounded-3xl border-0 shadow-2xl custom-scrollbar">
-          <DialogHeader>
+        <DialogContent className="w-[95vw] sm:max-w-[800px] max-h-[90svh] overflow-y-auto rounded-[1.75rem] sm:rounded-3xl border-0 p-0 shadow-2xl custom-scrollbar">
+          <DialogHeader className="px-5 pt-6 sm:px-6">
             <DialogTitle className="text-2xl font-bold text-primary flex items-center gap-2">
               {editingEvent ? <Edit2 className="h-6 w-6" /> : <Plus className="h-6 w-6" />}
               {editingEvent ? "Editar Evento" : "Novo Evento"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-8 py-6">
+          <div className="space-y-8 px-5 py-6 sm:px-6">
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground border-b pb-2">
                 <Info className="h-3.5 w-3.5" /> Informações Básicas
@@ -606,10 +604,10 @@ const Agenda = () => {
               <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground border-b pb-2">
                 <ImagePlus className="h-3.5 w-3.5" /> Banner do Evento
               </div>
-              <div className="flex gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row">
                 <Input placeholder="URL da imagem..." value={bannerUrl} onChange={e => setBannerUrl(e.target.value)} className="flex-1 rounded-xl h-11" />
                 <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
-                <Button variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="rounded-xl px-6">
+                <Button variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="rounded-xl px-6 sm:self-start">
                   {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
                   {uploading ? "Sendo..." : "Upload"}
                 </Button>
@@ -742,9 +740,9 @@ const Agenda = () => {
               </div>
             </div>
           </div>
-          <DialogFooter className="gap-2 pb-2">
-            <Button variant="outline" onClick={() => { setCreatingEvent(false); setEditingEvent(null); }} className="rounded-xl border-2">Cancelar</Button>
-            <Button onClick={() => saveMutation.mutate()} disabled={!title || !date || saveMutation.isPending} className="rounded-xl px-12 font-bold">
+          <DialogFooter className="sticky bottom-0 gap-2 border-t bg-background/95 px-5 py-4 pb-safe backdrop-blur-sm sm:px-6">
+            <Button variant="outline" onClick={() => { setCreatingEvent(false); setEditingEvent(null); }} className="w-full rounded-xl border-2 sm:w-auto">Cancelar</Button>
+            <Button onClick={() => saveMutation.mutate()} disabled={!title || !date || saveMutation.isPending} className="w-full rounded-xl px-12 font-bold sm:w-auto">
               {saveMutation.isPending ? "Salvando..." : editingEvent ? "Salvar Alterações" : "Criar Evento Agora"}
             </Button>
           </DialogFooter>
@@ -842,10 +840,9 @@ const Agenda = () => {
             setScanningEvent(null);
             if (decoded === scanningEvent.checkinQrSecret) {
               try {
-                await api.post("/event-checkins", 
+                await api.post("/event-checkins",
                   { eventId: scanningEvent.id, userId: user!.id }
                 );
-                if (error && error.code !== "23505") throw error;
                 toast({ title: "✅ Presença confirmada!", description: `Check-in registrado para "${scanningEvent.title}".` });
                 queryClient.invalidateQueries({ queryKey: ["events"] });
               } catch (err: any) {
@@ -890,7 +887,7 @@ const RsvpList = ({ event }: { event: any }) => {
         const { data } = await api.get('/profiles');
         relevantProfiles = data || [];
       } else if (event.groupId) {
-        const { data: gm } = await api.get('/member-groups', { params: { groupId: event.groupId } });
+        const { data: gm } = await api.get(`/member-groups/group/${event.groupId}`);
         const { data: profiles } = await api.get('/profiles');
         const nameMap = new Map(profiles?.map((p: any) => [p.userId, p.fullName]));
         relevantProfiles = gm?.map((m: any) => ({
@@ -979,8 +976,8 @@ const RsvpSection = ({ label, items, color, icon }: { label: string; items: any[
       {items.length === 0
         ? <p className="text-xs text-muted-foreground italic px-2">Nenhum</p>
         : items.map(u => (
-            <div key={u.userId} className="text-[13px] px-3 py-2 bg-muted/50 rounded-lg font-medium">{u.name}</div>
-          ))
+          <div key={u.userId} className="text-[13px] px-3 py-2 bg-muted/50 rounded-lg font-medium">{u.name}</div>
+        ))
       }
     </div>
   </section>

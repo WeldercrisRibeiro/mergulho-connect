@@ -59,14 +59,14 @@ const TagInput = ({
   };
   return (
     <div className="space-y-2">
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row">
         <Input
           value={draft}
           onChange={e => setDraft(e.target.value)}
           placeholder={placeholder}
           onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
         />
-        <Button type="button" variant="outline" size="sm" onClick={add} disabled={!draft.trim()}>
+        <Button type="button" variant="outline" size="sm" className="w-full sm:w-auto" onClick={add} disabled={!draft.trim()}>
           + Add
         </Button>
       </div>
@@ -321,19 +321,20 @@ const Reports = () => {
   const formOpen = creating || !!editing;
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-5">
+    <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-5 pb-20 md:pb-8">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
           <BarChart3 className="h-6 w-6 text-primary" />
           Relatórios
         </h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             variant={showFilters ? "default" : "outline"}
             size="sm"
             onClick={() => setShowFilters(v => !v)}
+            className="flex-1 sm:flex-none"
           >
             <Filter className="h-4 w-4 mr-1" />
             Filtros
@@ -341,7 +342,7 @@ const Reports = () => {
               <span className="ml-1.5 bg-white text-primary text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">!</span>
             )}
           </Button>
-          <Button onClick={() => { resetForm(); setCreating(true); }}>
+          <Button onClick={() => { resetForm(); setCreating(true); }} className="flex-1 sm:flex-none">
             <Plus className="h-4 w-4 mr-1" /> Novo Relatório
           </Button>
         </div>
@@ -351,7 +352,7 @@ const Reports = () => {
       {showFilters && (
         <Card className="border border-primary/20 shadow-none">
           <CardContent className="p-4 space-y-3">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs">De</Label>
                 <Input type="date" value={filterFrom} onChange={e => setFilterFrom(e.target.value)} />
@@ -584,12 +585,12 @@ const Reports = () => {
 
       {/* Dialog Formulário */}
       <Dialog open={formOpen} onOpenChange={v => { if (!v) { setCreating(false); setEditing(null); } }}>
-        <DialogContent className="sm:max-w-[680px] max-h-[88vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="w-[95vw] sm:max-w-[680px] max-h-[90svh] overflow-y-auto p-0">
+          <DialogHeader className="px-5 pt-6 sm:px-6">
             <DialogTitle>{editing ? "Editar Relatório" : "Novo Relatório"}</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-6 py-2">
+          <div className="space-y-6 px-5 py-2 sm:px-6">
 
             {/* Identificação */}
             <section className="space-y-3">
@@ -731,11 +732,11 @@ const Reports = () => {
 
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setCreating(false); setEditing(null); }}>
+          <DialogFooter className="sticky bottom-0 gap-2 bg-background/95 px-5 py-4 pb-safe backdrop-blur-sm sm:px-6">
+            <Button variant="outline" onClick={() => { setCreating(false); setEditing(null); }} className="w-full sm:w-auto">
               Cancelar
             </Button>
-            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
+            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="w-full sm:w-auto">
               {saveMutation.isPending ? "Salvando..." : editing ? "Salvar Alterações" : "Criar Relatório"}
             </Button>
           </DialogFooter>

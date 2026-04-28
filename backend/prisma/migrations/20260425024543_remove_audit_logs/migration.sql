@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "app_role" AS ENUM ('admin', 'admin_ccm', 'gerente', 'pastor', 'membro');
+CREATE TYPE "app_role" AS ENUM ('admin', 'admin_ccm', 'lider', 'pastor', 'membro');
 
 -- CreateEnum
 CREATE TYPE "payment_status" AS ENUM ('pending', 'paid', 'cancelled');

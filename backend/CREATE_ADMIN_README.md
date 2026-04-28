@@ -109,7 +109,7 @@ npm run create-admin
 
 - `admin` - Administrador completo
 - `admin_ccm` - Administrador da CCM
-- `gerente` - Gerente
+- `lider` - Lider
 - `pastor` - Pastor
 - `membro` - Membro comum
 
@@ -174,7 +174,7 @@ npm run create-admin
 
 - `admin` - Administrador completo
 - `admin_ccm` - Administrador da CCM
-- `gerente` - Gerente
+- `lider` - Lider
 - `pastor` - Pastor
 - `membro` - Membro comum
 

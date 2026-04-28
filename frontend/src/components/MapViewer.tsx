@@ -37,6 +37,8 @@ export const MapViewer = ({
   className = '',
   showOpenInMapsButton = true,
 }: MapViewerProps) => {
+  const LeafletMapContainer = MapContainer as any;
+  const LeafletTileLayer = TileLayer as any;
   const coordinates: LatLngExpression = [lat, lng];
 
   const handleOpenInGoogleMaps = () => {
@@ -52,14 +54,14 @@ export const MapViewer = ({
   return (
     <div className={cn('relative rounded-3xl overflow-hidden bg-muted/50 border-2 border-white/20 shadow-xl', height, className)}>
       {/* Mapa */}
-      <MapContainer
+      <LeafletMapContainer
         center={coordinates}
         zoom={zoom}
         scrollWheelZoom={true}
         style={{ height: '100%', width: '100%' }}
         zoomControl={false}
       >
-        <TileLayer
+        <LeafletTileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
@@ -72,7 +74,7 @@ export const MapViewer = ({
             </div>
           </Popup>
         </Marker>
-      </MapContainer>
+      </LeafletMapContainer>
 
       {/* Overlay com controles */}
       {showControls && (

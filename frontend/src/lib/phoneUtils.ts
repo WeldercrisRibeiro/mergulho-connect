@@ -33,16 +33,16 @@ export function normalizePhoneForDB(raw: string): string | null {
     number = number.slice(2);
   }
 
-  // Agora deve ter 10 (DDD + 8) ou 11 (DDD + 9 + 8) dígitos
+  // Se tem 11 dígitos (DDD + 9 + 8), o sistema de disparos exige remover o "9"
+  // Resultado: 55 + DDD (2) + 8 dígitos = 12 dígitos
   if (number.length === 11) {
-    // DDD + 9 + 8 dígitos → remove o nono dígito
     const ddd = number.slice(0, 2);
-    const rest = number.slice(3); // pula o "9"
+    const rest = number.slice(3); // remove o "9"
     return `55${ddd}${rest}`;
   }
 
+  // Se tem 10 dígitos (DDD + 8), apenas adiciona o 55
   if (number.length === 10) {
-    // DDD + 8 dígitos → já no formato correto
     return `55${number}`;
   }
 
@@ -83,4 +83,29 @@ export function formatPhoneForDisplay(raw: string): string {
 
   // Fallback: retorna o original
   return raw;
+}
+
+/**
+ * Aplica uma máscara visual ao telefone conforme o usuário digita.
+ * Formato: (XX) XXXXX-XXXX
+ */
+export function maskPhone(value: string): string {
+  if (!value) return "";
+  
+  let digits = value.replace(/\D/g, "");
+  
+  // Se o usuário colou um número com 55 no início, removemos para a máscara visual
+  // mas apenas se o número resultante tiver um tamanho de celular brasileiro (10 ou 11 dígitos)
+  if (digits.startsWith("55") && (digits.length === 12 || digits.length === 13)) {
+    digits = digits.slice(2);
+  }
+  
+  // Limita a 11 dígitos (DDD + 9 + 8)
+  digits = digits.slice(0, 11);
+  
+  if (digits.length === 0) return "";
+  if (digits.length <= 2) return `(${digits}`;
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 }

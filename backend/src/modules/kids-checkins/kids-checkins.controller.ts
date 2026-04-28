@@ -6,9 +6,9 @@ import { UpdateKidsCheckinDto } from './dto/update-kids-checkin.dto';
 
 @ApiTags('Kids Checkins')
 @ApiBearerAuth()
-@Controller('kids-checkins')
+@Controller('checkins')
 export class KidsCheckinsController {
-  constructor(private readonly service: KidsCheckinsService) {}
+  constructor(private readonly service: KidsCheckinsService) { }
   @Post() create(@Body() dto: CreateKidsCheckinDto) { return this.service.create(dto); }
   @Get()
   @ApiQuery({ name: 'eventId', required: false })

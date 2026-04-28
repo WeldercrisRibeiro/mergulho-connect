@@ -4,7 +4,7 @@ export class RegisterDto {
   @IsString({ message: 'Nome é obrigatório.' })
   name: string;
 
-  @IsEmail({}, { message: 'Email inválido.' })
+  @IsString({ message: 'E-mail ou Login inválido.' })
   email: string;
 
   @IsString()

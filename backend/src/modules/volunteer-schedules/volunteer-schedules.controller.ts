@@ -11,9 +11,9 @@ export class VolunteerSchedulesController {
   constructor(private readonly service: VolunteerSchedulesService) {}
   @Post() create(@Body() dto: CreateVolunteerScheduleDto) { return this.service.create(dto); }
   @Get()
-  @ApiQuery({ name: 'groupId', required: false })
+  @ApiQuery({ name: 'groupIds', required: false })
   @ApiQuery({ name: 'userId', required: false })
-  findAll(@Query('groupId') groupId?: string, @Query('userId') userId?: string) { return this.service.findAll(groupId, userId); }
+  findAll(@Query('groupIds') groupIds?: string, @Query('userId') userId?: string) { return this.service.findAll(groupIds, userId); }
   @Get(':id') findOne(@Param('id') id: string) { return this.service.findOne(id); }
   @Patch(':id') update(@Param('id') id: string, @Body() dto: UpdateVolunteerScheduleDto) { return this.service.update(id, dto); }
   @Delete(':id') remove(@Param('id') id: string) { return this.service.remove(id); }

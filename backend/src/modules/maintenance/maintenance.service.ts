@@ -40,6 +40,11 @@ export class MaintenanceService {
 
   async createUser(dto: CreateMaintenanceUserDto, executorId: string) {
     try {
+      // Garante que o email tenha o domínio se for apenas um login
+      if (dto.email && !dto.email.includes('@')) {
+        dto.email = dto.email.trim().toLowerCase() + "@ccmergulho.com";
+      }
+
       const existingUser = await this.prisma.user.findUnique({ where: { email: dto.email } });
       if (existingUser) {
         throw new BadRequestException('Usuário com este e-mail já existe.');
@@ -213,12 +218,12 @@ export class MaintenanceService {
         name: 'Criar Novo Usuário/Admin',
         description: 'Cria um novo usuário com perfil e cargo definidos.',
         fields: [
-          { name: 'email', label: 'E-mail', type: 'email', required: true },
+          { name: 'email', label: 'Login', type: 'text', required: true },
           { name: 'password', label: 'Senha', type: 'password', required: true },
           { name: 'fullName', label: 'Nome Completo', type: 'text', required: true },
           { name: 'username', label: 'Nome de Usuário', type: 'text', required: true },
           { name: 'whatsappPhone', label: 'WhatsApp', type: 'text', required: false },
-          { name: 'role', label: 'Cargo (Role)', type: 'select', options: ['admin', 'admin_ccm', 'gerente', 'pastor', 'membro'], required: true },
+          { name: 'role', label: 'Cargo (Role)', type: 'select', options: ['admin', 'admin_ccm', 'gerente', 'lider', 'pastor', 'membro'], required: true },
         ],
       },
       {
@@ -248,7 +253,7 @@ export class MaintenanceService {
         description: 'Muda o cargo/nível de acesso de um usuário.',
         fields: [
           { name: 'userId', label: 'Selecionar Membro', type: 'user_select', required: true },
-          { name: 'role', label: 'Novo Cargo', type: 'select', options: ['admin', 'admin_ccm', 'gerente', 'pastor', 'membro'], required: true },
+          { name: 'role', label: 'Novo Cargo', type: 'select', options: ['admin', 'admin_ccm', 'lider', 'pastor', 'membro'], required: true },
         ],
       },
     ];

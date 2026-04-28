@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errorMessages";
+import { maskPhone } from "@/lib/phoneUtils";
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
@@ -253,8 +254,9 @@ const Auth = () => {
                     type="tel"
                     className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium"
                     value={reqPhone}
-                    onChange={(e) => setReqPhone(e.target.value)}
-                    placeholder="Seu melhor contato"
+                    onChange={(e) => setReqPhone(maskPhone(e.target.value))}
+                    placeholder="(85) 99266-4889"
+                    maxLength={15}
                     required
                   />
                 </div>
@@ -282,47 +284,33 @@ const Auth = () => {
                 </div>
                 <div className="space-y-2 text-left">
                   <Label htmlFor="ch-oldpass">Senha Atual</Label>
-                  <div className="relative">
-                    <Input
-                      id="ch-oldpass"
-                      type={showPassword ? "text" : "password"}
-                      className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium pr-10"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Sua senha atual"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors p-1 rounded-md"
-                    >
-                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    </button>
-                  </div>
+                  <Input
+                    id="ch-oldpass"
+                    type={showPassword ? "text" : "password"}
+                    className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium pr-10"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Sua senha atual"
+                    eyeButton={true}
+                    onEyeClick={() => setShowPassword(!showPassword)}
+                    required
+                  />
                 </div>
                 <div className="space-y-2 text-left">
                   <Label htmlFor="ch-newpass">Nova Senha</Label>
-                  <div className="relative">
-                    <Input
-                      id="ch-newpass"
-                      type={showPassword ? "text" : "password"}
-                      className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium pr-10"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="Mínimo 6 caracteres"
-                      required
-                      minLength={6}
-                      autoComplete="new-password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors p-1 rounded-md"
-                    >
-                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    </button>
-                  </div>
+                  <Input
+                    id="ch-newpass"
+                    type={showPassword ? "text" : "password"}
+                    className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium pr-10"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Mínimo 6 caracteres"
+                    eyeButton={true}
+                    onEyeClick={() => setShowPassword(!showPassword)}
+                    required
+                    minLength={6}
+                    autoComplete="new-password"
+                  />
                 </div>
                 <Button type="submit" className="w-full h-12 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl shadow-md hover:shadow-lg transition-all text-base mt-4" disabled={loading}>
                   {loading ? "Processando..." : "Alterar Senha"}
@@ -362,26 +350,19 @@ const Auth = () => {
                       Trocar Senha?
                     </button>
                   </div>
-                  <div className="relative group/password">
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Senha"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium pr-10"
-                      required
-                      minLength={6}
-                      autoComplete="current-password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors p-1 rounded-md"
-                    >
-                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    </button>
-                  </div>
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Senha"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-12 bg-white/50 dark:bg-black/20 border-white/30 dark:border-white/10 rounded-xl focus:ring-primary/50 text-base font-medium pr-10"
+                    eyeButton={true}
+                    onEyeClick={() => setShowPassword(!showPassword)}
+                    required
+                    minLength={6}
+                    autoComplete="current-password"
+                  />
                 </div>
                 <Button type="submit" className="w-full h-12 bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 text-white rounded-xl shadow-md hover:shadow-lg transition-all text-base mt-4" disabled={loading}>
                   {loading ? "Aguarde..." : "Entrar na Comunidade"}

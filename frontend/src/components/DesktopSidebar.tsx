@@ -51,6 +51,7 @@ const navGroups: {
         { path: "/departamentos", icon: Shield, label: "Departamentos", adminOnly: true },
         { path: "/relatorios", icon: BarChart3, label: "Relatórios", adminOnly: true, routine: "relatorios" },
         { path: "/whatsapp", icon: Smartphone, label: "WhatsApp", adminOnly: true },
+        { path: "/gestao-rotinas", icon: ShieldCheck, label: "Acessos", adminOnly: true },
         { path: "/configuracoes", icon: Settings, label: "Ajustes", adminOnly: true },
       ]
     }
@@ -63,7 +64,7 @@ interface DesktopSidebarProps {
 
 const DesktopSidebar = ({ collapsed = false, onToggle }: DesktopSidebarProps) => {
   const location = useLocation();
-  const { isAdmin, isAdminCCM, isGerente, signOut, profile, user, routinePermissions, unreadAnnouncements } = useAuth();
+  const { isAdmin, isAdminCCM, IsLider, signOut, profile, user, routinePermissions, unreadAnnouncements } = useAuth();
   const { theme } = useTheme();
   const [totalUnread, setTotalUnread] = useState(0);
 
@@ -85,10 +86,10 @@ const DesktopSidebar = ({ collapsed = false, onToggle }: DesktopSidebarProps) =>
 
         const directUnread = new Set<string>();
         const groupUnreadSet = new Set<string>();
-        
+
         msgs.forEach((m: any) => {
           if (m.senderId === user.id) return;
-          
+
           if (!m.groupId && m.recipientId === user.id) {
             const lastRead = readTs[m.senderId];
             if (!lastRead || new Date(m.createdAt) > new Date(lastRead)) {
@@ -96,11 +97,11 @@ const DesktopSidebar = ({ collapsed = false, onToggle }: DesktopSidebarProps) =>
             }
           }
           else if (m.groupId) {
-             // In a perfect system, DesktopSidebar should know user's groupIds.
-             // We'll just assume they fetch them or we check if the msg was read:
+            // In a perfect system, DesktopSidebar should know user's groupIds.
+            // We'll just assume they fetch them or we check if the msg was read:
             const lastRead = readTs[m.groupId];
             if (!lastRead || new Date(m.createdAt) > new Date(lastRead)) {
-               groupUnreadSet.add(m.groupId);
+              groupUnreadSet.add(m.groupId);
             }
           }
         });
@@ -159,7 +160,7 @@ const DesktopSidebar = ({ collapsed = false, onToggle }: DesktopSidebarProps) =>
           {navGroups.map((group) => {
             const filteredItems = group.items.filter(item => {
               if (item.adminOnly && !isAdmin) return false;
-              
+
               // Se tem routine key e não é admin: exige permissão explícita (true)
               if (item.routine && !isAdmin) {
                 if (routinePermissions[item.routine] !== true) return false;
@@ -237,7 +238,7 @@ const DesktopSidebar = ({ collapsed = false, onToggle }: DesktopSidebarProps) =>
               <Button
                 variant="ghost"
                 size={collapsed ? "icon" : "sm"}
-                className={cn("text-muted-foreground hover:text-destructive transition-colors", !collapsed && "w-full justify-start")}
+                className={cn("text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all font-bold", !collapsed && "w-full justify-start")}
                 onClick={signOut}
               >
                 <LogOut className="h-4 w-4 shrink-0" />

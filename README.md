@@ -51,12 +51,12 @@ mergulho-connect/
 |---|---|---|
 | `auth` | `/api/auth` | Login, registro, JWT |
 | `profiles` | `/api/profiles` | Perfis de usuários |
-| `user-roles` | `/api/user-roles` | Permissões (admin, gerente, membro) |
+| `user-roles` | `/api/user-roles` | Permissões (admin, lider, membro) |
 | `events` | `/api/events` | Cultos e eventos |
 | `event-checkins` | `/api/event-checkins` | Presença em eventos |
 | `event-rsvps` | `/api/event-rsvps` | Confirmação de presença |
 | `event-registrations` | `/api/event-registrations` | Inscrições em eventos |
-| `kids-checkins` | `/api/kids-checkins` | Controle de crianças e volumes |
+| `checkins` | `/api/checkins` | Controle de crianças e volumes |
 | `groups` | `/api/groups` | Departamentos/células |
 | `member-groups` | `/api/member-groups` | Vínculo membro-departamento |
 | `messages` | `/api/messages` | Chat interno (WebSocket) |
@@ -90,18 +90,18 @@ mergulho-connect/
 | `/home` | `HomePage` | Autenticado |
 | `/agenda` | `Agenda` | Autenticado |
 | `/devocionais` | `Devotionals` | Autenticado |
-| `/membros` | `Members` | Admin/Gerente |
+| `/membros` | `Members` | Admin |
 | `/chat` | `Chat` | Autenticado |
 | `/perfil` | `Profile` | Autenticado |
 | `/departamentos` | `Groups` | Autenticado |
 | `/configuracoes` | `Settings` | Admin |
 | `/voluntarios` | `Volunteers` | Autenticado |
-| `/relatorios` | `Reports` | Admin/Gerente |
-| `/checkin-kids` | `KidsCheckin` | Admin/Gerente |
+| `/relatorios` | `Reports` | Admin |
+| `/checkin-kids` | `KidsCheckin` | Admin |
 | `/Disparos` | `AdminNotices` | Admin |
 | `/whatsapp` | `AdminWhatsApp` | Admin |
-| `/gestao-rotinas` | `GroupPermissions` | Admin/Gerente |
-| `/tesouraria` | `Tesouraria` | Admin/Gerente |
+| `/gestao-rotinas` | `GroupPermissions` | Admin |
+| `/tesouraria` | `Tesouraria` | Admin |
 
 ---
 
@@ -111,7 +111,7 @@ mergulho-connect/
 |---|---|
 | `admin_ccm` | Super admin — acesso total, gerencia outros admins |
 | `admin` | Administrador da igreja |
-| `gerente` | Líder de departamento |
+| `lider` | Líder de departamento |
 | `pastor` | Pastor |
 | `membro` | Membro comum |
 

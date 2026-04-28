@@ -22,7 +22,7 @@ const HomePage = () => {
     queryFn: async () => {
       if (!user) return null;
       // Backend: we must get all and filter locally if the endpoint doesn't support complex params yet
-      const { data } = await api.get("/kids-checkins", { params: { status: "active" } });
+      const { data } = await api.get("/checkins", { params: { status: "active" } });
       const active = data?.find((c: any) => c.guardianId === user.id || c.guardian_id === user.id);
       return active || null;
     },
@@ -52,8 +52,8 @@ const HomePage = () => {
       if (!user) return [];
       const { data: annData } = await api.get("/announcements");
       // Filtros simplificados no frontend por enquanto
-      const filtered = annData?.filter((a: any) => 
-        a.type === 'general' || a.targetUserId === user.id || 
+      const filtered = annData?.filter((a: any) =>
+        a.type === 'general' || a.targetUserId === user.id ||
         (a.type === 'group' && userGroupIds.includes(a.groupId))
       ).slice(0, 5) || [];
       return filtered;
@@ -106,7 +106,7 @@ const HomePage = () => {
                 Sua vida cristã em um só lugar.
               </p>
             </div>
-            
+
             <div className="hidden md:block relative z-20">
               <img src="/idvmergulho/logo-white.png" alt="Logo" className="h-14 w-auto drop-shadow-2xl opacity-90" />
             </div>
@@ -119,9 +119,9 @@ const HomePage = () => {
         <div className="px-4 mt-6">
           <div className="max-w-6xl mx-auto rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-2xl ring-4 ring-white/10 dark:ring-white/5 border-4 border-muted/20 bg-muted/10">
             {siteSettings?.homepage_banner && (
-              <img 
-                src={siteSettings.homepage_banner} 
-                alt="Banner Desktop" 
+              <img
+                src={getUploadUrl(siteSettings.homepage_banner) || ""}
+                alt="Banner Desktop"
                 className={cn(
                   "w-full h-auto max-h-[500px] lg:max-h-[600px] object-cover aspect-video md:aspect-[16/5]",
                   siteSettings.homepage_banner_mobile ? "hidden md:block" : "block"
@@ -129,9 +129,9 @@ const HomePage = () => {
               />
             )}
             {siteSettings?.homepage_banner_mobile && (
-              <img 
-                src={siteSettings.homepage_banner_mobile} 
-                alt="Banner Mobile" 
+              <img
+                src={getUploadUrl(siteSettings.homepage_banner_mobile) || ""}
+                alt="Banner Mobile"
                 className={cn(
                   "w-full h-auto object-cover aspect-[4/5] sm:aspect-square md:hidden",
                   !siteSettings.homepage_banner ? "block" : ""
@@ -173,15 +173,14 @@ const HomePage = () => {
         )}
 
         {/* Quick Actions (Funções Liberadas) */}
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        {/*<div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {[
             { icon: Calendar, label: "Agenda", path: "/agenda", color: skin !== "default" ? "bg-primary text-white" : "bg-brand-cyan text-white", routine: "agenda" },
             { icon: BookOpen, label: "Devocionais", path: "/devocionais", color: skin !== "default" ? "bg-primary text-white" : "bg-brand-navy text-white", routine: "devocionais" },
             { icon: HandHeart, label: "Voluntários", path: "/voluntarios", color: skin !== "default" ? "bg-primary text-white" : "bg-brand-charcoal text-white", routine: "voluntarios" },
             { icon: MessageCircle, label: "Chat", path: "/chat", color: skin !== "default" ? "bg-primary text-white" : "bg-brand-navy text-white", routine: "chat" },
             { icon: Users, label: "Membros", path: "/membros", color: skin !== "default" ? "bg-primary text-white" : "bg-brand-cyan text-white", adminOnly: true, routine: "membros" },
-            { icon: ShieldCheck, label: "Check-in", path: "/checkin-kids", color: skin !== "default" ? "bg-primary text-white" : "bg-brand-navy text-white", adminOnly: true, routine: "kids" },
-            { icon: Megaphone, label: "Avisos", path: "/Disparos", color: skin !== "default" ? "bg-primary text-white" : "bg-brand-charcoal text-white", routine: "Disparos" ,adminOnly: true},
+            { icon: Megaphone, label: "Avisos", path: "/Disparos", color: skin !== "default" ? "bg-primary text-white" : "bg-brand-charcoal text-white", routine: "Disparos", adminOnly: true },
             { icon: BarChart3, label: "Relatórios", path: "/relatorios", color: skin !== "default" ? "bg-primary text-white" : "bg-brand-cyan text-white", adminOnly: true, routine: "relatorios" },
           ].filter((item: any) => {
             if (item.path === "/membros" && isAdminCCM) return false;
@@ -206,7 +205,7 @@ const HomePage = () => {
               </Card>
             </Link>
           ))}
-        </div>
+        </div>*/}
 
         {/* Announcements */}
         {announcements && announcements.length > 0 && (

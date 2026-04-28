@@ -40,7 +40,11 @@ export function VolunteerScheduleNotifyDialog({ schedule, open, onClose }: Volun
         timeZone: "America/Sao_Paulo",
       });
 
-      const scope = schedule.groupId ? `Membros do grupo ${schedule.groups?.name || "sem nome"}` : "Todos os membros";
+      const scope = schedule.itemUserId 
+        ? `Individualmente para ${schedule.profiles?.fullName || "o voluntário"}`
+        : schedule.groupId 
+          ? `Membros do grupo ${schedule.groups?.name || "sem nome"}` 
+          : "Todos os membros";
 
       let msg = `🔔 *Lembrete de Escala*\n\n`;
       msg += `📅 Data: *${formattedDate}*\n`;
@@ -60,11 +64,14 @@ export function VolunteerScheduleNotifyDialog({ schedule, open, onClose }: Volun
     mutationFn: async () => {
       const scheduledAt = new Date().toISOString();
       const formData = new FormData();
-      formData.append("title", `Aviso: Escala ${schedule.roleFunction}`);
+      formData.append("title", `Lembrete Individual: ${schedule.roleFunction}`);
       formData.append("content", message);
 
-      // Define alvo baseado na escala
-      if (schedule.groupId) {
+      // Define alvo individual se houver usuário atribuído
+      if (schedule.itemUserId) {
+        formData.append("type", "individual");
+        formData.append("targetUserId", schedule.itemUserId);
+      } else if (schedule.groupId) {
         formData.append("type", "group");
         formData.append("targetGroupId", schedule.groupId);
       } else {
@@ -72,6 +79,7 @@ export function VolunteerScheduleNotifyDialog({ schedule, open, onClose }: Volun
       }
 
       formData.append("priority", "high");
+
       formData.append("scheduledAt", scheduledAt);
       if (user?.id) formData.append("createdBy", user.id);
 
@@ -115,7 +123,13 @@ export function VolunteerScheduleNotifyDialog({ schedule, open, onClose }: Volun
           <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-2xl border border-blue-100 dark:border-blue-900/50">
             <Info className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
             <p className="text-xs text-blue-700 dark:text-blue-300">
-              O aviso será enviado para <strong>{schedule?.groupId ? `Membros do grupo ${schedule.groups?.name || "sem nome"}` : "Todos os membros"}</strong>.
+              O aviso será enviado para <strong>{
+                schedule?.itemUserId 
+                  ? `Individualmente para ${schedule.profiles?.fullName || "o voluntário"}`
+                  : schedule?.groupId 
+                    ? `Membros do grupo ${schedule.groups?.name || "sem nome"}` 
+                    : "Todos os membros"
+              }</strong>.
               Você pode ajustar a mensagem abaixo antes de enviar.
             </p>
           </div>

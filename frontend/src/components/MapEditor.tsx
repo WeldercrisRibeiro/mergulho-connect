@@ -38,6 +38,8 @@ export const MapEditor = ({
   zoom = 16,
   className = '',
 }: MapEditorProps) => {
+  const LeafletMapContainer = MapContainer as any;
+  const LeafletTileLayer = TileLayer as any;
   const coordinates: LatLngExpression = [lat, lng];
 
   const handleUseCurrentLocation = () => {
@@ -95,14 +97,14 @@ export const MapEditor = ({
       </Button>
 
       <div className={cn('relative rounded-2xl overflow-hidden bg-muted/50 border-2 border-white/20 shadow-lg', height)}>
-        <MapContainer
+        <LeafletMapContainer
           center={coordinates}
           zoom={zoom}
           scrollWheelZoom={true}
           style={{ height: '100%', width: '100%' }}
           zoomControl={false}
         >
-          <TileLayer
+          <LeafletTileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
@@ -115,7 +117,7 @@ export const MapEditor = ({
               </div>
             </Popup>
           </Marker>
-        </MapContainer>
+        </LeafletMapContainer>
       </div>
 
       <p className="text-xs text-muted-foreground">

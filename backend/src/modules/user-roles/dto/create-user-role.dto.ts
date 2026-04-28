@@ -4,7 +4,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export enum AppRole {
   admin = 'admin',
   admin_ccm = 'admin_ccm',
-  gerente = 'gerente',
+  lider = 'lider',
   pastor = 'pastor',
   membro = 'membro',
 }

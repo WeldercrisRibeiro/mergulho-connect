@@ -14,6 +14,9 @@ export class AuthService {
   ) {}
 
   async login(dto: LoginDto) {
+    if (dto.email && !dto.email.includes('@')) {
+      dto.email = dto.email.trim().toLowerCase() + "@ccmergulho.com";
+    }
     console.log(`🔑 Tentativa de login para: ${dto.email}`);
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
@@ -46,6 +49,9 @@ export class AuthService {
   }
 
   async register(dto: RegisterDto) {
+    if (dto.email && !dto.email.includes('@')) {
+      dto.email = dto.email.trim().toLowerCase() + "@ccmergulho.com";
+    }
     const existingUser = await this.prisma.user.findUnique({ where: { email: dto.email } });
     if (existingUser) {
       throw new BadRequestException('E-mail já está em uso.');
@@ -96,6 +102,9 @@ export class AuthService {
   }
 
   async updatePasswordWithCredentials(dto: ChangePasswordWithCredentialsDto) {
+    if (dto.email && !dto.email.includes('@')) {
+      dto.email = dto.email.trim().toLowerCase() + "@ccmergulho.com";
+    }
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
