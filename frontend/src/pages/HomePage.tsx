@@ -21,13 +21,13 @@ const HomePage = () => {
     queryKey: ["my-active-checkin", user?.id],
     queryFn: async () => {
       if (!user) return null;
-      // Backend: we must get all and filter locally if the endpoint doesn't support complex params yet
-      const { data } = await api.get("/checkins", { params: { status: "active" } });
-      const active = data?.find((c: any) => c.guardianId === user.id || c.guardian_id === user.id);
-      return active || null;
+      const { data } = await api.get("/checkins", {
+        params: { status: "active", guardianId: user.id }
+      });
+      return data?.[0] || null;
     },
     enabled: !!user,
-    refetchInterval: 15000,
+    refetchInterval: 60000, // 60s for home status
   });
 
   const { data: siteSettings } = useQuery({

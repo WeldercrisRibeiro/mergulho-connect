@@ -8,6 +8,7 @@ import { useTheme } from "./ThemeProvider";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import api from "@/lib/api";
+import { VersionIndicator } from "./VersionIndicator";
 
 const navGroups: {
   label: string;
@@ -231,8 +232,10 @@ const DesktopSidebar = ({ collapsed = false, onToggle }: DesktopSidebarProps) =>
           })}
         </nav>
 
-        {/* Bottom: Sign Out */}
-        <div className={cn("p-3 border-t border-sidebar-border", collapsed && "flex flex-col items-center")}>
+        {/* Bottom: Sign Out & Version */}
+        <div className={cn("p-3 border-t border-sidebar-border space-y-2", collapsed && "flex flex-col items-center")}>
+          <VersionIndicator collapsed={collapsed} />
+          
           <Tooltip>
             <TooltipTrigger asChild>
               <Button

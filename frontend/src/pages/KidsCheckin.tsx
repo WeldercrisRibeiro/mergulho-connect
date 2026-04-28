@@ -67,7 +67,7 @@ const KidsCheckin = () => {
       return response.data;
     },
     enabled: !!selectedEventId,
-    refetchInterval: 10000,
+    refetchInterval: 30000,
   });
 
   // Mutations

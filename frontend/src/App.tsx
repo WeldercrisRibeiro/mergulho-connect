@@ -30,6 +30,8 @@ import NotFound from "./pages/NotFound";
 import AdminWhatsApp from "./pages/AdminWhatsApp";
 import Tesouraria from "./pages/Tesouraria";
 import AdminScripts from "./pages/AdminScripts";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
 
 // ─── InstallPrompt consolida InstallBanner + PwaPrompt em um único componente.
 // Remova os imports de InstallBanner e PwaPrompt.
@@ -122,6 +124,8 @@ const App = () => (
               <Route path="/gestao-rotinas" element={<ProtectedRoute><GroupPermissions /></ProtectedRoute>} />
               <Route path="/tesouraria" element={<ProtectedRoute><Tesouraria /></ProtectedRoute>} />
               <Route path="/admin/scripts" element={<ProtectedRoute><AdminScripts /></ProtectedRoute>} />
+              <Route path="/privacidade" element={<Privacy />} />
+              <Route path="/termos" element={<Terms />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>

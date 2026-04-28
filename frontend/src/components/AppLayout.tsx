@@ -6,6 +6,7 @@ import DevotionalWelcome from "./DevotionalWelcome";
 import { useAuth } from "@/contexts/AuthContext";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { VersionIndicator } from "./VersionIndicator";
 
 const AppLayout = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
@@ -21,16 +22,19 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
 
     const pollInterval = setInterval(async () => {
       try {
-        // Poll Checkins
-        const { data: checkins } = await api.get('/checkins', { params: { status: 'active' } });
-        const myCheckin = checkins?.find((c: any) => c.guardian_id === user.id && c.call_requested);
+        // Poll Checkins for current guardian ONLY
+        const { data: checkins } = await api.get('/checkins', {
+          params: { status: 'active', guardianId: user.id }
+        });
+
+        const myCheckin = checkins?.find((c: any) => c.call_requested);
         if (myCheckin) {
           // We would need to track if we already alerted, but skipping for simplicity
         }
       } catch (e) {
         // ignore
       }
-    }, 60000);
+    }, 120000); // 120s polling for global alerts
 
     return () => clearInterval(pollInterval);
   }, [user, toast]);
@@ -40,8 +44,13 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
       <DesktopSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(c => !c)} />
       <div className="flex-1 flex flex-col min-w-0">
         <TopBar onToggleSidebar={() => setSidebarCollapsed(c => !c)} />
-        <main className="flex-1 pb-20 md:pb-0 relative overflow-auto">
-          {children}
+        <main className="flex-1 pb-20 md:pb-0 relative overflow-auto flex flex-col">
+          <div className="flex-1">
+            {children}
+          </div>
+          <footer className="p-8 mt-auto flex justify-center">
+            <VersionIndicator className="opacity-40 hover:opacity-100" />
+          </footer>
         </main>
       </div>
       <BottomNav />

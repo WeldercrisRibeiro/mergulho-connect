@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTheme } from "@/components/ThemeProvider";
 import api from "@/lib/api";
+import { VersionIndicator } from "./VersionIndicator";
 
 interface NavItem {
   path: string;
@@ -221,6 +222,10 @@ const BottomNav = () => {
                 {getVisibleMoreMenu().map(item => (
                   <MoreMenuButton key={item.path} item={item} skin={skin} unreadAnnouncements={unreadAnnouncements} onClose={() => setOpen(false)} />
                 ))}
+              </div>
+
+              <div className="mt-12 flex justify-center border-t border-muted/20 pt-6">
+                <VersionIndicator />
               </div>
             </SheetContent>
           </Sheet>

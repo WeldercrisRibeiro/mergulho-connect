@@ -15,6 +15,7 @@ import { PublicAgenda } from "@/components/PublicAgenda"; // ajuste o path confo
 import { TestimonialCarousel } from "@/components/TestimonialCarousel";
 import MapViewer from "@/components/MapViewer";
 import { PhotoCarousel } from "@/components/PhotoCarousel";
+import { WhatsAppWidget } from "@/components/WhatsAppWidget";
 
 const Landing = () => {
   const [formData, setFormData] = useState({ name: "", phone: "", subject: "Quero me tornar Membro", message: "" });
@@ -74,9 +75,9 @@ const Landing = () => {
         <div className="container mx-auto flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2">
             <img
-              src={theme === "dark" ? "/idvmergulho/logo-white.png" : "/idvmergulho/logo.png"}
-              alt="Logo"
-              className="h-10 w-auto hover:opacity-80 transition-opacity"
+              src={theme === "dark" ? "/idvmergulho/logo-horizontal.png" : "/idvmergulho/logo-horizontal-azul.png"}
+              alt="Logo Mergulho"
+              className="h-8 md:h-10 w-auto hover:opacity-80 transition-opacity"
             />
           </div>
 
@@ -98,43 +99,46 @@ const Landing = () => {
             >
               {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
             </button>
-            <Button asChild variant="secondary" className="rounded-full px-6 font-bold shadow-md transition-all hover:-translate-y-0.5 hidden sm:flex border border-border/50">
-              <Link to="/auth">Entrar</Link>
-            </Button>
             <Button asChild className="rounded-full px-6 bg-primary hover:bg-primary/90 text-white border-0 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 transition-all hover:-translate-y-0.5">
-              <Link to="/auth?request=true">Seja um Membro!</Link>
+              <Link to="/auth">Entrar</Link>
             </Button>
           </div>
         </div>
       </header>
 
       {/* Hero */}
-      <section id="inicio" className="scroll-mt-24 relative container mx-auto px-4 py-24 md:py-32 text-center overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/20 rounded-full blur-[120px] -z-10 mix-blend-screen pointer-events-none opacity-60 animate-pulse" />
-        <div className="absolute top-0 right-1/4 w-[400px] h-[400px] bg-blue-500/10 rounded-full blur-[100px] -z-10 mix-blend-screen pointer-events-none" />
+      <section id="inicio" className="scroll-mt-24 relative overflow-hidden min-h-[80vh] flex items-center justify-center py-24 md:py-32">
+        {/* Background Image with Overlay */}
+        <div className="absolute inset-0 -z-10">
+          <img
+            src="/idvmergulho/church_community.png"
+            alt="Comunidade CC Mergulho"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-background/90 md:bg-background/80 backdrop-blur-[2px]" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/50" />
+        </div>
 
-        <div className="mx-auto max-w-4xl flex flex-col items-center relative z-10">
-          <div className="mb-10 relative group w-full flex justify-center">
-            <img
-              src={theme === "dark" ? "/idvmergulho/logo-horizontal.png" : "/idvmergulho/logo-horizontal-azul.png"}
-              alt="Logo CC Mergulho"
-              className="h-32 md:h-48 w-auto object-contain drop-shadow-xl transition-transform duration-500 hover:scale-105"
-            />
+        <div className="mx-auto max-w-4xl flex flex-col items-center relative z-10 text-center px-4">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-[10px] md:text-xs font-black uppercase tracking-[0.2em] mb-8 border border-primary/20 backdrop-blur-md animate-fade-in">
+            <Star className="h-3 w-3 fill-primary" /> Bem-vindo à nossa comunidade
           </div>
 
-          <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight mb-4 text-primary">
-            AMAR | CUIDAR | SERVIR
+          <h1 className="text-4xl md:text-7xl font-black tracking-tighter mb-6 leading-[0.9] text-foreground">
+            <span className="text-primary block mb-2">AMAR | CUIDAR</span>
+            <span className="block italic opacity-90">SERVIR</span>
           </h1>
-          <p className="mt-4 text-lg md:text-xl text-muted-foreground leading-relaxed max-w-3xl font-medium">
-            Uma comunidade cristã interligada. Junte-se aos nossos departamentos, envolva-se em projetos, estude a Palavra e conecte-se com seus irmãos com um clique.
+          
+          <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl font-medium mb-12">
+            Uma comunidade cristã interligada. Junte-se aos nossos departamentos, envolva-se em projetos e conecte-se com seus irmãos com um clique.
           </p>
 
-          <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center w-full max-w-lg">
-            <Button size="lg" asChild className="rounded-full sm:flex-1 h-14 text-base bg-primary hover:bg-primary/90 shadow-xl shadow-primary/30 hover:shadow-2xl hover:shadow-primary/40 transition-all hover:-translate-y-1">
-              <Link to="/auth?request=true">Fazer Parte</Link>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center w-full max-w-md">
+            <Button size="lg" asChild className="rounded-full sm:flex-1 h-14 text-base bg-primary hover:bg-primary/90 shadow-2xl shadow-primary/40 hover:shadow-primary/60 transition-all hover:-translate-y-1 font-bold">
+              <Link to="/auth">Entrar Agora</Link>
             </Button>
-            <Button variant="secondary" size="lg" asChild className="rounded-full sm:flex-1 h-14 text-base border shadow-lg transition-all hover:-translate-y-1 font-bold">
-              <Link to="/auth">Entrar</Link>
+            <Button variant="outline" size="lg" asChild className="rounded-full sm:flex-1 h-14 text-base border-2 bg-background/50 backdrop-blur-md hover:bg-muted shadow-xl transition-all hover:-translate-y-1 font-bold">
+              <Link to="/auth?request=true">Solicitar Cadastro</Link>
             </Button>
           </div>
         </div>
@@ -343,24 +347,58 @@ const Landing = () => {
 
       {/* Floating WhatsApp */}
       {siteSettings?.whatsapp_number && (
-        <a
-          href={whatsappUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="fixed bottom-6 right-6 z-[60] bg-emerald-500 text-white p-4 rounded-full shadow-2xl hover:bg-emerald-600 hover:scale-110 transition-all duration-300 group flex items-center gap-2"
-        >
-          <Phone className="h-6 w-6 fill-current" />
-          <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-500 font-bold whitespace-nowrap">Fale Conosco</span>
-        </a>
+        <WhatsAppWidget phoneNumber={siteSettings.whatsapp_number} />
       )}
 
       {/* Footer */}
-      <footer className="border-t py-8">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} CC Mergulho. Todos os direitos reservados.</p>
+      <footer className="bg-zinc-950 text-zinc-400 py-20 border-t border-white/5">
+        <div className="container mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
+            <div className="space-y-6">
+              <img
+                src="/idvmergulho/logo-white.png"
+                alt="Logo CC Mergulho"
+                className="h-12 w-auto opacity-80"
+              />
+              <p className="text-sm leading-relaxed">
+                Uma comunidade cristã interligada, focada em amar, cuidar e servir ao próximo através do evangelho.
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              <h4 className="text-white font-bold uppercase tracking-widest text-xs">Sistema</h4>
+              <nav className="flex flex-col gap-3 text-sm font-medium">
+                <a href="#inicio" className="hover:text-primary transition-colors">Início</a>
+                <a href="#sobre" className="hover:text-primary transition-colors">Sobre Nós</a>
+                <a href="#agenda" className="hover:text-primary transition-colors">Agenda</a>
+                <a href="/auth" className="hover:text-primary transition-colors">Entrar</a>
+              </nav>
+            </div>
+
+            <div className="space-y-6">
+              <h4 className="text-white font-bold uppercase tracking-widest text-xs">Legal</h4>
+              <nav className="flex flex-col gap-3 text-sm font-medium">
+                <Link to="/termos" className="hover:text-primary transition-colors">Termos de Uso</Link>
+                <Link to="/privacidade" className="hover:text-primary transition-colors">Privacidade</Link>
+                <Link to="/privacidade" className="hover:text-primary transition-colors">LGPD</Link>
+              </nav>
+            </div>
+
+          </div>
+
+          <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
+            <p className="text-xs font-bold uppercase tracking-tighter opacity-40">
+              © {new Date().getFullYear()} CC Mergulho. Todos os direitos reservados.
+            </p>
+            <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest opacity-40">
+              <span>CNPJ: 00.000.000/0000-00</span>
+              <span className="h-1 w-1 bg-zinc-500 rounded-full" />
+              <span>Fortaleza - CE</span>
+            </div>
+          </div>
         </div>
       </footer>
     </div>
   );
 };
-export default Landing;
+export default Landing;

@@ -7,9 +7,13 @@ import { UpdateKidsCheckinDto } from './dto/update-kids-checkin.dto';
 export class KidsCheckinsService {
   constructor(private prisma: PrismaService) {}
   create(dto: CreateKidsCheckinDto) { return this.prisma.kidsCheckin.create({ data: dto as any }); }
-  findAll(eventId?: string, status?: string) {
+  findAll(eventId?: string, status?: string, guardianId?: string) {
     return this.prisma.kidsCheckin.findMany({
-      where: { ...(eventId ? { eventId } : {}), ...(status ? { status } : {}) },
+      where: {
+        ...(eventId ? { eventId } : {}),
+        ...(status ? { status } : {}),
+        ...(guardianId ? { guardianId } : {}),
+      },
       orderBy: { createdAt: 'desc' }, include: { guardian: true },
     });
   }
