@@ -87,8 +87,8 @@ export function VersionIndicator({ className, collapsed }: { className?: string;
       <DialogTrigger asChild>
         <button
           className={cn(
-            "flex items-center gap-2 px-3 py-1.5 text-[11px] font-bold text-muted-foreground/60 hover:text-primary transition-all rounded-lg hover:bg-primary/5 group",
-            collapsed && "justify-center px-0",
+            "flex items-center gap-2 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-muted-foreground/60 bg-muted/20 border border-muted-foreground/5 hover:border-primary/20 hover:bg-primary/5 hover:text-primary transition-all rounded-full group",
+            collapsed && "justify-center px-0 w-8 h-8",
             className
           )}
         >

@@ -16,6 +16,7 @@ import { TestimonialCarousel } from "@/components/TestimonialCarousel";
 import MapViewer from "@/components/MapViewer";
 import { PhotoCarousel } from "@/components/PhotoCarousel";
 import { WhatsAppWidget } from "@/components/WhatsAppWidget";
+import { VersionIndicator } from "@/components/VersionIndicator";
 
 const Landing = () => {
   const [formData, setFormData] = useState({ name: "", phone: "", subject: "Quero me tornar Membro", message: "" });
@@ -387,9 +388,12 @@ const Landing = () => {
           </div>
 
           <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
-            <p className="text-xs font-bold uppercase tracking-tighter opacity-40">
-              © {new Date().getFullYear()} CC Mergulho. Todos os direitos reservados.
-            </p>
+            <div className="flex flex-col md:flex-row items-center gap-4">
+              <p className="text-xs font-bold uppercase tracking-tighter opacity-40">
+                © {new Date().getFullYear()} CC Mergulho. Todos os direitos reservados.
+              </p>
+              <VersionIndicator className="opacity-40 hover:opacity-100" />
+            </div>
             <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest opacity-40">
               <span>CNPJ: 00.000.000/0000-00</span>
               <span className="h-1 w-1 bg-zinc-500 rounded-full" />
