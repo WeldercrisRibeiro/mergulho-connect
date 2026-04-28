@@ -106,37 +106,33 @@ const DevotionalWelcome = () => {
               {safeFormat(devotional.publishDate, "dd 'de' MMMM 'de' yyyy")}
             </p>
 
-            <div className="flex flex-col md:flex-row gap-5 md:gap-6">
-              {/* Text column */}
-              <div className="flex-1 order-1">
-                <div className="max-h-none md:max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
-                  <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                    {devotional.content}
-                  </p>
-                </div>
+            <div className="space-y-6">
+              {/* Text content */}
+              <div className="prose prose-sm max-w-none">
+                <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                  {devotional.content}
+                </p>
               </div>
 
-              {/* Media column */}
+              {/* Media content (Image/Video) */}
               {((devotional as any).videoUrl || devotional.mediaUrl) && (() => {
                 const url = (devotional as any).videoUrl || devotional.mediaUrl || "";
                 const isYoutube = url.includes("youtube") || url.includes("youtu.be");
                 const isVideoFile = (devotional as any).isVideoUpload || url.match(/\.(mp4|webm|mov)(\?.*)?$/i);
                 return (
-                  <div className="md:w-[350px] md:shrink-0 order-2">
-                    <div className="rounded-xl overflow-hidden shadow-md bg-muted/10 border border-border/50">
-                      {isYoutube ? (
-                        <VideoPlayer url={url} isUpload={false} />
-                      ) : isVideoFile ? (
-                        <VideoPlayer url={url} isUpload={true} />
-                      ) : (
-                        <img
-                          src={url}
-                          alt={devotional.title}
-                          className="w-full object-cover max-h-[220px] md:max-h-[350px]"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                        />
-                      )}
-                    </div>
+                  <div className="rounded-xl overflow-hidden shadow-md bg-muted/10 border border-border/50">
+                    {isYoutube ? (
+                      <VideoPlayer url={url} isUpload={false} />
+                    ) : isVideoFile ? (
+                      <VideoPlayer url={url} isUpload={true} />
+                    ) : (
+                      <img
+                        src={url}
+                        alt={devotional.title}
+                        className="w-full object-cover max-h-[400px]"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                      />
+                    )}
                   </div>
                 );
               })()}
