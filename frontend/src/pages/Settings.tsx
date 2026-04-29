@@ -763,7 +763,7 @@ const SettingsPage = () => {
             </div>
             <div className="space-y-2">
               <Label>Cargo / Papel na Igreja</Label>
-              <Input value={testRole} onChange={(e) => setTestRole(e.target.value)} placeholder="Ex: Membro há 5 anos, Voluntário Kids..." />
+              <Input value={testRole} onChange={(e) => setTestRole(e.target.value)} placeholder="Ex: Membro há 5 anos, Voluntário checkin..." />
             </div>
             <div className="space-y-2">
               <Label>Depoimento</Label>

@@ -34,7 +34,7 @@ const navGroups: {
         { path: "/devocionais", icon: BookOpen, label: "Devocionais", routine: "devocionais" },
         { path: "/tesouraria", icon: Wallet, label: "Tesouraria", routine: "tesouraria" },
         { path: "/voluntarios", icon: HandHeart, label: "Voluntários", routine: "voluntarios" },
-        { path: "/checkin-kids", icon: ShieldCheck, label: "Validação", routine: "kids" },
+        { path: "/checkin-checkin", icon: ShieldCheck, label: "Validação", routine: "checkin" },
       ]
     },
     {
@@ -235,7 +235,7 @@ const DesktopSidebar = ({ collapsed = false, onToggle }: DesktopSidebarProps) =>
         {/* Bottom: Sign Out & Version */}
         <div className={cn("p-3 border-t border-sidebar-border space-y-2", collapsed && "flex flex-col items-center")}>
           <VersionIndicator collapsed={collapsed} />
-          
+
           <Tooltip>
             <TooltipTrigger asChild>
               <Button

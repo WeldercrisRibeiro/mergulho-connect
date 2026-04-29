@@ -57,7 +57,7 @@ const Privacy = () => {
             <ul className="list-disc pl-6 space-y-2">
               <li>Gestão da membresia e comunicação institucional;</li>
               <li>Organização de escalas de voluntários e eventos;</li>
-              <li>Segurança e controle de acesso físico (Check-in Kids);</li>
+              <li>Segurança e controle de acesso físico (Check-in checkin);</li>
               <li>Cumprimento de obrigações legais e estatutárias.</li>
             </ul>
           </section>

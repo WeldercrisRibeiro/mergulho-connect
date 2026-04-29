@@ -144,7 +144,7 @@ const HomePage = () => {
 
       <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-8 relative z-20">
 
-        {/* Active Kids Check-in */}
+        {/* Active checkin Check-in */}
         {myActiveCheckin && (
           <Card className="border-0 shadow-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/20 dark:to-emerald-900/10 overflow-hidden ring-2 ring-emerald-500/20">
             <CardContent className="p-6">
@@ -163,7 +163,7 @@ const HomePage = () => {
                   {(myActiveCheckin.callRequested || myActiveCheckin.call_requested) && (
                     <div className="mt-4 p-3 bg-rose-500 text-white rounded-xl flex items-center gap-2 animate-bounce shadow-lg">
                       <Phone className="h-5 w-5 fill-white" />
-                      <span className="font-bold text-sm text-center">ATENÇÃO: Favor comparecer ao Kids!</span>
+                      <span className="font-bold text-sm text-center">ATENÇÃO: Favor comparecer ao checkin!</span>
                     </div>
                   )}
                 </div>

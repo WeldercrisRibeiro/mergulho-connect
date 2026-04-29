@@ -1,7 +1,7 @@
-import { 
-  Home, Calendar, BookOpen, MessageCircle, User, Users, 
-  Settings, Target, HandHeart, BarChart3, Megaphone, 
-  ShieldCheck, Wallet, Menu, Sun, Moon, Bell, BellOff 
+import {
+  Home, Calendar, BookOpen, MessageCircle, User, Users,
+  Settings, Target, HandHeart, BarChart3, Megaphone,
+  ShieldCheck, Wallet, Menu, Sun, Moon, Bell, BellOff
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -73,7 +73,7 @@ const TopBar = ({ onToggleSidebar }: TopBarProps) => {
     "/relatorios": { label: "Relatórios", icon: BarChart3 },
     "/configuracoes": { label: "Ajustes", icon: Settings },
     "/whatsapp": { label: "WhatsApp", icon: WhatsAppIcon },
-    "/checkin-kids": { label: "Validação", icon: ShieldCheck },
+    "/checkin-checkin": { label: "Validação", icon: ShieldCheck },
     "/Disparos": { label: "Disparos", icon: Megaphone },
     "/gestao-rotinas": { label: "Acessos", icon: ShieldCheck },
   };
@@ -82,7 +82,7 @@ const TopBar = ({ onToggleSidebar }: TopBarProps) => {
     pageConfig[location.pathname] ||
     Object.entries(pageConfig).find(([path]) => location.pathname.startsWith(`${path}/`))?.[1] ||
     { label: "Comunidade", icon: Users };
-  
+
   const Icon = config.icon;
 
   return (

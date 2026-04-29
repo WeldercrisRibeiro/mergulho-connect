@@ -22,7 +22,7 @@ import Settings from "./pages/Settings";
 import Volunteers from "./pages/Volunteers";
 import Reports from "./pages/Reports";
 import ArchivedChats from "./pages/ArchivedChats";
-import KidsCheckin from "./pages/KidsCheckin";
+import Checkin from "./pages/Checkin";
 import AdminNotices from "./pages/AdminNotices";
 import Admin from "./pages/Admin";
 import GroupPermissions from "./pages/GroupPermissions";
@@ -110,7 +110,7 @@ const App = () => (
               <Route path="/voluntarios" element={<ProtectedRoute><Volunteers /></ProtectedRoute>} />
               <Route path="/relatorios" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
               <Route path="/arquivos" element={<ProtectedRoute><ArchivedChats /></ProtectedRoute>} />
-              <Route path="/checkin-kids" element={<ProtectedRoute><KidsCheckin /></ProtectedRoute>} />
+              <Route path="/checkin-checkin" element={<ProtectedRoute><Checkin /></ProtectedRoute>} />
               <Route path="/Disparos" element={<ProtectedRoute><AdminNotices /></ProtectedRoute>} />
 
               <Route path="/whatsapp" element={<ProtectedRoute><AdminWhatsApp /></ProtectedRoute>} />

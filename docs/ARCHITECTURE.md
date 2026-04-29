@@ -180,7 +180,7 @@ User                    Profile
    ├── userId (FK)
    └── role (admin|lider|pastor|membro)
 
-Event                   KidsCheckin
+Event                   Checkin
 ├── id                  ├── id
 ├── title               ├── eventId (FK → Event)
 ├── date                ├── childName

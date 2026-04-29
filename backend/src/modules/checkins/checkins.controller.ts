@@ -1,15 +1,15 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { KidsCheckinsService } from './kids-checkins.service';
-import { CreateKidsCheckinDto } from './dto/create-kids-checkin.dto';
-import { UpdateKidsCheckinDto } from './dto/update-kids-checkin.dto';
+import { CheckinsService } from './checkins.service';
+import { CreateCheckinDto } from './dto/create-checkin.dto';
+import { UpdateCheckinDto } from './dto/update-checkin.dto';
 
-@ApiTags('Kids Checkins')
+@ApiTags('checkins')
 @ApiBearerAuth()
 @Controller('checkins')
-export class KidsCheckinsController {
-  constructor(private readonly service: KidsCheckinsService) { }
-  @Post() create(@Body() dto: CreateKidsCheckinDto) { return this.service.create(dto); }
+export class CheckinsController {
+  constructor(private readonly service: CheckinsService) { }
+  @Post() create(@Body() dto: CreateCheckinDto) { return this.service.create(dto); }
   @Get()
   @ApiQuery({ name: 'eventId', required: false })
   @ApiQuery({ name: 'status', required: false })
@@ -23,6 +23,6 @@ export class KidsCheckinsController {
   }
   @Get('token/:token') findByToken(@Param('token') token: string) { return this.service.findByToken(token); }
   @Get(':id') findOne(@Param('id') id: string) { return this.service.findOne(id); }
-  @Patch(':id') update(@Param('id') id: string, @Body() dto: UpdateKidsCheckinDto) { return this.service.update(id, dto); }
+  @Patch(':id') update(@Param('id') id: string, @Body() dto: UpdateCheckinDto) { return this.service.update(id, dto); }
   @Delete(':id') remove(@Param('id') id: string) { return this.service.remove(id); }
 }

@@ -52,7 +52,7 @@ const versions: Version[] = [
     changes: [
       { type: "new", text: "Lançamento oficial do Mergulho Connect" },
       { type: "new", text: "Gestão de Membros e Departamentos" },
-      { type: "new", text: "Sistema de Check-in Kids" },
+      { type: "new", text: "Sistema de Check-in checkin" },
     ]
   }
 ];
@@ -125,7 +125,7 @@ export function VersionIndicator({ className, collapsed }: { className?: string;
                   "absolute left-[11px] top-1.5 h-3.5 w-3.5 rounded-full border-2 border-white dark:border-zinc-950 transition-all duration-300 z-10",
                   idx === 0 ? "bg-primary scale-125 shadow-[0_0_0_4px_rgba(var(--primary-rgb),0.1)]" : "bg-zinc-300 dark:bg-zinc-700 group-hover:bg-primary/50"
                 )} />
-                
+
                 <div className="mb-1 flex items-center justify-between">
                   <span className={cn("text-sm font-black", idx === 0 ? "text-primary" : "text-foreground")}>
                     Versão {v.version}

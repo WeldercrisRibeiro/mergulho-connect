@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 type Theme = "light" | "dark";
-type Skin = "default" | "youth" | "kids";
+type Skin = "default" | "youth" | "checkin";
 
 interface ThemeContextType {
   theme: Theme;
@@ -34,9 +34,9 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const root = window.document.documentElement;
     // Remove all possible skin classes
-    root.classList.remove("theme-youth", "theme-kids");
+    root.classList.remove("theme-youth", "theme-checkin");
     if (skin === "youth") root.classList.add("theme-youth");
-    if (skin === "kids") root.classList.add("theme-kids");
+    if (skin === "checkin") root.classList.add("theme-checkin");
     localStorage.setItem("app-skin", skin);
   }, [skin]);
 

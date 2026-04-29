@@ -1,7 +1,7 @@
 import { IsString, IsOptional, IsUUID, IsBoolean } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export class CreateKidsCheckinDto {
+export class CreateCheckinDto {
   @ApiProperty() @IsString() childName: string;
   @ApiPropertyOptional() @IsOptional() @IsUUID() guardianId?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() itemsDescription?: string;

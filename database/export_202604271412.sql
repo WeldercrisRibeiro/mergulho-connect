@@ -263,7 +263,7 @@ VALUES (
 	),
 	(
 		'd13a9d3b-81e6-4251-a24c-e7af8be7ed97'::uuid,
-		'kids',
+		'checkin',
 		true,
 		'2026-04-27 01:50:02.866+00',
 		NULL,
@@ -271,7 +271,7 @@ VALUES (
 	),
 	(
 		'4cf3b44f-4b28-4351-983a-4a067dd929b0'::uuid,
-		'kids',
+		'checkin',
 		true,
 		'2026-04-27 01:50:02.875+00',
 		NULL,
@@ -479,7 +479,7 @@ VALUES (
 	),
 	(
 		'86429e09-85e1-4e4d-ae1d-12309731834a'::uuid,
-		'kids',
+		'checkin',
 		true,
 		'2026-04-27 03:51:06.913+00',
 		'f2a6de49-0168-4bd2-8372-3af4e696cfea'::uuid,
@@ -527,7 +527,7 @@ VALUES (
 	),
 	(
 		'aa5c7da9-98f7-4ade-987b-67289a23cbb9'::uuid,
-		'kids',
+		'checkin',
 		true,
 		'2026-04-27 03:51:31.67+00',
 		'a10052c7-23ab-4f5d-9320-7b50268da37f'::uuid,
@@ -615,7 +615,7 @@ VALUES (
 	),
 	(
 		'2d3e238b-478a-4639-b0cc-6b081db50156'::uuid,
-		'kids',
+		'checkin',
 		false,
 		'2026-04-27 03:52:25.875+00',
 		'5d53d603-598b-49ab-8df0-9a60df92eefa'::uuid,
@@ -677,7 +677,14 @@ VALUES (
 		'8130f782-27a8-428e-b44e-6eef03e756a1'::uuid,
 		NULL
 	);
-INSERT INTO public."groups" (id, name, description, icon, created_at, updated_at)
+INSERT INTO public."groups" (
+		id,
+		name,
+		description,
+		icon,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'801abcb4-4612-4ac4-8030-942664f0d718'::uuid,
 		'Acolhimento',
@@ -696,7 +703,7 @@ VALUES (
 	),
 	(
 		'f2a6de49-0168-4bd2-8372-3af4e696cfea'::uuid,
-		'Kids',
+		'checkin',
 		'',
 		'🌊',
 		'2026-04-27 01:42:08.139+00',
@@ -758,7 +765,14 @@ VALUES (
 		'2026-04-27 01:41:54.759+00',
 		'2026-04-27 01:43:21.777+00'
 	);
-INSERT INTO public."groups" (id, name, description, icon, created_at, updated_at)
+INSERT INTO public."groups" (
+		id,
+		name,
+		description,
+		icon,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'a10052c7-23ab-4f5d-9320-7b50268da37f'::uuid,
 		'Lideranças',
@@ -2048,7 +2062,11 @@ VALUES (
 		'19.017.873/0002-16',
 		'2026-04-27 01:45:33.253+00'
 	),
-	('maps_embed_url', '', '2026-04-27 01:45:34.51+00');
+	(
+		'maps_embed_url',
+		'',
+		'2026-04-27 01:45:34.51+00'
+	);
 INSERT INTO public.user_roles (id, user_id, "role")
 VALUES (
 		'3f8b6b31-b812-49dc-8711-803df3f1b411'::uuid,

@@ -22,7 +22,7 @@ const ROUTINES = [
   { id: "membros", label: "Membros", icon: Users, description: "Acesso ao cadastro de pessoas" },
   { id: "relatorios", label: "Relatórios", icon: BarChart3, description: "Dados, gráficos e estatísticas" },
   { id: "chat", label: "Chat", icon: MessageCircle, description: "Mensagens e comunicação interna" },
-  { id: "kids", label: "Kids & Segurança", icon: ShieldCheck, description: "Check-in e proteção infantil" },
+  { id: "checkin", label: "checkin & Segurança", icon: ShieldCheck, description: "Check-in e proteção infantil" },
   { id: "Disparos", label: "Disparos", icon: Megaphone, description: "Mural de avisos e notificações" },
 ];
 
@@ -56,9 +56,9 @@ const GroupPermissions = () => {
   const toggleMutation = useMutation({
     mutationFn: async ({ id, routineKey, enabled, isRole }: { id: string, routineKey: string, enabled: boolean, isRole: boolean }) => {
       const normalizedRoutineKey = routineKey.toLowerCase();
-      
+
       const existing = permissions?.find((p: any) =>
-        isRole 
+        isRole
           ? (p.roleId === id && String(p.routineKey || p.routine_key).toLowerCase() === normalizedRoutineKey)
           : ((p.groupId || p.group_id) === id && String(p.routineKey || p.routine_key).toLowerCase() === normalizedRoutineKey)
       );
@@ -66,7 +66,7 @@ const GroupPermissions = () => {
       if (existing) {
         await api.patch(`/group-routines/${existing.id}`, { isEnabled: enabled });
       } else {
-        const payload = isRole 
+        const payload = isRole
           ? { roleId: id, routineKey: normalizedRoutineKey, isEnabled: enabled }
           : { groupId: id, routineKey: normalizedRoutineKey, isEnabled: enabled };
         await api.post('/group-routines', payload);
@@ -90,8 +90,8 @@ const GroupPermissions = () => {
     return (p => p.isEnabled ?? p.is_enabled ?? false)(perm);
   };
 
-  const selectedName = activeTab === "groups" 
-    ? groups?.find((g: any) => g.id === selectedId)?.name 
+  const selectedName = activeTab === "groups"
+    ? groups?.find((g: any) => g.id === selectedId)?.name
     : ROLE_TYPES.find(r => r.id === selectedId)?.label;
 
   if (loadingPerms) {

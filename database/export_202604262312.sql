@@ -48,7 +48,14 @@ VALUES (
 		'2026-04-26 19:20:10.336559+00',
 		1
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'736567a0-9b5a-4f99-8cc1-dac32cdd9f8a'::uuid,
 		'whatsapp-default',
@@ -129,7 +136,14 @@ VALUES (
 		'2026-04-26 20:09:48.792+00',
 		'2026-04-26 20:09:48.792+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'debff154-abc1-48f3-9c6a-58ec32486fe8'::uuid,
 		'whatsapp-default',
@@ -210,7 +224,14 @@ VALUES (
 		'2026-04-26 20:55:52.865+00',
 		'2026-04-26 20:55:52.865+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'fe4323a2-253f-4b72-b96a-4bc351f90e86'::uuid,
 		'whatsapp-default',
@@ -291,7 +312,14 @@ VALUES (
 		'2026-04-26 19:29:54.925+00',
 		'2026-04-26 19:30:25.49+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'6e75e493-2a50-4655-8e98-4ff359feebe2'::uuid,
 		'whatsapp-default',
@@ -372,7 +400,14 @@ VALUES (
 		'2026-04-26 19:29:54.931+00',
 		'2026-04-26 19:30:25.491+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'b45e8ba1-f3a9-4728-940a-7c6c4140ec59'::uuid,
 		'whatsapp-default',
@@ -453,7 +488,14 @@ VALUES (
 		'2026-04-26 20:09:48.792+00',
 		'2026-04-26 20:09:48.792+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'79ea7810-bbad-44c0-9851-0b546bae1685'::uuid,
 		'whatsapp-default',
@@ -534,7 +576,14 @@ VALUES (
 		'2026-04-26 19:30:03.16+00',
 		'2026-04-26 19:30:18.505+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'a180ec25-3305-4e59-9c34-1ec8b1af9a55'::uuid,
 		'whatsapp-default',
@@ -615,7 +664,14 @@ VALUES (
 		'2026-04-26 20:55:41.959+00',
 		'2026-04-26 20:55:41.959+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'390c6151-b0e2-4782-9fa2-f23a79a5ce2c'::uuid,
 		'whatsapp-default',
@@ -696,7 +752,14 @@ VALUES (
 		'2026-04-26 20:55:48.828+00',
 		'2026-04-26 20:55:48.828+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'39ec66f8-f65d-4df4-b89b-3ee06ad0b1ce'::uuid,
 		'whatsapp-default',
@@ -777,7 +840,14 @@ VALUES (
 		'2026-04-26 19:29:54.934+00',
 		'2026-04-26 19:30:18.5+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'6868dda9-c661-4de9-94a4-f8bb37d90ab6'::uuid,
 		'whatsapp-default',
@@ -858,7 +928,14 @@ VALUES (
 		'2026-04-26 19:29:54.93+00',
 		'2026-04-26 19:30:25.491+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'a97df02a-668b-412a-8534-080acded24b0'::uuid,
 		'whatsapp-default',
@@ -939,7 +1016,14 @@ VALUES (
 		'2026-04-26 21:04:23.63+00',
 		'2026-04-26 21:04:23.63+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'aa7bcd70-b273-4df3-8afe-175c018c012a'::uuid,
 		'whatsapp-default',
@@ -1020,7 +1104,14 @@ VALUES (
 		'2026-04-26 21:04:43.233+00',
 		'2026-04-26 21:04:43.233+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'd4af58d1-b7e7-499e-bdbc-f2ea9abdaa24'::uuid,
 		'whatsapp-default',
@@ -1101,7 +1192,14 @@ VALUES (
 		'2026-04-26 19:29:54.93+00',
 		'2026-04-26 19:30:25.491+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'f3f76208-6fce-4d59-bce0-f73d1279d3ad'::uuid,
 		'whatsapp-default',
@@ -1182,7 +1280,14 @@ VALUES (
 		'2026-04-26 19:29:54.927+00',
 		'2026-04-26 19:30:25.489+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'5553a963-5d11-4802-b89b-fc7c886ec6ec'::uuid,
 		'whatsapp-default',
@@ -1263,7 +1368,14 @@ VALUES (
 		'2026-04-26 19:40:06.523+00',
 		'2026-04-26 19:42:04.786+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'9aced84f-803f-41b7-b578-bf0d85f09384'::uuid,
 		'whatsapp-default',
@@ -1344,7 +1456,14 @@ VALUES (
 		'2026-04-26 19:29:54.937+00',
 		'2026-04-26 19:30:18.503+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'cc8d0318-23ad-4efd-a474-e9d0755fb560'::uuid,
 		'whatsapp-default',
@@ -1425,7 +1544,14 @@ VALUES (
 		'2026-04-26 19:29:54.941+00',
 		'2026-04-26 19:30:18.506+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'49bfcfbe-4645-49cb-be50-adb3b9abbc49'::uuid,
 		'whatsapp-default',
@@ -1506,7 +1632,14 @@ VALUES (
 		'2026-04-26 21:04:50.305+00',
 		'2026-04-26 21:04:50.305+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'2d478cf8-fd58-4251-80f6-d45276f97b23'::uuid,
 		'whatsapp-default',
@@ -1587,7 +1720,14 @@ VALUES (
 		'2026-04-26 19:29:54.933+00',
 		'2026-04-26 19:30:18.5+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'b13782fa-e1cd-4658-94bf-2004a14dfdf6'::uuid,
 		'whatsapp-default',
@@ -1668,7 +1808,14 @@ VALUES (
 		'2026-04-26 19:40:06.525+00',
 		'2026-04-26 19:42:04.786+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'56cae1f4-e9b4-4b4b-935c-ded1893ff47c'::uuid,
 		'whatsapp-default',
@@ -1749,7 +1896,14 @@ VALUES (
 		'2026-04-26 19:40:06.523+00',
 		'2026-04-26 19:42:04.786+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'40395a22-814a-4ecf-900d-0a89be0aa48f'::uuid,
 		'whatsapp-default',
@@ -1830,7 +1984,14 @@ VALUES (
 		'2026-04-26 21:04:26.501+00',
 		'2026-04-26 21:04:26.501+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'54152e07-9a87-424a-bd68-8ecb9c26095d'::uuid,
 		'whatsapp-default',
@@ -1911,7 +2072,14 @@ VALUES (
 		'2026-04-26 19:29:54.938+00',
 		'2026-04-26 19:30:18.503+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'9f9179dc-fa6b-435f-a91f-7ac708652f83'::uuid,
 		'whatsapp-default',
@@ -1992,7 +2160,14 @@ VALUES (
 		'2026-04-26 21:04:46.583+00',
 		'2026-04-26 21:04:46.583+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'20451c2b-1d45-4eae-920a-0ab8cd1f0a88'::uuid,
 		'whatsapp-default',
@@ -2073,7 +2248,14 @@ VALUES (
 		'2026-04-26 19:29:54.941+00',
 		'2026-04-26 19:30:18.506+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'60b9f494-91b8-44af-b663-ebe3f8ebbc10'::uuid,
 		'whatsapp-default',
@@ -2154,7 +2336,14 @@ VALUES (
 		'2026-04-26 21:04:26.501+00',
 		'2026-04-26 21:04:26.501+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'38921539-eeac-4697-a3f3-45274d657ed4'::uuid,
 		'whatsapp-default',
@@ -2235,7 +2424,14 @@ VALUES (
 		'2026-04-26 21:04:53.007+00',
 		'2026-04-26 21:04:53.007+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'8e81d41f-7388-4366-83a3-84d75402c159'::uuid,
 		'whatsapp-default',
@@ -2316,7 +2512,14 @@ VALUES (
 		'2026-04-26 19:40:06.523+00',
 		'2026-04-26 19:42:04.786+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'1ba5efeb-e73b-4753-8e37-b2cc59a09c27'::uuid,
 		'whatsapp-default',
@@ -2397,7 +2600,14 @@ VALUES (
 		'2026-04-26 19:29:54.937+00',
 		'2026-04-26 19:30:18.502+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'3997398c-a57a-49d3-9cbd-eff9a2d09820'::uuid,
 		'whatsapp-default',
@@ -2478,7 +2688,14 @@ VALUES (
 		'2026-04-26 21:04:33.188+00',
 		'2026-04-26 21:04:33.188+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'3c1e9d3a-6e66-49d2-8c4b-cf9503355a86'::uuid,
 		'whatsapp-default',
@@ -2559,7 +2776,14 @@ VALUES (
 		'2026-04-26 19:29:54.943+00',
 		'2026-04-26 19:30:18.508+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'920f135e-0df1-466a-b54a-b6374db4fef5'::uuid,
 		'whatsapp-default',
@@ -2640,7 +2864,14 @@ VALUES (
 		'2026-04-26 21:04:53.007+00',
 		'2026-04-26 21:04:53.007+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'e1f2bd6d-9366-4ef3-8f07-6fb26eba1c16'::uuid,
 		'whatsapp-default',
@@ -2721,7 +2952,14 @@ VALUES (
 		'2026-04-26 19:40:06.526+00',
 		'2026-04-26 19:42:04.786+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'5fb32261-b3dc-45d1-b8ef-715b0ce32561'::uuid,
 		'whatsapp-default',
@@ -2802,7 +3040,14 @@ VALUES (
 		'2026-04-26 19:29:54.927+00',
 		'2026-04-26 19:30:25.49+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'98e02038-b88f-4b6d-bb45-eee3d401bcb6'::uuid,
 		'whatsapp-default',
@@ -2883,7 +3128,14 @@ VALUES (
 		'2026-04-26 19:29:54.938+00',
 		'2026-04-26 19:30:18.504+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'6afd2e1c-bc4e-4789-9d08-83062cf6fec8'::uuid,
 		'whatsapp-default',
@@ -2964,7 +3216,14 @@ VALUES (
 		'2026-04-26 19:40:06.526+00',
 		'2026-04-26 19:42:04.786+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'3e4b7490-285e-461e-9d72-be2d3ddf5ddd'::uuid,
 		'whatsapp-default',
@@ -3045,7 +3304,14 @@ VALUES (
 		'2026-04-26 19:29:54.942+00',
 		'2026-04-26 19:30:18.507+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'be35abce-e2f0-4d00-86bd-82805ded7408'::uuid,
 		'whatsapp-default',
@@ -3126,7 +3392,14 @@ VALUES (
 		'2026-04-26 21:04:33.188+00',
 		'2026-04-26 21:04:33.188+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'1ca829c3-1b0c-49a9-b483-9f0b585c9ecf'::uuid,
 		'whatsapp-default',
@@ -3207,7 +3480,14 @@ VALUES (
 		'2026-04-26 19:40:06.527+00',
 		'2026-04-26 19:42:04.787+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'63301503-1c26-4a5c-8f3a-b733e3f60d2d'::uuid,
 		'whatsapp-default',
@@ -3288,7 +3568,14 @@ VALUES (
 		'2026-04-26 19:29:54.947+00',
 		'2026-04-26 19:29:54.947+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'fb180890-4251-486a-8f19-6736a9a3d428'::uuid,
 		'whatsapp-default',
@@ -3369,7 +3656,14 @@ VALUES (
 		'2026-04-26 19:29:54.941+00',
 		'2026-04-26 19:30:18.506+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'9c322671-2e1f-42c8-84da-b9a981f3b469'::uuid,
 		'whatsapp-default',
@@ -3450,7 +3744,14 @@ VALUES (
 		'2026-04-26 19:29:54.931+00',
 		'2026-04-26 19:30:25.492+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'e54943f6-ae28-466f-b7bf-ae461640b455'::uuid,
 		'whatsapp-default',
@@ -3531,7 +3832,14 @@ VALUES (
 		'2026-04-26 19:29:54.923+00',
 		'2026-04-26 19:30:03.138+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'1c0b418a-a798-4321-ac7e-9672762c90d9'::uuid,
 		'whatsapp-default',
@@ -3612,7 +3920,14 @@ VALUES (
 		'2026-04-26 20:55:22.638+00',
 		'2026-04-26 20:55:22.638+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'a8b5b802-d9cf-440c-94dc-574fabae441d'::uuid,
 		'whatsapp-default',
@@ -3693,7 +4008,14 @@ VALUES (
 		'2026-04-26 20:55:33.668+00',
 		'2026-04-26 20:55:33.668+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'c5f6aaeb-1d26-4143-b9a3-cbd9811e24a1'::uuid,
 		'whatsapp-default',
@@ -3774,7 +4096,14 @@ VALUES (
 		'2026-04-26 20:55:35.894+00',
 		'2026-04-26 20:55:35.894+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'a714f40f-0719-4186-af1e-82e1f7b810f8'::uuid,
 		'whatsapp-default',
@@ -3855,7 +4184,14 @@ VALUES (
 		'2026-04-26 19:29:54.938+00',
 		'2026-04-26 19:30:18.503+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'36ff22cd-0650-4f10-b7de-183766f47536'::uuid,
 		'whatsapp-default',
@@ -3936,7 +4272,14 @@ VALUES (
 		'2026-04-26 20:55:58.981+00',
 		'2026-04-26 20:55:58.981+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'161a79de-54bb-4fb4-a829-19903ca2335f'::uuid,
 		'whatsapp-default',
@@ -4017,7 +4360,14 @@ VALUES (
 		'2026-04-26 21:04:56.965+00',
 		'2026-04-26 21:04:56.965+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'8221f654-9a43-41e7-9e69-e15274441ad8'::uuid,
 		'whatsapp-default',
@@ -4098,7 +4448,14 @@ VALUES (
 		'2026-04-26 19:30:03.139+00',
 		'2026-04-26 19:30:18.496+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'f52fd3a0-6db2-4c63-a41c-16f6cbb731d9'::uuid,
 		'whatsapp-default',
@@ -4179,7 +4536,14 @@ VALUES (
 		'2026-04-26 19:29:54.925+00',
 		'2026-04-26 19:30:25.49+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'd22e7260-34b4-4dd5-bdf9-6b391d883584'::uuid,
 		'whatsapp-default',
@@ -4260,7 +4624,14 @@ VALUES (
 		'2026-04-26 19:40:06.527+00',
 		'2026-04-26 19:42:04.788+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'ea84e12f-5592-4240-b315-d67eef010269'::uuid,
 		'whatsapp-default',
@@ -4341,7 +4712,14 @@ VALUES (
 		'2026-04-26 20:09:48.792+00',
 		'2026-04-26 20:09:48.792+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'30e303e9-d5bb-4757-a22f-9866c7329134'::uuid,
 		'whatsapp-default',
@@ -4422,7 +4800,14 @@ VALUES (
 		'2026-04-26 20:55:39.347+00',
 		'2026-04-26 20:55:39.347+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'3790f99a-40b0-4b48-ac19-6e38fc06b133'::uuid,
 		'whatsapp-default',
@@ -4503,7 +4888,14 @@ VALUES (
 		'2026-04-26 21:05:03.182+00',
 		'2026-04-26 21:05:03.182+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'c7012a0d-1d38-4da6-ae36-23e6dce36840'::uuid,
 		'whatsapp-default',
@@ -4584,7 +4976,14 @@ VALUES (
 		'2026-04-26 21:12:05+00',
 		'2026-04-26 21:12:32.772+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'3587eddc-c8e3-4fd3-b76c-594f8923ef37'::uuid,
 		'whatsapp-default',
@@ -4665,7 +5064,14 @@ VALUES (
 		'2026-04-26 21:17:26.517+00',
 		'2026-04-26 21:17:26.517+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'69760e1a-8fc0-4edc-bf8f-3f6e53ca41bb'::uuid,
 		'whatsapp-default',
@@ -4746,7 +5152,14 @@ VALUES (
 		'2026-04-26 21:05:03.181+00',
 		'2026-04-26 21:05:03.181+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'073c7f04-2536-4e8a-a451-25945edd53ac'::uuid,
 		'whatsapp-default',
@@ -4827,7 +5240,14 @@ VALUES (
 		'2026-04-26 21:12:45.42+00',
 		'2026-04-26 21:12:45.42+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'd935c04b-8f85-4074-837f-dc4d9976d365'::uuid,
 		'whatsapp-default',
@@ -4908,7 +5328,14 @@ VALUES (
 		'2026-04-26 21:17:39.784+00',
 		'2026-04-26 21:18:08.462+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'd8a2c844-2f10-4b52-a37a-47c966167203'::uuid,
 		'whatsapp-default',
@@ -4989,7 +5416,14 @@ VALUES (
 		'2026-04-26 21:05:06.447+00',
 		'2026-04-26 21:05:06.447+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'f4d59056-f048-49c0-bc25-f458d110a44f'::uuid,
 		'whatsapp-default',
@@ -5070,7 +5504,14 @@ VALUES (
 		'2026-04-26 21:12:11.939+00',
 		'2026-04-26 21:12:38.722+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'963c0389-4a2e-428f-b6aa-fae0f2c2d7cc'::uuid,
 		'whatsapp-default',
@@ -5151,7 +5592,14 @@ VALUES (
 		'2026-04-26 21:17:22.398+00',
 		'2026-04-26 21:17:22.398+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'aa7ae0a8-8d7a-4df3-a198-af7086c17da2'::uuid,
 		'whatsapp-default',
@@ -5232,7 +5680,14 @@ VALUES (
 		'2026-04-26 21:05:15.767+00',
 		'2026-04-26 21:05:15.767+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'1ba348be-73fc-4876-912a-946e4064fe7e'::uuid,
 		'whatsapp-default',
@@ -5313,7 +5768,14 @@ VALUES (
 		'2026-04-26 21:12:54.669+00',
 		'2026-04-26 21:13:24.77+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'e70ae783-eecf-4c4f-a341-c48b3b1932bb'::uuid,
 		'whatsapp-default',
@@ -5394,7 +5856,14 @@ VALUES (
 		'2026-04-26 21:26:38.041+00',
 		'2026-04-26 21:26:38.041+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'9de828fe-6dfe-4bb0-b613-8f182027d2eb'::uuid,
 		'whatsapp-default',
@@ -5475,7 +5944,14 @@ VALUES (
 		'2026-04-26 21:05:12.439+00',
 		'2026-04-26 21:05:12.439+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'05cc8387-1f5c-401c-92c8-c2ef8d2e1fbb'::uuid,
 		'whatsapp-default',
@@ -5556,7 +6032,14 @@ VALUES (
 		'2026-04-26 21:13:14.494+00',
 		'2026-04-26 21:14:43.234+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'd8e0f92c-664d-4792-bd2e-c5c0eebf2b4f'::uuid,
 		'whatsapp-default',
@@ -5637,7 +6120,14 @@ VALUES (
 		'2026-04-26 21:18:35.326+00',
 		'2026-04-26 21:19:07.082+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'e00176a0-abb9-467d-9f5b-97dccec86759'::uuid,
 		'whatsapp-default',
@@ -5718,7 +6208,14 @@ VALUES (
 		'2026-04-26 21:05:09.654+00',
 		'2026-04-26 21:05:09.654+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'bb8be0cb-2a79-424f-961e-230781b90035'::uuid,
 		'whatsapp-default',
@@ -5799,7 +6296,14 @@ VALUES (
 		'2026-04-26 21:12:48.224+00',
 		'2026-04-26 21:12:48.224+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'8f399329-a6b2-44b5-a4ab-7bf100374b1d'::uuid,
 		'whatsapp-default',
@@ -5880,7 +6384,14 @@ VALUES (
 		'2026-04-26 21:18:35.326+00',
 		'2026-04-26 21:19:07.082+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'4de44816-92f7-4d3b-8666-6a77d8e605af'::uuid,
 		'whatsapp-default',
@@ -5961,7 +6472,14 @@ VALUES (
 		'2026-04-26 21:05:18.967+00',
 		'2026-04-26 21:05:18.967+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'27f92185-5080-46f6-92c4-d1b6c66dac95'::uuid,
 		'whatsapp-default',
@@ -6042,7 +6560,14 @@ VALUES (
 		'2026-04-26 21:11:35.08+00',
 		'2026-04-26 21:11:35.08+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'efee7f9e-5162-4489-b8ec-18a3b5592ab0'::uuid,
 		'whatsapp-default',
@@ -6123,7 +6648,14 @@ VALUES (
 		'2026-04-26 21:13:14.494+00',
 		'2026-04-26 21:14:43.234+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'd7ca2708-7bcd-419f-8fb9-711e23da33f3'::uuid,
 		'whatsapp-default',
@@ -6204,7 +6736,14 @@ VALUES (
 		'2026-04-26 21:05:18.968+00',
 		'2026-04-26 21:05:18.968+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'58bdff49-06b1-4578-8ecb-2f0cce70e51f'::uuid,
 		'whatsapp-default',
@@ -6285,7 +6824,14 @@ VALUES (
 		'2026-04-26 21:11:54.498+00',
 		'2026-04-26 21:12:21.425+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'916c3b89-e35d-47c2-857d-44913da5faa4'::uuid,
 		'whatsapp-default',
@@ -6366,7 +6912,14 @@ VALUES (
 		'2026-04-26 21:17:49.501+00',
 		'2026-04-26 21:18:19.267+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'992cda96-d321-4cbf-bfb6-b426a33315e2'::uuid,
 		'whatsapp-default',
@@ -6447,7 +7000,14 @@ VALUES (
 		'2026-04-26 20:56:12.69+00',
 		'2026-04-26 20:56:12.69+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'cf4286db-74e5-4ed4-b66e-b5cdcf9bc222'::uuid,
 		'whatsapp-default',
@@ -6528,7 +7088,14 @@ VALUES (
 		'2026-04-26 21:11:38.291+00',
 		'2026-04-26 21:11:38.291+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'b5b190c4-f47e-4579-9bd2-7b2acea6ca30'::uuid,
 		'whatsapp-default',
@@ -6609,7 +7176,14 @@ VALUES (
 		'2026-04-26 21:18:39.275+00',
 		'2026-04-26 21:19:11.058+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'533a9423-1406-4de5-8c76-ca4180ef9b67'::uuid,
 		'whatsapp-default',
@@ -6690,7 +7264,14 @@ VALUES (
 		'2026-04-26 20:56:12.69+00',
 		'2026-04-26 20:56:12.69+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'c4b59697-cad2-4d57-9de7-409a3d973f97'::uuid,
 		'whatsapp-default',
@@ -6771,7 +7352,14 @@ VALUES (
 		'2026-04-26 20:56:23.261+00',
 		'2026-04-26 20:56:23.261+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'34fe69f7-4ca0-4604-a811-dd28f5654cba'::uuid,
 		'whatsapp-default',
@@ -6852,7 +7440,14 @@ VALUES (
 		'2026-04-26 20:56:29.784+00',
 		'2026-04-26 20:56:29.784+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'0d0bd850-e802-4710-80ae-a3c0e669589b'::uuid,
 		'whatsapp-default',
@@ -6933,7 +7528,14 @@ VALUES (
 		'2026-04-26 20:56:35.806+00',
 		'2026-04-26 20:56:35.806+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'2fefa6f3-1281-4416-96f7-af23de70a264'::uuid,
 		'whatsapp-default',
@@ -7014,7 +7616,14 @@ VALUES (
 		'2026-04-26 21:05:32.759+00',
 		'2026-04-26 21:05:32.759+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'a0bd458d-1f23-445c-8cb8-04757ace7608'::uuid,
 		'whatsapp-default',
@@ -7095,7 +7704,14 @@ VALUES (
 		'2026-04-26 21:11:46.001+00',
 		'2026-04-26 21:11:48.045+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'642e23b3-7051-44de-b0f6-46eb1854adea'::uuid,
 		'whatsapp-default',
@@ -7176,7 +7792,14 @@ VALUES (
 		'2026-04-26 21:13:11.948+00',
 		'2026-04-26 21:14:40.236+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'7c653406-f892-4a5c-a733-584d096a52d9'::uuid,
 		'whatsapp-default',
@@ -7257,7 +7880,14 @@ VALUES (
 		'2026-04-26 21:05:32.758+00',
 		'2026-04-26 21:05:32.758+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'0cc379fc-4198-4e94-860d-5df13edbec23'::uuid,
 		'whatsapp-default',
@@ -7338,7 +7968,14 @@ VALUES (
 		'2026-04-26 21:18:02.359+00',
 		'2026-04-26 21:19:04.585+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'c3fd6f38-c589-4a7b-999b-f5a77b2354bd'::uuid,
 		'whatsapp-default',
@@ -7419,7 +8056,14 @@ VALUES (
 		'2026-04-26 21:26:07.227+00',
 		'2026-04-26 21:26:07.227+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'8ea33042-48bc-4dcc-8afe-0e9262f2fe78'::uuid,
 		'whatsapp-default',
@@ -7500,7 +8144,14 @@ VALUES (
 		'2026-04-26 21:05:43.331+00',
 		'2026-04-26 21:05:43.331+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'3e3a1e2a-909b-441c-ac97-9d91304fa21c'::uuid,
 		'whatsapp-default',
@@ -7581,7 +8232,14 @@ VALUES (
 		'2026-04-26 21:14:06.576+00',
 		'2026-04-26 21:15:07.244+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'1fa6664a-e8f2-4793-9916-b700330dd9ec'::uuid,
 		'whatsapp-default',
@@ -7662,7 +8320,14 @@ VALUES (
 		'2026-04-26 21:26:31.027+00',
 		'2026-04-26 21:27:30.674+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'44dd5c92-afe8-4bd8-b764-627dbc757c17'::uuid,
 		'whatsapp-default',
@@ -7743,7 +8408,14 @@ VALUES (
 		'2026-04-26 21:05:43.331+00',
 		'2026-04-26 21:05:43.331+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'936b6787-e116-40c3-acaf-5ad9c231fc4d'::uuid,
 		'whatsapp-default',
@@ -7824,7 +8496,14 @@ VALUES (
 		'2026-04-26 21:14:06.576+00',
 		'2026-04-26 21:15:07.244+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'6f918140-41e6-4b0a-90bd-de54520f6c35'::uuid,
 		'whatsapp-default',
@@ -7905,7 +8584,14 @@ VALUES (
 		'2026-04-26 21:20:32.562+00',
 		'2026-04-26 21:20:32.562+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'dda6147a-e123-47c9-ba05-a66f8c5b59b5'::uuid,
 		'whatsapp-default',
@@ -7986,7 +8672,14 @@ VALUES (
 		'2026-04-26 21:05:35.992+00',
 		'2026-04-26 21:05:35.992+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'a6a9b5f9-437c-4653-994c-45768f4e771e'::uuid,
 		'whatsapp-default',
@@ -8067,7 +8760,14 @@ VALUES (
 		'2026-04-26 21:14:00.842+00',
 		'2026-04-26 21:15:00.231+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'4fe65888-a554-4152-aea5-145e5ff01559'::uuid,
 		'whatsapp-default',
@@ -8148,7 +8848,14 @@ VALUES (
 		'2026-04-26 21:20:42.302+00',
 		'2026-04-26 21:20:42.302+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'6a3bce50-cc04-41c1-9bd6-3cbb2ce250e2'::uuid,
 		'whatsapp-default',
@@ -8229,7 +8936,14 @@ VALUES (
 		'2026-04-26 21:05:29.161+00',
 		'2026-04-26 21:05:29.161+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'53705382-f79f-4303-a801-49a922f80bc9'::uuid,
 		'whatsapp-default',
@@ -8310,7 +9024,14 @@ VALUES (
 		'2026-04-26 21:13:21.425+00',
 		'2026-04-26 21:14:49.964+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'76023eff-c4f6-4ea4-8c6b-a3ff6faeb0fe'::uuid,
 		'whatsapp-default',
@@ -8391,7 +9112,14 @@ VALUES (
 		'2026-04-26 21:20:29.799+00',
 		'2026-04-26 21:20:29.799+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'a71f52ca-e32f-41e8-b781-4952d0e8f88c'::uuid,
 		'whatsapp-default',
@@ -8472,7 +9200,14 @@ VALUES (
 		'2026-04-26 21:05:29.161+00',
 		'2026-04-26 21:05:29.161+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'8a0dd03b-34e2-4da0-92d5-a9045225f612'::uuid,
 		'whatsapp-default',
@@ -8553,7 +9288,14 @@ VALUES (
 		'2026-04-26 21:13:53.584+00',
 		'2026-04-26 21:14:53.2+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'b3295611-eca3-4f6f-ae6c-3d1bdb29e3ed'::uuid,
 		'whatsapp-default',
@@ -8634,7 +9376,14 @@ VALUES (
 		'2026-04-26 21:20:38.659+00',
 		'2026-04-26 21:20:38.659+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'e3aa41fe-33eb-4a05-b2ac-51384f295b31'::uuid,
 		'whatsapp-default',
@@ -8715,7 +9464,14 @@ VALUES (
 		'2026-04-26 21:06:20.92+00',
 		'2026-04-26 21:06:20.92+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'b8f38fce-57fd-435d-ac72-a08f0f428431'::uuid,
 		'whatsapp-default',
@@ -8796,7 +9552,14 @@ VALUES (
 		'2026-04-26 21:07:29.088+00',
 		'2026-04-26 21:07:29.088+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'a468eef2-d7e2-4c37-888f-c8b0ef1f763e'::uuid,
 		'whatsapp-default',
@@ -8877,7 +9640,14 @@ VALUES (
 		'2026-04-26 21:14:16.937+00',
 		'2026-04-26 21:15:18.316+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'6a93223c-22a9-45c6-987b-7669d1e29b7a'::uuid,
 		'whatsapp-default',
@@ -8958,7 +9728,14 @@ VALUES (
 		'2026-04-26 21:06:20.92+00',
 		'2026-04-26 21:06:20.92+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'72553e7b-e37b-4677-9d1e-c05ab81f224b'::uuid,
 		'whatsapp-default',
@@ -9039,7 +9816,14 @@ VALUES (
 		'2026-04-26 21:07:29.088+00',
 		'2026-04-26 21:07:29.088+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'92b3f17a-83b6-4e07-a8bb-767cc0827115'::uuid,
 		'whatsapp-default',
@@ -9120,7 +9904,14 @@ VALUES (
 		'2026-04-26 21:14:23.886+00',
 		'2026-04-26 21:15:25.556+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'1e431810-ce0a-4a2f-9b4d-4b900cf8f5ac'::uuid,
 		'whatsapp-default',
@@ -9201,7 +9992,14 @@ VALUES (
 		'2026-04-26 20:57:20.929+00',
 		'2026-04-26 20:57:20.929+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'6645e367-78dd-4445-bec6-0b7ad56ea0c6'::uuid,
 		'whatsapp-default',
@@ -9282,7 +10080,14 @@ VALUES (
 		'2026-04-26 20:57:28.365+00',
 		'2026-04-26 20:57:28.365+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'9d13951b-d4cc-413c-81c2-22ceace00337'::uuid,
 		'whatsapp-default',
@@ -9363,7 +10168,14 @@ VALUES (
 		'2026-04-26 20:57:34.16+00',
 		'2026-04-26 20:58:35.447+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'f8836b0f-2a86-4661-8918-d79a779fd815'::uuid,
 		'whatsapp-default',
@@ -9444,7 +10256,14 @@ VALUES (
 		'2026-04-26 21:06:40.64+00',
 		'2026-04-26 21:06:40.64+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'b5e85128-f6db-4f59-b2ba-b681a83f3843'::uuid,
 		'whatsapp-default',
@@ -9525,7 +10344,14 @@ VALUES (
 		'2026-04-26 21:07:16.599+00',
 		'2026-04-26 21:07:16.599+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'06cee4ee-1c88-41ea-a4a3-605b38aa25a2'::uuid,
 		'whatsapp-default',
@@ -9606,7 +10432,14 @@ VALUES (
 		'2026-04-26 21:14:10.592+00',
 		'2026-04-26 21:15:10.481+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'9b6d9902-b61f-4cac-8c19-146846dbe797'::uuid,
 		'whatsapp-default',
@@ -9687,7 +10520,14 @@ VALUES (
 		'2026-04-26 21:06:34.575+00',
 		'2026-04-26 21:06:34.575+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'70c7956e-66d9-4c98-8636-dc21b92032c0'::uuid,
 		'whatsapp-default',
@@ -9768,7 +10608,14 @@ VALUES (
 		'2026-04-26 21:07:16.599+00',
 		'2026-04-26 21:07:16.599+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'1c9e590c-6dad-4a81-bf1c-b1ae05b6002c'::uuid,
 		'whatsapp-default',
@@ -9849,7 +10696,14 @@ VALUES (
 		'2026-04-26 21:13:57.648+00',
 		'2026-04-26 21:14:56.568+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'7ccae45e-c0d4-40fb-983c-ca68a9a40588'::uuid,
 		'whatsapp-default',
@@ -9930,7 +10784,14 @@ VALUES (
 		'2026-04-26 21:06:38.414+00',
 		'2026-04-26 21:06:38.414+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'76f6854b-8ba5-4aa8-b474-b3c4acc7899a'::uuid,
 		'whatsapp-default',
@@ -10011,7 +10872,14 @@ VALUES (
 		'2026-04-26 21:07:20.205+00',
 		'2026-04-26 21:07:20.205+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'dd885de6-ef53-488b-ad90-ce092b7b5a95'::uuid,
 		'whatsapp-default',
@@ -10092,7 +10960,14 @@ VALUES (
 		'2026-04-26 21:08:12.482+00',
 		'2026-04-26 21:08:12.482+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'eaca30c4-b932-4239-acf6-b042949bf94d'::uuid,
 		'whatsapp-default',
@@ -10173,7 +11048,14 @@ VALUES (
 		'2026-04-26 21:06:38.414+00',
 		'2026-04-26 21:06:38.414+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'708092ca-d77d-4044-afcb-04b89df8a0de'::uuid,
 		'whatsapp-default',
@@ -10254,7 +11136,14 @@ VALUES (
 		'2026-04-26 21:07:06.586+00',
 		'2026-04-26 21:07:06.586+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'fc910ccb-6b4d-4025-ad81-ab8fe93a81d0'::uuid,
 		'whatsapp-default',
@@ -10335,7 +11224,14 @@ VALUES (
 		'2026-04-26 21:08:05.961+00',
 		'2026-04-26 21:08:05.961+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'aa8eeab9-d210-4619-8623-26b8e829ba78'::uuid,
 		'whatsapp-default',
@@ -10416,7 +11312,14 @@ VALUES (
 		'2026-04-26 21:06:31.739+00',
 		'2026-04-26 21:06:31.739+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'64d4f62b-cf2b-41c0-aaee-eabcb077f8a1'::uuid,
 		'whatsapp-default',
@@ -10497,7 +11400,14 @@ VALUES (
 		'2026-04-26 21:07:26.513+00',
 		'2026-04-26 21:07:26.513+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'793f39ab-b667-434f-9416-c6efcf8a11b7'::uuid,
 		'whatsapp-default',
@@ -10578,7 +11488,14 @@ VALUES (
 		'2026-04-26 21:19:37.379+00',
 		'2026-04-26 21:19:37.379+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'057e293a-f352-4727-904f-61fc2af92ded'::uuid,
 		'whatsapp-default',
@@ -10659,7 +11576,14 @@ VALUES (
 		'2026-04-26 21:06:38.414+00',
 		'2026-04-26 21:06:38.414+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'1df933d9-f98c-4caa-9498-cdb7332cb448'::uuid,
 		'whatsapp-default',
@@ -10740,7 +11664,14 @@ VALUES (
 		'2026-04-26 21:07:14.123+00',
 		'2026-04-26 21:07:14.123+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'80c9923e-2a83-4c0d-b269-ff9de3a5b28e'::uuid,
 		'whatsapp-default',
@@ -10821,7 +11752,14 @@ VALUES (
 		'2026-04-26 21:13:57.648+00',
 		'2026-04-26 21:14:56.568+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'8a305be6-cbca-45ff-8aec-a00b77783e7a'::uuid,
 		'whatsapp-default',
@@ -10902,7 +11840,14 @@ VALUES (
 		'2026-04-26 21:06:31.739+00',
 		'2026-04-26 21:06:31.739+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'1b6a242c-8988-48bc-826d-4442d534f3f2'::uuid,
 		'whatsapp-default',
@@ -10983,7 +11928,14 @@ VALUES (
 		'2026-04-26 21:07:06.586+00',
 		'2026-04-26 21:07:06.586+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'4e3250f0-3ccc-48a3-ab1d-77e9d59d9424'::uuid,
 		'whatsapp-default',
@@ -11064,7 +12016,14 @@ VALUES (
 		'2026-04-26 21:14:23.886+00',
 		'2026-04-26 21:15:25.556+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'cb242e77-1f06-4a34-9034-b57f01700320'::uuid,
 		'whatsapp-default',
@@ -11145,7 +12104,14 @@ VALUES (
 		'2026-04-26 21:06:40.64+00',
 		'2026-04-26 21:06:40.64+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'984b6e0b-c96d-4f4d-8184-af674c91d57b'::uuid,
 		'whatsapp-default',
@@ -11226,7 +12192,14 @@ VALUES (
 		'2026-04-26 20:58:06.411+00',
 		'2026-04-26 20:59:34.398+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'e72f91fe-0d5c-4e54-87bd-e1e1e5cc3dc1'::uuid,
 		'whatsapp-default',
@@ -11307,7 +12280,14 @@ VALUES (
 		'2026-04-26 21:15:44.442+00',
 		'2026-04-26 21:15:44.442+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'4c9a22b0-303c-4a57-ad79-ea1038cb0740'::uuid,
 		'whatsapp-default',
@@ -11388,7 +12368,14 @@ VALUES (
 		'2026-04-26 21:08:19.322+00',
 		'2026-04-26 21:08:19.322+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'8b0a22ef-6ff0-4623-b841-be86c6c8484b'::uuid,
 		'whatsapp-default',
@@ -11469,7 +12456,14 @@ VALUES (
 		'2026-04-26 21:08:37.34+00',
 		'2026-04-26 21:08:37.34+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'51f3721b-5d74-4b07-aec4-670c0f046251'::uuid,
 		'whatsapp-default',
@@ -11550,7 +12544,14 @@ VALUES (
 		'2026-04-26 21:15:44.441+00',
 		'2026-04-26 21:15:44.441+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'd05b298a-cd71-4b58-a6e5-b1a5a92fe808'::uuid,
 		'whatsapp-default',
@@ -11631,7 +12632,14 @@ VALUES (
 		'2026-04-26 21:08:19.322+00',
 		'2026-04-26 21:08:19.322+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'154a25b1-644d-4777-b927-3dfd34d5cafb'::uuid,
 		'whatsapp-default',
@@ -11712,7 +12720,14 @@ VALUES (
 		'2026-04-26 20:58:20.092+00',
 		'2026-04-26 20:59:48.043+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'bab6721f-63d2-465f-822f-76da35907347'::uuid,
 		'whatsapp-default',
@@ -11793,7 +12808,14 @@ VALUES (
 		'2026-04-26 20:58:26.275+00',
 		'2026-04-26 20:59:53.898+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'4319e76e-fbbf-4e60-a4b4-5b1f01dea81b'::uuid,
 		'whatsapp-default',
@@ -11874,7 +12896,14 @@ VALUES (
 		'2026-04-26 20:58:22.409+00',
 		'2026-04-26 20:59:51.285+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'3f2fc597-ede4-467b-9bcd-dda3bf868075'::uuid,
 		'whatsapp-default',
@@ -11955,7 +12984,14 @@ VALUES (
 		'2026-04-26 21:00:04.262+00',
 		'2026-04-26 21:00:04.262+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'4a73de4b-df8b-4dd3-82f4-6194112a1586'::uuid,
 		'whatsapp-default',
@@ -12036,7 +13072,14 @@ VALUES (
 		'2026-04-26 21:00:10.649+00',
 		'2026-04-26 21:00:10.649+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'a0aa2d93-b48a-44ca-874c-0efe8df6b962'::uuid,
 		'whatsapp-default',
@@ -12117,7 +13160,14 @@ VALUES (
 		'2026-04-26 21:00:17.099+00',
 		'2026-04-26 21:00:17.099+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'64a5ff8e-5d20-418a-bbde-908c5aac43f1'::uuid,
 		'whatsapp-default',
@@ -12198,7 +13248,14 @@ VALUES (
 		'2026-04-26 21:00:24.241+00',
 		'2026-04-26 21:00:24.241+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'fa87bc4c-de0e-423c-8f48-44bc6d064190'::uuid,
 		'whatsapp-default',
@@ -12279,7 +13336,14 @@ VALUES (
 		'2026-04-26 21:00:31.44+00',
 		'2026-04-26 21:00:31.44+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'39a7fd9b-50df-4516-b198-99534c240a43'::uuid,
 		'whatsapp-default',
@@ -12360,7 +13424,14 @@ VALUES (
 		'2026-04-26 21:00:37.823+00',
 		'2026-04-26 21:00:37.823+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'15be790b-3da5-453e-9d02-9b25fde4be04'::uuid,
 		'whatsapp-default',
@@ -12441,7 +13512,14 @@ VALUES (
 		'2026-04-26 21:08:30.733+00',
 		'2026-04-26 21:08:30.733+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'78daf7c3-c124-4232-86c7-98c09ed2a61a'::uuid,
 		'whatsapp-default',
@@ -12522,7 +13600,14 @@ VALUES (
 		'2026-04-26 21:15:56.763+00',
 		'2026-04-26 21:15:56.763+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'dcc71f6a-288a-4ed5-93f8-31d310bf3507'::uuid,
 		'whatsapp-default',
@@ -12603,7 +13688,14 @@ VALUES (
 		'2026-04-26 21:26:27.181+00',
 		'2026-04-26 21:27:26.895+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'17006547-01ad-4253-8096-d3854e1ab2cf'::uuid,
 		'whatsapp-default',
@@ -12684,7 +13776,14 @@ VALUES (
 		'2026-04-26 21:08:30.733+00',
 		'2026-04-26 21:08:30.733+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'261d77f4-ca54-4f28-9010-930b95fb32cb'::uuid,
 		'whatsapp-default',
@@ -12765,7 +13864,14 @@ VALUES (
 		'2026-04-26 21:15:59.231+00',
 		'2026-04-26 21:15:59.231+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'bb4248ca-93ed-458b-b5c1-1fcdfd8c0830'::uuid,
 		'whatsapp-default',
@@ -12846,7 +13952,14 @@ VALUES (
 		'2026-04-26 21:26:53.974+00',
 		'2026-04-26 21:26:53.974+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'335f91a4-efbc-4d93-a2ed-5635f254f10b'::uuid,
 		'whatsapp-default',
@@ -12927,7 +14040,14 @@ VALUES (
 		'2026-04-26 21:08:39.318+00',
 		'2026-04-26 21:09:39.077+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'b085638f-ec71-4b45-abf5-27b2264d408c'::uuid,
 		'whatsapp-default',
@@ -13008,7 +14128,14 @@ VALUES (
 		'2026-04-26 21:16:05.184+00',
 		'2026-04-26 21:16:05.184+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'142cfb9f-d2c4-4101-a85c-c3413b0e36df'::uuid,
 		'whatsapp-default',
@@ -13089,7 +14216,14 @@ VALUES (
 		'2026-04-26 21:27:11.95+00',
 		'2026-04-26 21:27:40.316+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'7a1a51c9-244d-480c-bc69-37b2f66be98d'::uuid,
 		'whatsapp-default',
@@ -13170,7 +14304,14 @@ VALUES (
 		'2026-04-26 21:01:12.949+00',
 		'2026-04-26 21:03:11.922+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'7a0ba1a4-d233-42df-8106-bfafd804331f'::uuid,
 		'whatsapp-default',
@@ -13251,7 +14392,14 @@ VALUES (
 		'2026-04-26 21:15:59.232+00',
 		'2026-04-26 21:15:59.232+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'189a3d87-a27e-48df-8561-fdc2a812bb5b'::uuid,
 		'whatsapp-default',
@@ -13332,7 +14480,14 @@ VALUES (
 		'2026-04-26 21:27:04.775+00',
 		'2026-04-26 21:27:04.775+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'2565d7ca-86d9-4ecb-beb5-d6eccfe26e3f'::uuid,
 		'whatsapp-default',
@@ -13413,7 +14568,14 @@ VALUES (
 		'2026-04-26 21:01:09.967+00',
 		'2026-04-26 21:03:08.632+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'95ace5eb-fb23-4a17-9125-de5917c86d58'::uuid,
 		'whatsapp-default',
@@ -13494,7 +14656,14 @@ VALUES (
 		'2026-04-26 21:09:18.436+00',
 		'2026-04-26 21:10:16.418+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'8b714e87-63ab-427d-a3d1-94f87ca2d91d'::uuid,
 		'whatsapp-default',
@@ -13575,7 +14744,14 @@ VALUES (
 		'2026-04-26 21:26:33.357+00',
 		'2026-04-26 21:27:33.95+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'9a88cef2-3c7f-490f-ab06-cf733b0aff2b'::uuid,
 		'whatsapp-default',
@@ -13656,7 +14832,14 @@ VALUES (
 		'2026-04-26 21:08:21.254+00',
 		'2026-04-26 21:09:21.022+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'cfe53d1a-7287-48ee-a3ad-f6d7234fd26d'::uuid,
 		'whatsapp-default',
@@ -13737,7 +14920,14 @@ VALUES (
 		'2026-04-26 21:15:59.232+00',
 		'2026-04-26 21:15:59.232+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'eaf5c6b3-12f5-440f-8488-8e9f65388158'::uuid,
 		'whatsapp-default',
@@ -13818,7 +15008,14 @@ VALUES (
 		'2026-04-26 21:16:23.941+00',
 		'2026-04-26 21:17:23.458+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'55523b49-3a30-4285-9c60-5731f916c2dc'::uuid,
 		'whatsapp-default',
@@ -13899,7 +15096,14 @@ VALUES (
 		'2026-04-26 21:08:21.255+00',
 		'2026-04-26 21:09:21.023+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'023046ec-f35e-4a62-90a8-9686fd98c25b'::uuid,
 		'whatsapp-default',
@@ -13980,7 +15184,14 @@ VALUES (
 		'2026-04-26 21:15:56.763+00',
 		'2026-04-26 21:15:56.763+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'd1628b2e-8fe9-42f8-be13-034af4733e04'::uuid,
 		'whatsapp-default',
@@ -14061,7 +15272,14 @@ VALUES (
 		'2026-04-26 21:16:52.93+00',
 		'2026-04-26 21:16:52.93+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'b99d3a42-8afd-42b5-896b-463a089d7a1c'::uuid,
 		'whatsapp-default',
@@ -14142,7 +15360,14 @@ VALUES (
 		'2026-04-26 21:08:49.985+00',
 		'2026-04-26 21:09:47.824+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'324cdfa9-f0f9-4a18-9197-3a838b50f6e8'::uuid,
 		'whatsapp-default',
@@ -14223,7 +15448,14 @@ VALUES (
 		'2026-04-26 21:16:48.982+00',
 		'2026-04-26 21:16:48.982+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'8b159af9-367a-4f01-b28e-901463fc75dc'::uuid,
 		'whatsapp-default',
@@ -14304,7 +15536,14 @@ VALUES (
 		'2026-04-26 21:19:34.196+00',
 		'2026-04-26 21:19:34.196+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'0923079b-5e04-406b-ba2f-7f7de5dea2e9'::uuid,
 		'whatsapp-default',
@@ -14385,7 +15624,14 @@ VALUES (
 		'2026-04-26 21:09:02.472+00',
 		'2026-04-26 21:10:00.182+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'86457179-c898-4190-9e72-52d86d3c627d'::uuid,
 		'whatsapp-default',
@@ -14466,7 +15712,14 @@ VALUES (
 		'2026-04-26 21:17:06.428+00',
 		'2026-04-26 21:17:06.428+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'947037b0-d788-4a07-855a-c8a6f2713c91'::uuid,
 		'whatsapp-default',
@@ -14547,7 +15800,14 @@ VALUES (
 		'2026-04-26 21:20:26.313+00',
 		'2026-04-26 21:20:26.313+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'2f02cb93-068a-451a-b72e-182d234c28ac'::uuid,
 		'whatsapp-default',
@@ -14628,7 +15888,14 @@ VALUES (
 		'2026-04-26 21:01:19.032+00',
 		'2026-04-26 21:03:19.275+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'ce1a42cf-31a0-41c6-bd01-5e1c3b3f14f9'::uuid,
 		'whatsapp-default',
@@ -14709,7 +15976,14 @@ VALUES (
 		'2026-04-26 21:01:29.431+00',
 		'2026-04-26 21:03:29.779+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'794590d1-feaf-4110-b1c9-223bafc0e931'::uuid,
 		'whatsapp-default',
@@ -14790,7 +16064,14 @@ VALUES (
 		'2026-04-26 21:01:19.03+00',
 		'2026-04-26 21:03:19.274+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'f6acf66e-30c5-414a-9d91-54a0e8d88184'::uuid,
 		'whatsapp-default',
@@ -14871,7 +16152,14 @@ VALUES (
 		'2026-04-26 21:09:22.424+00',
 		'2026-04-26 21:10:19.541+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'1544fbe8-576e-42dc-8c4c-57eecca9c2d6'::uuid,
 		'whatsapp-default',
@@ -14952,7 +16240,14 @@ VALUES (
 		'2026-04-26 21:16:34.421+00',
 		'2026-04-26 21:16:34.421+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'782fd874-befe-4f8d-b759-a06c1f6fb976'::uuid,
 		'whatsapp-default',
@@ -15033,7 +16328,14 @@ VALUES (
 		'2026-04-26 21:19:58.97+00',
 		'2026-04-26 21:19:58.97+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'6a2fad59-ff2f-466d-b722-dc043063a53c'::uuid,
 		'whatsapp-default',
@@ -15114,7 +16416,14 @@ VALUES (
 		'2026-04-26 21:01:55.941+00',
 		'2026-04-26 21:03:52.605+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'bc42f426-4907-4283-b243-22f08b4d4772'::uuid,
 		'whatsapp-default',
@@ -15195,7 +16504,14 @@ VALUES (
 		'2026-04-26 21:10:40.865+00',
 		'2026-04-26 21:10:40.865+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'd3910418-ef90-4130-91b0-c475a0833a2b'::uuid,
 		'whatsapp-default',
@@ -15276,7 +16592,14 @@ VALUES (
 		'2026-04-26 21:17:02.527+00',
 		'2026-04-26 21:17:02.527+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'291aa5ce-73e4-4fc0-9b4a-13fae19c6127'::uuid,
 		'whatsapp-default',
@@ -15357,7 +16680,14 @@ VALUES (
 		'2026-04-26 21:02:02.553+00',
 		'2026-04-26 21:03:59.373+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'9bfc38cc-1fe0-41ab-88cf-3d39e4c1c4ee'::uuid,
 		'whatsapp-default',
@@ -15438,7 +16768,14 @@ VALUES (
 		'2026-04-26 21:11:07.755+00',
 		'2026-04-26 21:11:07.755+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'dabc55fe-5bb7-45a1-81b5-2f0b62b4b556'::uuid,
 		'whatsapp-default',
@@ -15519,7 +16856,14 @@ VALUES (
 		'2026-04-26 21:19:52.996+00',
 		'2026-04-26 21:19:52.996+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'bb184977-a203-467c-9859-b6adfb5c21b4'::uuid,
 		'whatsapp-default',
@@ -15600,7 +16944,14 @@ VALUES (
 		'2026-04-26 21:02:12.013+00',
 		'2026-04-26 21:04:09.409+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'75efc518-85aa-4fd8-bf31-4222ec7f7f9e'::uuid,
 		'whatsapp-default',
@@ -15681,7 +17032,14 @@ VALUES (
 		'2026-04-26 21:16:43.07+00',
 		'2026-04-26 21:16:43.07+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'307e9d6d-c36c-4d54-9276-fd97a79f5701'::uuid,
 		'whatsapp-default',
@@ -15762,7 +17120,14 @@ VALUES (
 		'2026-04-26 21:20:03.36+00',
 		'2026-04-26 21:20:03.36+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'58d3993d-02fb-417c-b129-c4bbfac852dc'::uuid,
 		'whatsapp-default',
@@ -15843,7 +17208,14 @@ VALUES (
 		'2026-04-26 21:02:12.012+00',
 		'2026-04-26 21:04:09.409+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'04572120-71fd-4b94-bbe9-0cdbfc9a8e94'::uuid,
 		'whatsapp-default',
@@ -15924,7 +17296,14 @@ VALUES (
 		'2026-04-26 21:11:10.383+00',
 		'2026-04-26 21:11:10.383+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'35d06bdd-7d28-4046-9e92-f39724038018'::uuid,
 		'whatsapp-default',
@@ -16005,7 +17384,14 @@ VALUES (
 		'2026-04-26 21:19:56.968+00',
 		'2026-04-26 21:19:56.968+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'e4ac00e8-5693-43be-b1e2-1a76bc4837a5'::uuid,
 		'whatsapp-default',
@@ -16086,7 +17472,14 @@ VALUES (
 		'2026-04-26 21:02:09.616+00',
 		'2026-04-26 21:04:06.233+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'aa6c7bbb-204b-4221-ab01-b600f1487f3b'::uuid,
 		'whatsapp-default',
@@ -16167,7 +17560,14 @@ VALUES (
 		'2026-04-26 21:16:59.417+00',
 		'2026-04-26 21:16:59.417+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'42505463-ca38-40d3-a396-6ba150079037'::uuid,
 		'whatsapp-default',
@@ -16248,7 +17648,14 @@ VALUES (
 		'2026-04-26 21:20:26.313+00',
 		'2026-04-26 21:20:26.313+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'249a0017-5fa4-4dd2-b0bb-83ac843281fe'::uuid,
 		'whatsapp-default',
@@ -16329,7 +17736,14 @@ VALUES (
 		'2026-04-26 21:02:02.553+00',
 		'2026-04-26 21:03:59.372+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'0d0aef97-7a6f-4f84-81e5-53c04486a798'::uuid,
 		'whatsapp-default',
@@ -16410,7 +17824,14 @@ VALUES (
 		'2026-04-26 21:11:04.2+00',
 		'2026-04-26 21:11:04.2+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'e518df1c-b47a-404f-bfa1-c4c5367e8e8e'::uuid,
 		'whatsapp-default',
@@ -16491,7 +17912,14 @@ VALUES (
 		'2026-04-26 21:20:23.641+00',
 		'2026-04-26 21:20:23.641+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'5606d3cf-eb39-420d-860e-9c857f838b06'::uuid,
 		'whatsapp-default',
@@ -16572,7 +18000,14 @@ VALUES (
 		'2026-04-26 21:01:58.462+00',
 		'2026-04-26 21:03:55.86+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'04e24f44-2e48-4a6c-9194-307428e09377'::uuid,
 		'whatsapp-default',
@@ -16653,7 +18088,14 @@ VALUES (
 		'2026-04-26 21:11:10.382+00',
 		'2026-04-26 21:11:10.382+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'859cc57f-dc6f-41f1-b69b-fcdc277c9987'::uuid,
 		'whatsapp-default',
@@ -16734,7 +18176,14 @@ VALUES (
 		'2026-04-26 21:19:58.97+00',
 		'2026-04-26 21:19:58.97+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'79f4d173-a024-4f19-8ed5-005845202a00'::uuid,
 		'whatsapp-default',
@@ -16815,7 +18264,14 @@ VALUES (
 		'2026-04-26 21:01:52.152+00',
 		'2026-04-26 21:03:49.753+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'f524f462-7ffc-45d7-aa18-dc6c6a3d5fcf'::uuid,
 		'whatsapp-default',
@@ -16896,7 +18352,14 @@ VALUES (
 		'2026-04-26 21:11:07.755+00',
 		'2026-04-26 21:11:07.755+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'a1f449a1-e25c-481a-80a3-2f2388c402ef'::uuid,
 		'whatsapp-default',
@@ -16977,7 +18440,14 @@ VALUES (
 		'2026-04-26 21:18:39.275+00',
 		'2026-04-26 21:19:11.058+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'ca3732cc-6315-4ea6-88c7-71d0294ecd03'::uuid,
 		'whatsapp-default',
@@ -17058,7 +18528,14 @@ VALUES (
 		'2026-04-26 21:01:22.603+00',
 		'2026-04-26 21:03:23.007+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'c8c9af54-b75a-4bd6-a10a-23fdc2c2ef6d'::uuid,
 		'whatsapp-default',
@@ -17139,7 +18616,14 @@ VALUES (
 		'2026-04-26 21:02:18.549+00',
 		'2026-04-26 21:04:17.101+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'a8bbab39-b478-4d4a-9dce-0f966f8a505e'::uuid,
 		'whatsapp-default',
@@ -17220,7 +18704,14 @@ VALUES (
 		'2026-04-26 21:10:50.198+00',
 		'2026-04-26 21:10:50.198+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'd74ef3ce-bd90-4419-b28d-7d7b851b19fb'::uuid,
 		'whatsapp-default',
@@ -17301,7 +18792,14 @@ VALUES (
 		'2026-04-26 21:20:48.319+00',
 		'2026-04-26 21:20:48.319+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'843dfd3e-0f0a-46d0-a03a-39c7e1786a2f'::uuid,
 		'whatsapp-default',
@@ -17382,7 +18880,14 @@ VALUES (
 		'2026-04-26 21:30:54.112+00',
 		'2026-04-26 21:30:54.112+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'afc6eaec-ee43-4f0d-b371-a007a93134cd'::uuid,
 		'whatsapp-default',
@@ -17463,7 +18968,14 @@ VALUES (
 		'2026-04-26 21:32:28.392+00',
 		'2026-04-26 21:32:28.392+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'4cafde03-9d13-4062-aa9f-1e1798d72060'::uuid,
 		'whatsapp-default',
@@ -17544,7 +19056,14 @@ VALUES (
 		'2026-04-26 21:32:58.184+00',
 		'2026-04-26 21:32:58.184+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'44edcc58-8c7f-4fac-9541-590798597513'::uuid,
 		'whatsapp-default',
@@ -17625,7 +19144,14 @@ VALUES (
 		'2026-04-26 21:31:03.614+00',
 		'2026-04-26 21:31:03.614+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'1cd16d0e-9346-494f-81c3-bebae2e2b822'::uuid,
 		'whatsapp-default',
@@ -17706,7 +19232,14 @@ VALUES (
 		'2026-04-26 21:32:31.92+00',
 		'2026-04-26 21:32:31.92+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'661e23b3-a698-45f3-8412-ca0985aee876'::uuid,
 		'whatsapp-default',
@@ -17787,7 +19320,14 @@ VALUES (
 		'2026-04-26 21:33:07.181+00',
 		'2026-04-26 21:33:07.181+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'9dd8aee1-3375-4b2c-aa6d-2a3812334f4b'::uuid,
 		'whatsapp-default',
@@ -17868,7 +19408,14 @@ VALUES (
 		'2026-04-26 21:31:03.614+00',
 		'2026-04-26 21:31:03.614+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'2058eef2-3c8f-44d1-bace-55456002c99a'::uuid,
 		'whatsapp-default',
@@ -17949,7 +19496,14 @@ VALUES (
 		'2026-04-26 21:32:45.311+00',
 		'2026-04-26 21:32:45.311+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'164bc836-07d2-405a-a8dd-34595d50547e'::uuid,
 		'whatsapp-default',
@@ -18030,7 +19584,14 @@ VALUES (
 		'2026-04-26 21:33:07.18+00',
 		'2026-04-26 21:33:07.18+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'cfe91d8b-6aea-4f68-88f4-936d4a528d1e'::uuid,
 		'whatsapp-default',
@@ -18111,7 +19672,14 @@ VALUES (
 		'2026-04-26 21:31:09.743+00',
 		'2026-04-26 21:31:09.743+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'05c41fdf-e3a5-44a4-befa-c0351c968b27'::uuid,
 		'whatsapp-default',
@@ -18192,7 +19760,14 @@ VALUES (
 		'2026-04-26 21:32:54.68+00',
 		'2026-04-26 21:32:54.68+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'6cbfab6e-684e-48f9-be58-2da6dff15fe8'::uuid,
 		'whatsapp-default',
@@ -18273,7 +19848,14 @@ VALUES (
 		'2026-04-26 21:33:11.363+00',
 		'2026-04-26 21:33:11.363+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'9f2c3beb-fe38-49bb-aac1-6eaa7630740f'::uuid,
 		'whatsapp-default',
@@ -18354,7 +19936,14 @@ VALUES (
 		'2026-04-26 21:27:59.647+00',
 		'2026-04-26 21:27:59.647+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'50585c66-945f-400f-8470-fb693c8375d7'::uuid,
 		'whatsapp-default',
@@ -18435,7 +20024,14 @@ VALUES (
 		'2026-04-26 21:29:10.828+00',
 		'2026-04-26 21:29:10.828+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'a72cce94-4784-4348-8a89-5e50c5fa8f71'::uuid,
 		'whatsapp-default',
@@ -18516,7 +20112,14 @@ VALUES (
 		'2026-04-26 21:32:35.391+00',
 		'2026-04-26 21:32:35.391+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'663fa45d-280f-46f8-808c-586131681156'::uuid,
 		'whatsapp-default',
@@ -18597,7 +20200,14 @@ VALUES (
 		'2026-04-26 21:27:11.951+00',
 		'2026-04-26 21:27:40.316+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'cc499dc4-3405-4262-86dc-0dc7d3b79b85'::uuid,
 		'whatsapp-default',
@@ -18678,7 +20288,14 @@ VALUES (
 		'2026-04-26 21:28:45.283+00',
 		'2026-04-26 21:28:45.283+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'9cd30ccc-e0d0-4137-8677-30d98148b60e'::uuid,
 		'whatsapp-default',
@@ -18759,7 +20376,14 @@ VALUES (
 		'2026-04-26 21:32:25.76+00',
 		'2026-04-26 21:32:25.76+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'f5c30853-a4b2-40f3-8225-8b3972de763a'::uuid,
 		'whatsapp-default',
@@ -18840,7 +20464,14 @@ VALUES (
 		'2026-04-26 21:26:27.18+00',
 		'2026-04-26 21:27:26.802+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'5df38ec5-4b81-473e-95ca-0804d01cab5f'::uuid,
 		'whatsapp-default',
@@ -18921,7 +20552,14 @@ VALUES (
 		'2026-04-26 21:28:38.069+00',
 		'2026-04-26 21:28:38.069+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'd65c6df4-0897-45c3-8948-f91232c1840c'::uuid,
 		'whatsapp-default',
@@ -19002,7 +20640,14 @@ VALUES (
 		'2026-04-26 21:31:24.701+00',
 		'2026-04-26 21:31:24.701+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'd842b1c0-5d82-40e6-bdc1-ffa41277a8c8'::uuid,
 		'whatsapp-default',
@@ -19083,7 +20728,14 @@ VALUES (
 		'2026-04-26 21:26:20.135+00',
 		'2026-04-26 21:27:20.377+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'a1b4a895-0dae-4e61-90ea-88b15a951056'::uuid,
 		'whatsapp-default',
@@ -19164,7 +20816,14 @@ VALUES (
 		'2026-04-26 21:28:38.069+00',
 		'2026-04-26 21:28:38.069+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'8844a0c8-62df-4eec-8f53-3276a3b740a9'::uuid,
 		'whatsapp-default',
@@ -19245,7 +20904,14 @@ VALUES (
 		'2026-04-26 21:31:31.057+00',
 		'2026-04-26 21:31:31.057+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'377f1fa9-d1cb-40ad-bdb8-ee2cda904ff5'::uuid,
 		'whatsapp-default',
@@ -19326,7 +20992,14 @@ VALUES (
 		'2026-04-26 21:26:24.08+00',
 		'2026-04-26 21:27:24.264+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'c8f2ca8c-362d-4147-998b-be1cea56e5d5'::uuid,
 		'whatsapp-default',
@@ -19407,7 +21080,14 @@ VALUES (
 		'2026-04-26 21:28:22.087+00',
 		'2026-04-26 21:28:22.087+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'5104f377-d509-44a5-a790-e49e16a1d622'::uuid,
 		'whatsapp-default',
@@ -19488,7 +21168,14 @@ VALUES (
 		'2026-04-26 21:31:18.658+00',
 		'2026-04-26 21:31:18.658+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'eed0225c-2d67-4f08-99cf-694a369eb9f4'::uuid,
 		'whatsapp-default',
@@ -19569,7 +21256,14 @@ VALUES (
 		'2026-04-26 21:21:06.442+00',
 		'2026-04-26 21:21:06.442+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'cbeffc93-8346-47d8-bc7e-9b2230b4541a'::uuid,
 		'whatsapp-default',
@@ -19650,7 +21344,14 @@ VALUES (
 		'2026-04-26 21:21:25.113+00',
 		'2026-04-26 21:21:25.113+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'daa016e4-671f-4c14-a550-32a2d3179337'::uuid,
 		'whatsapp-default',
@@ -19731,7 +21432,14 @@ VALUES (
 		'2026-04-26 21:21:31.334+00',
 		'2026-04-26 21:21:31.334+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'b1efdc06-26e7-40a7-b331-9f95c670e4a3'::uuid,
 		'whatsapp-default',
@@ -19812,7 +21520,14 @@ VALUES (
 		'2026-04-26 21:21:47.481+00',
 		'2026-04-26 21:21:47.481+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'3a78126e-c369-4be7-94dd-5b34de9f5b6b'::uuid,
 		'whatsapp-default',
@@ -19893,7 +21608,14 @@ VALUES (
 		'2026-04-26 21:22:40.675+00',
 		'2026-04-26 21:22:40.675+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'd2a19eed-3fd8-43a1-b150-717a29db1771'::uuid,
 		'whatsapp-default',
@@ -19974,7 +21696,14 @@ VALUES (
 		'2026-04-26 21:27:56.745+00',
 		'2026-04-26 21:27:56.745+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'31c573a0-b651-4e0a-93a8-83707058c58f'::uuid,
 		'whatsapp-default',
@@ -20055,7 +21784,14 @@ VALUES (
 		'2026-04-26 21:21:57.628+00',
 		'2026-04-26 21:21:57.628+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'5ebe1fd0-8be2-4a0f-8f6e-619e5e2084c3'::uuid,
 		'whatsapp-default',
@@ -20136,7 +21872,14 @@ VALUES (
 		'2026-04-26 21:23:11.286+00',
 		'2026-04-26 21:24:39.287+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'ac952122-f980-434e-9727-33a267dd768a'::uuid,
 		'whatsapp-default',
@@ -20217,7 +21960,14 @@ VALUES (
 		'2026-04-26 21:28:28.573+00',
 		'2026-04-26 21:28:28.573+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'c3b63308-d8cd-44a2-a2a2-c0b686e75efb'::uuid,
 		'whatsapp-default',
@@ -20298,7 +22048,14 @@ VALUES (
 		'2026-04-26 21:21:57.629+00',
 		'2026-04-26 21:21:57.629+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'a3454334-c3fd-431e-91ee-a1b8f78a0d94'::uuid,
 		'whatsapp-default',
@@ -20379,7 +22136,14 @@ VALUES (
 		'2026-04-26 21:22:51.358+00',
 		'2026-04-26 21:22:51.358+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'9b589120-21a1-469b-ba76-e75a5ee9a725'::uuid,
 		'whatsapp-default',
@@ -20460,7 +22224,14 @@ VALUES (
 		'2026-04-26 21:27:56.745+00',
 		'2026-04-26 21:27:56.745+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'1f096f39-1dbd-471d-a7d8-2e062b44be91'::uuid,
 		'whatsapp-default',
@@ -20541,7 +22312,14 @@ VALUES (
 		'2026-04-26 21:21:57.628+00',
 		'2026-04-26 21:21:57.628+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'99856a78-f34d-428d-973c-c87f6464a7a4'::uuid,
 		'whatsapp-default',
@@ -20622,7 +22400,14 @@ VALUES (
 		'2026-04-26 21:23:17.911+00',
 		'2026-04-26 21:24:46.062+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'5799d12f-a1d9-44c7-a078-f65b4bef5897'::uuid,
 		'whatsapp-default',
@@ -20703,7 +22488,14 @@ VALUES (
 		'2026-04-26 21:28:42.268+00',
 		'2026-04-26 21:28:42.268+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'8e66de74-b0ef-4d6b-8740-059a16275571'::uuid,
 		'whatsapp-default',
@@ -20784,7 +22576,14 @@ VALUES (
 		'2026-04-26 21:21:52.067+00',
 		'2026-04-26 21:21:52.067+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'dc59d0dc-4b6a-484d-b06f-e00f4548197c'::uuid,
 		'whatsapp-default',
@@ -20865,7 +22664,14 @@ VALUES (
 		'2026-04-26 21:22:58.579+00',
 		'2026-04-26 21:22:58.579+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'1e81d5c1-0df9-413e-bd33-1b935de0fd8a'::uuid,
 		'whatsapp-default',
@@ -20946,7 +22752,14 @@ VALUES (
 		'2026-04-26 21:28:19.054+00',
 		'2026-04-26 21:28:19.054+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'c9ca6da9-e331-44c7-bf5b-ffa024dbb49e'::uuid,
 		'whatsapp-default',
@@ -21027,7 +22840,14 @@ VALUES (
 		'2026-04-26 21:21:47.481+00',
 		'2026-04-26 21:21:47.481+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'5a629f9c-9a7b-486c-a4b9-8d36c0356a35'::uuid,
 		'whatsapp-default',
@@ -21108,7 +22928,14 @@ VALUES (
 		'2026-04-26 21:22:54.384+00',
 		'2026-04-26 21:22:54.384+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'90cb6c21-ef13-487c-8e53-8372adf538ef'::uuid,
 		'whatsapp-default',
@@ -21189,7 +23016,14 @@ VALUES (
 		'2026-04-26 21:29:14.302+00',
 		'2026-04-26 21:29:14.302+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'addeee32-1315-4056-91db-169d0469f3f6'::uuid,
 		'whatsapp-default',
@@ -21270,7 +23104,14 @@ VALUES (
 		'2026-04-26 21:21:41.747+00',
 		'2026-04-26 21:21:41.747+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'1009fe6e-aa11-4779-b2ce-c065406e5e43'::uuid,
 		'whatsapp-default',
@@ -21351,7 +23192,14 @@ VALUES (
 		'2026-04-26 21:22:54.385+00',
 		'2026-04-26 21:22:54.385+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'93b53412-fe6d-4729-ba63-1af860e110ea'::uuid,
 		'whatsapp-default',
@@ -21432,7 +23280,14 @@ VALUES (
 		'2026-04-26 21:31:21.982+00',
 		'2026-04-26 21:31:21.982+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'8b110cd2-2f4d-4a9b-864a-986bb6027be3'::uuid,
 		'whatsapp-default',
@@ -21513,7 +23368,14 @@ VALUES (
 		'2026-04-26 21:32:25.76+00',
 		'2026-04-26 21:32:25.76+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'bcdbe51b-c50b-412f-88b3-a828e30d878d'::uuid,
 		'whatsapp-default',
@@ -21594,7 +23456,14 @@ VALUES (
 		'2026-04-26 21:22:40.676+00',
 		'2026-04-26 21:22:40.676+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'659addac-fcf3-4546-9952-06bca7570346'::uuid,
 		'whatsapp-default',
@@ -21675,7 +23544,14 @@ VALUES (
 		'2026-04-26 21:31:35.096+00',
 		'2026-04-26 21:31:35.096+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'dc3c2ca7-b2ae-4a3a-88ed-8a7a989e10fa'::uuid,
 		'whatsapp-default',
@@ -21756,7 +23632,14 @@ VALUES (
 		'2026-04-26 21:32:31.92+00',
 		'2026-04-26 21:32:31.92+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'5eb56be1-04a2-4802-82fb-399a96925874'::uuid,
 		'whatsapp-default',
@@ -21837,7 +23720,14 @@ VALUES (
 		'2026-04-26 21:22:47.633+00',
 		'2026-04-26 21:22:47.633+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'330cd4ba-811d-492a-87fa-60f155e31f02'::uuid,
 		'whatsapp-default',
@@ -21918,7 +23808,14 @@ VALUES (
 		'2026-04-26 21:31:40.998+00',
 		'2026-04-26 21:31:40.998+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'5a1559f4-0b15-4eb8-8be9-316b2bab5cc3'::uuid,
 		'whatsapp-default',
@@ -21999,7 +23896,14 @@ VALUES (
 		'2026-04-26 21:32:31.92+00',
 		'2026-04-26 21:32:31.92+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'198e6b3d-5b67-4703-aba3-77a36de5b797'::uuid,
 		'whatsapp-default',
@@ -22080,7 +23984,14 @@ VALUES (
 		'2026-04-26 21:22:23.651+00',
 		'2026-04-26 21:22:23.651+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'1c85a16b-f3e4-4eae-947b-20df5188fd13'::uuid,
 		'whatsapp-default',
@@ -22161,7 +24072,14 @@ VALUES (
 		'2026-04-26 21:23:17.911+00',
 		'2026-04-26 21:24:46.063+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'3d69d30e-cacd-4aaf-a92a-b553a25efbc6'::uuid,
 		'whatsapp-default',
@@ -22242,7 +24160,14 @@ VALUES (
 		'2026-04-26 21:23:27.093+00',
 		'2026-04-26 21:24:55.827+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'21e8f5d1-42ba-43c0-ae0f-f8cefcfc75e8'::uuid,
 		'whatsapp-default',
@@ -22323,7 +24248,14 @@ VALUES (
 		'2026-04-26 21:24:10.448+00',
 		'2026-04-26 21:25:39.53+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'56dd0476-3c7f-488d-9b63-0fc169647188'::uuid,
 		'whatsapp-default',
@@ -22404,7 +24336,14 @@ VALUES (
 		'2026-04-26 21:30:07.097+00',
 		'2026-04-26 21:30:07.097+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'62cd94f1-404e-4444-99fd-24ebe5c69926'::uuid,
 		'whatsapp-default',
@@ -22485,7 +24424,14 @@ VALUES (
 		'2026-04-26 21:23:38.124+00',
 		'2026-04-26 21:25:06.914+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'1ac476b4-c4c1-4c24-a94d-7f422892e6c5'::uuid,
 		'whatsapp-default',
@@ -22566,7 +24512,14 @@ VALUES (
 		'2026-04-26 21:29:27.817+00',
 		'2026-04-26 21:29:27.817+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'7b76239b-2f0d-47cc-a616-2a817f04660d'::uuid,
 		'whatsapp-default',
@@ -22647,7 +24600,14 @@ VALUES (
 		'2026-04-26 21:30:31.545+00',
 		'2026-04-26 21:30:31.545+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'7df6dd2f-f4f2-4a54-b340-25b5e0909f72'::uuid,
 		'whatsapp-default',
@@ -22728,7 +24688,14 @@ VALUES (
 		'2026-04-26 21:24:17.035+00',
 		'2026-04-26 21:25:46.323+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'34a82538-cd85-4065-b4de-21b51722a446'::uuid,
 		'whatsapp-default',
@@ -22809,7 +24776,14 @@ VALUES (
 		'2026-04-26 21:30:07.097+00',
 		'2026-04-26 21:30:07.097+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'7fa31d2f-e9f8-44b3-b34a-a86a329353c3'::uuid,
 		'whatsapp-default',
@@ -22890,7 +24864,14 @@ VALUES (
 		'2026-04-26 21:24:10.447+00',
 		'2026-04-26 21:25:39.53+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'13a28fa1-297b-4615-adf1-a0b5aed3258f'::uuid,
 		'whatsapp-default',
@@ -22971,7 +24952,14 @@ VALUES (
 		'2026-04-26 21:29:50.372+00',
 		'2026-04-26 21:29:50.372+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'd990bdc0-a0ae-43ab-9c04-2c4982689ebd'::uuid,
 		'whatsapp-default',
@@ -23052,7 +25040,14 @@ VALUES (
 		'2026-04-26 21:23:54.067+00',
 		'2026-04-26 21:25:24.248+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'3a11545e-5dc2-4a11-8251-5fb1c68ebba7'::uuid,
 		'whatsapp-default',
@@ -23133,7 +25128,14 @@ VALUES (
 		'2026-04-26 21:29:56.081+00',
 		'2026-04-26 21:29:56.081+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'fed22c47-9757-44cb-a806-894d12a89cca'::uuid,
 		'whatsapp-default',
@@ -23214,7 +25216,14 @@ VALUES (
 		'2026-04-26 21:31:18.658+00',
 		'2026-04-26 21:31:18.658+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'd7261665-416c-4fe1-a489-64e9db1812c4'::uuid,
 		'whatsapp-default',
@@ -23295,7 +25304,14 @@ VALUES (
 		'2026-04-26 21:24:19.87+00',
 		'2026-04-26 21:25:50.022+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'0bef7db9-7fab-4500-806c-fd2b1752f8e3'::uuid,
 		'whatsapp-default',
@@ -23376,7 +25392,14 @@ VALUES (
 		'2026-04-26 21:30:28.263+00',
 		'2026-04-26 21:30:28.263+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'c6f8ef8b-56eb-44c8-94ea-82f27e2d81bf'::uuid,
 		'whatsapp-default',
@@ -23457,7 +25480,14 @@ VALUES (
 		'2026-04-26 21:23:54.067+00',
 		'2026-04-26 21:25:24.247+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'b59096e2-3fcb-448f-8f30-f47d075f1a60'::uuid,
 		'whatsapp-default',
@@ -23538,7 +25568,14 @@ VALUES (
 		'2026-04-26 21:29:56.081+00',
 		'2026-04-26 21:29:56.081+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'77ccfc23-779e-4d90-afb6-30fd732570a7'::uuid,
 		'whatsapp-default',
@@ -23619,7 +25656,14 @@ VALUES (
 		'2026-04-26 21:31:18.658+00',
 		'2026-04-26 21:31:18.658+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'e1e6f3e7-a583-4b0c-8634-589d61e74e58'::uuid,
 		'whatsapp-default',
@@ -23700,7 +25744,14 @@ VALUES (
 		'2026-04-26 21:23:46.344+00',
 		'2026-04-26 21:25:17.212+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'27eec28a-8db5-47d7-9058-61866bd6de18'::uuid,
 		'whatsapp-default',
@@ -23781,7 +25832,14 @@ VALUES (
 		'2026-04-26 21:29:37.154+00',
 		'2026-04-26 21:29:37.154+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'a6812d89-5cbf-422d-a97e-ae6b4b5d4070'::uuid,
 		'whatsapp-default',
@@ -23862,7 +25920,14 @@ VALUES (
 		'2026-04-26 21:30:15.588+00',
 		'2026-04-26 21:30:15.588+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'107dc4bf-f301-46f4-af6a-cb82789acbb7'::uuid,
 		'whatsapp-default',
@@ -23943,7 +26008,14 @@ VALUES (
 		'2026-04-26 21:23:40.302+00',
 		'2026-04-26 21:25:11.329+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'830e4b94-c86c-4aff-95c7-0447c7d5aeb1'::uuid,
 		'whatsapp-default',
@@ -24024,7 +26096,14 @@ VALUES (
 		'2026-04-26 21:29:33.761+00',
 		'2026-04-26 21:29:33.761+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'c511a344-5680-4d98-b35a-88fd09b8c055'::uuid,
 		'whatsapp-default',
@@ -24105,7 +26184,14 @@ VALUES (
 		'2026-04-26 21:30:31.546+00',
 		'2026-04-26 21:30:31.546+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'20dd5799-c456-4dc2-9e32-98c7ec344093'::uuid,
 		'whatsapp-default',
@@ -24186,7 +26272,14 @@ VALUES (
 		'2026-04-26 21:23:21.487+00',
 		'2026-04-26 21:24:49.255+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'e5c73e24-65f7-4a08-8f1f-9c7ade9a4b6d'::uuid,
 		'whatsapp-default',
@@ -24267,7 +26360,14 @@ VALUES (
 		'2026-04-26 21:23:57.896+00',
 		'2026-04-26 21:26:26.184+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'e7f84b2b-b99d-4252-9ca5-a251592be149'::uuid,
 		'whatsapp-default',
@@ -24348,7 +26448,14 @@ VALUES (
 		'2026-04-26 21:30:50.925+00',
 		'2026-04-26 21:30:50.925+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'351c26dd-5bbd-462c-8395-66dc8a65013e'::uuid,
 		'whatsapp-default',
@@ -24429,7 +26536,14 @@ VALUES (
 		'2026-04-26 21:33:22.99+00',
 		'2026-04-26 21:34:22.198+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'1227a6e2-3e11-4fb6-90e1-c061b4da582f'::uuid,
 		'whatsapp-default',
@@ -24510,7 +26624,14 @@ VALUES (
 		'2026-04-26 21:33:33.264+00',
 		'2026-04-26 21:34:30.626+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'6a6c3e45-6da3-48b1-b045-730a9b4afe40'::uuid,
 		'whatsapp-default',
@@ -24591,7 +26712,14 @@ VALUES (
 		'2026-04-26 21:33:26.277+00',
 		'2026-04-26 21:34:24.586+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'7951cb81-7a31-4702-bf0d-53c8988b5bf2'::uuid,
 		'whatsapp-default',
@@ -24672,7 +26800,14 @@ VALUES (
 		'2026-04-26 21:37:30.862+00',
 		'2026-04-26 21:37:30.862+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'0e0fc66d-9975-411d-a7c8-3c38c698f6fe'::uuid,
 		'whatsapp-default',
@@ -24753,7 +26888,14 @@ VALUES (
 		'2026-04-26 21:33:59.053+00',
 		'2026-04-26 21:37:00.821+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'99fcc260-658e-44f9-b9fb-b7b69bfb729f'::uuid,
 		'whatsapp-default',
@@ -24834,7 +26976,14 @@ VALUES (
 		'2026-04-26 21:33:19.506+00',
 		'2026-04-26 21:34:18.577+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'af166da1-2cfb-4b0a-90a7-bfd37e7da545'::uuid,
 		'whatsapp-default',
@@ -24915,7 +27064,14 @@ VALUES (
 		'2026-04-26 21:37:30.862+00',
 		'2026-04-26 21:37:30.862+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'f8f863ab-3b93-402e-a9f1-7303faa14a07'::uuid,
 		'whatsapp-default',
@@ -24996,7 +27152,14 @@ VALUES (
 		'2026-04-26 21:34:02.837+00',
 		'2026-04-26 21:37:03.931+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'457cfeb5-889f-4c99-a513-75d82f04d9e4'::uuid,
 		'whatsapp-default',
@@ -25077,7 +27240,14 @@ VALUES (
 		'2026-04-26 21:33:43.866+00',
 		'2026-04-26 21:34:41.747+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'0ac2746e-676d-44db-88a3-569e6108d9c6'::uuid,
 		'whatsapp-default',
@@ -25158,7 +27328,14 @@ VALUES (
 		'2026-04-26 21:37:53.019+00',
 		'2026-04-26 21:37:53.019+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'30cac6f7-c9b2-472e-970a-0435ab91ac9d'::uuid,
 		'whatsapp-default',
@@ -25239,7 +27416,14 @@ VALUES (
 		'2026-04-26 21:37:27.676+00',
 		'2026-04-26 21:37:27.676+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'2ce669cc-9094-4cf5-881a-91dc5748a273'::uuid,
 		'whatsapp-default',
@@ -25320,7 +27504,14 @@ VALUES (
 		'2026-04-26 21:33:43.866+00',
 		'2026-04-26 21:34:41.747+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'ab15929d-4de2-4cd8-a08e-375db4626d31'::uuid,
 		'whatsapp-default',
@@ -25401,7 +27592,14 @@ VALUES (
 		'2026-04-26 21:37:24.812+00',
 		'2026-04-26 21:37:24.812+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'87d5b048-d23e-4291-9d19-f5590c2d7de1'::uuid,
 		'whatsapp-default',
@@ -25482,7 +27680,14 @@ VALUES (
 		'2026-04-26 21:33:59.054+00',
 		'2026-04-26 21:37:00.821+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'f88c7cb8-af5f-494c-9f12-dd869ac41665'::uuid,
 		'whatsapp-default',
@@ -25563,7 +27768,14 @@ VALUES (
 		'2026-04-26 21:33:13.537+00',
 		'2026-04-26 21:34:13.331+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'2a89184f-cd24-45b7-a2b2-4885c8f12e69'::uuid,
 		'whatsapp-default',
@@ -25644,7 +27856,14 @@ VALUES (
 		'2026-04-26 21:37:27.676+00',
 		'2026-04-26 21:37:27.676+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'4cdc4c90-5b5c-40a4-a568-b420f278ede8'::uuid,
 		'whatsapp-default',
@@ -25725,7 +27944,14 @@ VALUES (
 		'2026-04-26 21:37:59.993+00',
 		'2026-04-26 21:37:59.993+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'd3847801-7b43-4449-8a56-5f7f455a3a1e'::uuid,
 		'whatsapp-default',
@@ -25806,7 +28032,14 @@ VALUES (
 		'2026-04-26 19:41:10.451+00',
 		'2026-04-27 01:51:25.68+00'
 	);
-INSERT INTO public.baileys_auth (id, session_id, "key", value, created_at, updated_at)
+INSERT INTO public.baileys_auth (
+		id,
+		session_id,
+		"key",
+		value,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'03e74e59-2f5e-4e5d-a80e-c8cfabb3bd17'::uuid,
 		'whatsapp-default',
@@ -26071,7 +28304,7 @@ VALUES (
 	),
 	(
 		'd13a9d3b-81e6-4251-a24c-e7af8be7ed97'::uuid,
-		'kids',
+		'checkin',
 		true,
 		'2026-04-27 01:50:02.866+00',
 		NULL,
@@ -26079,13 +28312,20 @@ VALUES (
 	),
 	(
 		'4cf3b44f-4b28-4351-983a-4a067dd929b0'::uuid,
-		'kids',
+		'checkin',
 		true,
 		'2026-04-27 01:50:02.875+00',
 		NULL,
 		'3e4bce2a-7856-4801-b466-7b8e3d12a74b'::uuid
 	);
-INSERT INTO public."groups" (id, "name", description, icon, created_at, updated_at)
+INSERT INTO public."groups" (
+		id,
+		"name",
+		description,
+		icon,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'801abcb4-4612-4ac4-8030-942664f0d718'::uuid,
 		'Acolhimento',
@@ -26104,7 +28344,7 @@ VALUES (
 	),
 	(
 		'f2a6de49-0168-4bd2-8372-3af4e696cfea'::uuid,
-		'Kids',
+		'checkin',
 		'',
 		'🌊',
 		'2026-04-27 01:42:08.139+00',
@@ -26166,7 +28406,14 @@ VALUES (
 		'2026-04-27 01:41:54.759+00',
 		'2026-04-27 01:43:21.777+00'
 	);
-INSERT INTO public."groups" (id, "name", description, icon, created_at, updated_at)
+INSERT INTO public."groups" (
+		id,
+		"name",
+		description,
+		icon,
+		created_at,
+		updated_at
+	)
 VALUES (
 		'a10052c7-23ab-4f5d-9320-7b50268da37f'::uuid,
 		'Lideranças',
@@ -26724,7 +28971,11 @@ VALUES (
 	),
 	('facebook_url', '', '2026-04-27 01:45:32.089+00'),
 	('pix_key', '', '2026-04-27 01:45:33.253+00'),
-	('maps_embed_url', '', '2026-04-27 01:45:34.51+00');
+	(
+		'maps_embed_url',
+		'',
+		'2026-04-27 01:45:34.51+00'
+	);
 INSERT INTO public.user_roles (id, user_id, "role")
 VALUES (
 		'3f8b6b31-b812-49dc-8711-803df3f1b411'::uuid,
@@ -27241,7 +29492,14 @@ VALUES (
 		'$2b$10$IjjwDJw.7E2Dvx64DNB4Uu2vFm/XpKhvKDWBUPLQi4FO8M2Le5qym',
 		'2026-04-27 01:41:18.413+00'
 	);
-INSERT INTO public.wz_dispatch_attachments ("type", filename, filepath, mimetype, id, dispatch_id)
+INSERT INTO public.wz_dispatch_attachments (
+		"type",
+		filename,
+		filepath,
+		mimetype,
+		id,
+		dispatch_id
+	)
 VALUES (
 		'image',
 		'Captura de tela 2026-04-24 143133.png',

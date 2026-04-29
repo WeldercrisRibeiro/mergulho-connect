@@ -10,7 +10,7 @@ Este roteiro resume as funcoes principais e orienta como testar manualmente cada
 - agenda e eventos
 - comunicacao (chat, avisos, contatos)
 - administracao e configuracoes
-- operacoes ministeriais (voluntarios, check-in kids, tesouraria, relatorios)
+- operacoes ministeriais (voluntarios, check-in checkin, tesouraria, relatorios)
 
 ## 2) Perfis para teste
 
@@ -65,7 +65,7 @@ Use pelo menos 3 usuarios:
 
 ### 4.6 Operacao ministerial
 - Voluntarios e escalas.
-- Check-in kids (entrada, retirada e chamadas).
+- Check-in checkin (entrada, retirada e chamadas).
 - Tesouraria e relatorios de culto/evento.
 - Relatorios consolidados.
 
@@ -142,7 +142,7 @@ Use pelo menos 3 usuarios:
    - cadastrar
    - criar escala
    - alterar status
-2. Check-in kids:
+2. Check-in checkin:
    - registrar entrada
    - solicitar chamada
    - registrar retirada

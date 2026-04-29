@@ -486,29 +486,29 @@ const AdminTesouraria = ({ pixKey, user, isAdminCCM }: { pixKey: string; user: a
           <TrendingUp className="h-4 w-4" /> Visão Consolidada
         </h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <DashboardStatBox 
-            icon={<DollarSign className="h-6 w-6"/>} 
-            label="Total Arrecadado" 
-            value={`R$ ${totalAmount.toFixed(2)}`} 
-            color={skin !== "default" ? "bg-primary" : "bg-brand-cyan"} 
+          <DashboardStatBox
+            icon={<DollarSign className="h-6 w-6" />}
+            label="Total Arrecadado"
+            value={`R$ ${totalAmount.toFixed(2)}`}
+            color={skin !== "default" ? "bg-primary" : "bg-brand-cyan"}
           />
-          <DashboardStatBox 
-            icon={<Heart className="h-6 w-6"/>} 
-            label="Dízimos" 
-            value={`R$ ${totalTithes.toFixed(2)}`} 
-            color={skin !== "default" ? "bg-primary" : "bg-brand-navy"} 
+          <DashboardStatBox
+            icon={<Heart className="h-6 w-6" />}
+            label="Dízimos"
+            value={`R$ ${totalTithes.toFixed(2)}`}
+            color={skin !== "default" ? "bg-primary" : "bg-brand-navy"}
           />
-          <DashboardStatBox 
-            icon={<Wallet className="h-6 w-6"/>} 
-            label="Ofertas" 
-            value={`R$ ${totalOfferings.toFixed(2)}`} 
-            color={skin !== "default" ? "bg-primary" : "bg-brand-charcoal"} 
+          <DashboardStatBox
+            icon={<Wallet className="h-6 w-6" />}
+            label="Ofertas"
+            value={`R$ ${totalOfferings.toFixed(2)}`}
+            color={skin !== "default" ? "bg-primary" : "bg-brand-charcoal"}
           />
-          <DashboardStatBox 
-            icon={<Users className="h-6 w-6"/>} 
-            label="Dizimistas" 
-            value={uniqueTithers} 
-            color={skin !== "default" ? "bg-primary" : "bg-brand-cyan"} 
+          <DashboardStatBox
+            icon={<Users className="h-6 w-6" />}
+            label="Dizimistas"
+            value={uniqueTithers}
+            color={skin !== "default" ? "bg-primary" : "bg-brand-cyan"}
           />
         </div>
       </div>
@@ -620,7 +620,7 @@ const AdminTesouraria = ({ pixKey, user, isAdminCCM }: { pixKey: string; user: a
                   <p className="text-lg font-bold">
                     {cultoReports?.reduce((s, r) => s + (r.childrenCount || 0), 0) || 0}
                   </p>
-                  <p className="text-[10px] text-muted-foreground">Total Kids</p>
+                  <p className="text-[10px] text-muted-foreground">Total checkin</p>
                 </CardContent>
               </Card>
               <Card className="border-0 bg-muted/30 rounded-2xl">
@@ -670,7 +670,7 @@ const AdminTesouraria = ({ pixKey, user, isAdminCCM }: { pixKey: string; user: a
                         </div>
                         <div className="bg-muted/50 rounded-xl p-2 text-center">
                           <p className="font-bold text-base">{r.childrenCount || 0}</p>
-                          <p className="text-muted-foreground">Kids</p>
+                          <p className="text-muted-foreground">checkin</p>
                         </div>
                         <div className="bg-muted/50 rounded-xl p-2 text-center">
                           <p className="font-bold text-base">{r.youthCount || 0}</p>
@@ -763,7 +763,7 @@ const AdminTesouraria = ({ pixKey, user, isAdminCCM }: { pixKey: string; user: a
                 <Input type="number" min={0} value={totalAttendees} onChange={e => setTotalAttendees(Number(e.target.value))} className="h-11 rounded-xl" />
               </div>
               <div className="space-y-2">
-                <Label>Crianças (Kids)</Label>
+                <Label>Crianças (checkin)</Label>
                 <Input type="number" min={0} value={childrenCount} onChange={e => setChildrenCount(Number(e.target.value))} className="h-11 rounded-xl" />
               </div>
               <div className="space-y-2">
@@ -848,7 +848,7 @@ const AdminTesouraria = ({ pixKey, user, isAdminCCM }: { pixKey: string; user: a
 const Tesouraria = () => {
   const { user, isAdmin, isAdminCCM, routinePermissions } = useAuth();
   const { skin } = useTheme();
-  
+
   const { data: siteSettings } = useQuery({
     queryKey: ["site-settings"],
     queryFn: async () => {

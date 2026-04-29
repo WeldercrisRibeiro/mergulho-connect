@@ -19,12 +19,12 @@ import { cn } from "@/lib/utils";
 import QRScanner from "@/components/QRScanner";
 import { getErrorMessage } from "@/lib/errorMessages";
 
-const KidsCheckin = () => {
+const Checkin = () => {
   const { user, isAdmin, IsLider } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const [category, setCategory] = useState<"kids" | "volume">("kids");
+  const [category, setCategory] = useState<"checkin" | "volume">("checkin");
   const [selectedEventId, setSelectedEventId] = useState<string>("");
   const [childName, setChildName] = useState("");
   const [itemsInfo, setItemsInfo] = useState("");
@@ -167,8 +167,8 @@ const KidsCheckin = () => {
 
           <Tabs value={category} onValueChange={(v: any) => setCategory(v)} className="w-full sm:w-auto">
             <TabsList className="grid grid-cols-2 h-10 p-1 bg-muted/50 rounded-xl">
-              <TabsTrigger value="kids" className="rounded-lg gap-2">
-                <ShieldCheck className="h-4 w-4" /> Kids
+              <TabsTrigger value="checkin" className="rounded-lg gap-2">
+                <ShieldCheck className="h-4 w-4" /> checkin
               </TabsTrigger>
               <TabsTrigger value="volume" className="rounded-lg gap-2">
                 <Package className="h-4 w-4" /> Volumes
@@ -202,7 +202,7 @@ const KidsCheckin = () => {
             {/* Registration Form */}
             <div className="lg:col-span-1">
               <Card className="border-0 shadow-xl overflow-hidden rounded-[2.5rem] bg-card/50 backdrop-blur-md">
-                <div className={cn("h-2 w-full", category === "kids" ? "bg-primary" : "bg-orange-500")} />
+                <div className={cn("h-2 w-full", category === "checkin" ? "bg-primary" : "bg-orange-500")} />
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-xl font-black uppercase tracking-tight">
                     <Monitor className="h-5 w-5 text-primary" /> Identificação
@@ -210,7 +210,7 @@ const KidsCheckin = () => {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{category === 'kids' ? 'Nome da Criança' : 'Identificação do Volume'}</Label>
+                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{category === 'checkin' ? 'Nome da Criança' : 'Identificação do Volume'}</Label>
                     <Input
                       placeholder="Ex: Joãozinho, Bolsa azul etc"
                       value={childName}
@@ -308,7 +308,7 @@ const KidsCheckin = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-card p-6 rounded-[2rem] border shadow-sm flex flex-col items-center justify-center text-center">
-                  <h4 className="text-3xl font-black text-primary">{activeCheckins?.filter((c: any) => c.category === 'kids').length || 0}</h4>
+                  <h4 className="text-3xl font-black text-primary">{activeCheckins?.filter((c: any) => c.category === 'checkin').length || 0}</h4>
                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Crianças Ativas</p>
                 </div>
                 <div className="bg-card p-6 rounded-[2rem] border shadow-sm flex flex-col items-center justify-center text-center">
@@ -324,7 +324,7 @@ const KidsCheckin = () => {
           <div className="space-y-6">
             <div className="flex items-center justify-between px-1">
               <h3 className="font-black text-2xl flex items-center gap-3 uppercase tracking-tighter">
-                <CheckCircle2 className={cn("h-7 w-7", category === "kids" ? "text-emerald-500" : "text-orange-500")} />
+                <CheckCircle2 className={cn("h-7 w-7", category === "checkin" ? "text-emerald-500" : "text-orange-500")} />
                 Pendentes de Retirada ({activeCheckins?.length || 0})
               </h3>
             </div>
@@ -348,7 +348,7 @@ const KidsCheckin = () => {
                     <CardContent className="p-8 space-y-6">
                       <div className="flex justify-between items-start">
                         <div className="min-w-0">
-                          <p className="text-[11px] font-black text-primary uppercase tracking-[0.2em] mb-1">{item.category === 'kids' ? 'CRIANÇA' : 'IDENTIFICAÇÃO'}</p>
+                          <p className="text-[11px] font-black text-primary uppercase tracking-[0.2em] mb-1">{item.category === 'checkin' ? 'CRIANÇA' : 'IDENTIFICAÇÃO'}</p>
                           <h4 className="font-black text-2xl leading-tight uppercase truncate text-slate-800 dark:text-slate-100">{item.childName}</h4>
                           <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-2 font-black uppercase tracking-widest">
                             <ShieldCheck className="h-3 w-3" /> RESP.: {item.guardian?.fullName?.split(' ')[0]}
@@ -511,4 +511,4 @@ const KidsCheckin = () => {
   );
 };
 
-export default KidsCheckin;
+export default Checkin;

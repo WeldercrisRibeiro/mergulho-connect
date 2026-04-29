@@ -416,48 +416,48 @@ const Reports = () => {
             {totals.count} {totals.count === 1 ? 'Relatório Encontrado' : 'Relatórios Encontrados'}
           </Badge>
         </div>
-        
+
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-          <DashboardStatBox 
-            icon={<Users className="h-5 w-5" />} 
-            label="Público Total" 
-            value={totals.people} 
-            color={skin !== "default" ? "bg-primary" : "bg-brand-cyan"} 
+          <DashboardStatBox
+            icon={<Users className="h-5 w-5" />}
+            label="Público Total"
+            value={totals.people}
+            color={skin !== "default" ? "bg-primary" : "bg-brand-cyan"}
             description="Soma de todos os presentes"
           />
-          <DashboardStatBox 
-            icon={<Smile className="h-5 w-5" />} 
-            label="Visitantes" 
-            value={totals.visitors} 
-            color={skin !== "default" ? "bg-primary" : "bg-brand-navy"} 
+          <DashboardStatBox
+            icon={<Smile className="h-5 w-5" />}
+            label="Visitantes"
+            value={totals.visitors}
+            color={skin !== "default" ? "bg-primary" : "bg-brand-navy"}
             description="Membros pela primeira vez"
           />
-          <DashboardStatBox 
-            icon={<Baby className="h-5 w-5" />} 
-            label="Crianças" 
-            value={totals.children} 
-            color={skin !== "default" ? "bg-primary" : "bg-brand-charcoal"} 
-            description="Mergulho Kids"
+          <DashboardStatBox
+            icon={<Baby className="h-5 w-5" />}
+            label="Crianças"
+            value={totals.children}
+            color={skin !== "default" ? "bg-primary" : "bg-brand-charcoal"}
+            description="Mergulho checkin"
           />
-          <DashboardStatBox 
-            icon={<UserCheck className="h-5 w-5" />} 
-            label="Jovens" 
-            value={totals.youth} 
-            color={skin !== "default" ? "bg-primary" : "bg-brand-navy"} 
+          <DashboardStatBox
+            icon={<UserCheck className="h-5 w-5" />}
+            label="Jovens"
+            value={totals.youth}
+            color={skin !== "default" ? "bg-primary" : "bg-brand-navy"}
             description="Juventude Mergulho"
           />
-          <DashboardStatBox 
-            icon={<HandHeart className="h-5 w-5" />} 
-            label="Monitores" 
-            value={totals.monitors} 
-            color={skin !== "default" ? "bg-primary" : "bg-brand-cyan"} 
+          <DashboardStatBox
+            icon={<HandHeart className="h-5 w-5" />}
+            label="Monitores"
+            value={totals.monitors}
+            color={skin !== "default" ? "bg-primary" : "bg-brand-cyan"}
             description="Equipe voluntária"
           />
-          <DashboardStatBox 
-            icon={<BarChart3 className="h-5 w-5" />} 
-            label="Média/Culto" 
-            value={totals.count > 0 ? Math.round(totals.people / totals.count) : 0} 
-            color={skin !== "default" ? "bg-primary" : "bg-brand-navy"} 
+          <DashboardStatBox
+            icon={<BarChart3 className="h-5 w-5" />}
+            label="Média/Culto"
+            value={totals.count > 0 ? Math.round(totals.people / totals.count) : 0}
+            color={skin !== "default" ? "bg-primary" : "bg-brand-navy"}
             description="Média geral de presentes"
           />
         </div>
@@ -514,7 +514,7 @@ const Reports = () => {
                     <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                       <StatBox label="Presentes" value={r.total_attendees || 0} accent />
                       <StatBox label="Visitantes" value={r.visitors_count || 0} />
-                      <StatBox label="Kids" value={r.children_count || 0} />
+                      <StatBox label="checkin" value={r.children_count || 0} />
                       <StatBox label="Jovens" value={r.youth_count || 0} />
                       <StatBox label="Monitores" value={r.monitors_count || 0} />
                     </div>

@@ -150,7 +150,7 @@ model Profile {
   updatedAt          DateTime            @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   announcements      Announcement[]
   eventReports       EventReport[]
-  kidsCheckins       KidsCheckin[]
+  checkins           Checkin[]
   receivedMessages   Message[]           @relation("ReceivedMessages")
   sentMessages       Message[]           @relation("SentMessages")
   user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -339,7 +339,7 @@ model Event {
   @@map("events")
 }
 
-model KidsCheckin {
+model Checkin {
   id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   childName        String    @map("child_name")
   guardianId       String?   @map("guardian_id") @db.Uuid
@@ -347,7 +347,7 @@ model KidsCheckin {
   validationToken  String    @map("validation_token")
   status           String?   @default("active")
   callRequested    Boolean?  @default(false) @map("call_requested")
-  category         String?   @default("kids")
+  category         String?   @default("checkin")
   eventId          String?   @map("event_id") @db.Uuid
   createdAt        DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)

@@ -20,7 +20,7 @@ import { EventsModule } from './modules/events/events.module';
 import { GroupsModule } from './modules/groups/groups.module';
 import { GroupRoutinesModule } from './modules/group-routines/group-routines.module';
 import { HiddenConversationsModule } from './modules/hidden-conversations/hidden-conversations.module';
-import { KidsCheckinsModule } from './modules/kids-checkins/kids-checkins.module';
+import { CheckinsModule } from './modules/checkins/checkins.module';
 import { LandingPhotosModule } from './modules/landing-photos/landing-photos.module';
 import { LandingTestimonialsModule } from './modules/landing-testimonials/landing-testimonials.module';
 import { MemberGroupsModule } from './modules/member-groups/member-groups.module';
@@ -63,7 +63,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     GroupsModule,
     GroupRoutinesModule,
     HiddenConversationsModule,
-    KidsCheckinsModule,
+    CheckinsModule,
     LandingPhotosModule,
     LandingTestimonialsModule,
     MemberGroupsModule,

@@ -106,8 +106,8 @@
     --accent-foreground: 270 100% 90%;
   }
 
-  /* Kids Theme - Playful & Lively */
-  .theme-kids {
+  /* checkin Theme - Playful & Lively */
+  .theme-checkin {
     --primary: 190 90% 50%;
     --sidebar-primary: 190 90% 50%;
     --ring: 190 90% 50%;
@@ -116,7 +116,7 @@
     --radius: 1.5rem;
   }
 
-  .dark .theme-kids {
+  .dark .theme-checkin {
     --primary: 195 100% 60%;
     --sidebar-primary: 195 100% 60%;
     --ring: 195 100% 60%;
@@ -126,6 +126,7 @@
 }
 
 @layer base {
+
   html,
   body,
   #root {
@@ -146,40 +147,51 @@
   .neo-shadow {
     box-shadow: 6px 6px 12px hsl(var(--neo-shadow-dark)), -6px -6px 12px hsl(var(--neo-shadow-light));
   }
+
   .neo-shadow-sm {
     box-shadow: 3px 3px 6px hsl(var(--neo-shadow-dark)), -3px -3px 6px hsl(var(--neo-shadow-light));
   }
+
   .neo-inset {
     box-shadow: inset 3px 3px 6px hsl(var(--neo-shadow-dark)), inset -3px -3px 6px hsl(var(--neo-shadow-light));
   }
+
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
+
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
   .custom-scrollbar {
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--border)) transparent;
   }
+
   .custom-scrollbar::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
+
   .custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
+
   .custom-scrollbar::-webkit-scrollbar-thumb {
     background: hsl(var(--border));
     border-radius: 9999px;
   }
+
   .pb-safe {
     padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
   }
+
   .pt-safe {
     padding-top: max(0.75rem, env(safe-area-inset-top));
   }
+
   .mb-safe {
     margin-bottom: env(safe-area-inset-bottom);
   }
@@ -187,9 +199,11 @@
   .glass {
     @apply bg-white/40 backdrop-blur-md border border-white/20;
   }
+
   .glass-dark {
     @apply bg-black/40 backdrop-blur-md border border-white/10;
   }
+
   .glass-morphism {
     background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(10px);
@@ -206,6 +220,7 @@
       opacity: 0;
       transform: translateY(20px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
