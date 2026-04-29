@@ -17,8 +17,8 @@ interface Version {
 
 const versions: Version[] = [
   {
-    version: "1.3.0",
-    date: "28/04/2026",
+    version: "1.3.1",
+    date: "29/04/2026",
     changes: [
       { type: "new", text: "Hero Section com foto real da comunidade" },
       { type: "new", text: "Páginas de Termos de Uso e Política de Privacidade (LGPD)" },
