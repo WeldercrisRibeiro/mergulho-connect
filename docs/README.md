@@ -97,7 +97,7 @@ mergulho-connect/
 | `/configuracoes` | `Settings` | Admin |
 | `/voluntarios` | `Volunteers` | Autenticado |
 | `/relatorios` | `Reports` | Admin |
-| `/checkin-checkin` | `Checkin` | Admin |
+| `/checkin` | `Checkin` | Admin |
 | `/Disparos` | `AdminNotices` | Admin |
 | `/whatsapp` | `AdminWhatsApp` | Admin |
 | `/gestao-rotinas` | `GroupPermissions` | Admin |
