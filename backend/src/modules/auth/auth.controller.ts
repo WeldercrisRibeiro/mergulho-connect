@@ -30,7 +30,7 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Obter perfil do usuário logado' })
   getProfile(@Request() req) {
-    return req.user;
+    return this.authService.getFullAuthContext(req.user.id);
   }
 
   @Patch('password')

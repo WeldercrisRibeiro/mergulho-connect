@@ -17,6 +17,11 @@ interface AuthContextType {
   setProfile: (profile: AuthContextType["profile"]) => void;
   routinePermissions: Record<string, boolean>;
   unreadAnnouncements: number;
+  counts: { members: number; groups: number; events: number; devotionals: number } | null;
+  siteSettings: Record<string, any> | null;
+  activeCheckin: any | null;
+  nextEvents: any[] | null;
+  latestDevotional: any | null;
   signIn: (email: string, pass: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -35,6 +40,11 @@ const AuthContext = createContext<AuthContextType>({
   setProfile: () => { },
   routinePermissions: {},
   unreadAnnouncements: 0,
+  counts: null,
+  siteSettings: null,
+  activeCheckin: null,
+  nextEvents: null,
+  latestDevotional: null,
   signIn: async () => { },
   signOut: async () => { },
   refreshProfile: async () => { },
@@ -69,6 +79,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<AuthContextType["profile"]>(null);
   const [routinePermissions, setRoutinePermissions] = useState<Record<string, boolean>>({});
   const [unreadAnnouncements, setUnreadAnnouncements] = useState(0);
+  const [counts, setCounts] = useState<AuthContextType["counts"]>(null);
+  const [siteSettings, setSiteSettings] = useState<AuthContextType["siteSettings"]>(null);
+  const [activeCheckin, setActiveCheckin] = useState<any>(null);
+  const [nextEvents, setNextEvents] = useState<any[]>([]);
+  const [latestDevotional, setLatestDevotional] = useState<any>(null);
 
   const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const signOutRef = useRef<() => Promise<void>>(async () => { });
@@ -93,9 +108,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       try {
-        const { data: me } = await api.get('/auth/me');
-        setUser(me);
-        await Promise.all([fetchProfile(me.id), checkRoles(me.id)]);
+        const { data } = await api.get('/auth/me');
+        processAuthContext(data);
       } catch (err) {
         devWarn("Token inválido ou expirado.");
         clearAuthData();
@@ -106,6 +120,75 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     checkAuth();
   }, []);
+
+  const processAuthContext = (data: any) => {
+    if (!data) return;
+    const { user: userData, memberGroups, routines } = data;
+    
+    // 1. Set basic User
+    setUser(userData);
+
+    // 2. Set Profile
+    if (userData.profile) {
+      setProfile({
+        fullName: userData.profile.fullName || userData.profile.full_name || "",
+        avatarUrl: userData.profile.avatarUrl || userData.profile.avatar_url || null,
+        whatsappPhone: userData.profile.whatsappPhone || userData.profile.whatsapp_phone || null,
+        username: userData.profile.username || null,
+        createdAt: userData.profile.createdAt || userData.profile.created_at || null,
+      });
+    }
+
+    // 3. Set Roles & Admin flags
+    const currentRole = userData.role || "membro";
+    const hasAdminCCM = currentRole === "admin_ccm";
+    const hasAdmin = currentRole === "admin" || currentRole === "pastor" || hasAdminCCM;
+    const hasLeaderRole = currentRole === "lider";
+
+    setIsAdminCCM(hasAdminCCM);
+    setIsAdmin(hasAdmin);
+
+    // 4. Set Group IDs
+    const allGroupIds: string[] = Array.from(
+      new Set<string>(
+        (memberGroups || [])
+          .map((m: any) => m.groupId || m.group_id)
+          .filter((id: string | null | undefined): id is string => Boolean(id))
+      )
+    );
+    setUserGroupIds(allGroupIds);
+
+    const managedIds: string[] = Array.from(
+      new Set<string>(
+        (memberGroups || [])
+          .filter((mg: any) => {
+            const role = (mg.role || "").toLowerCase();
+            return role !== "" && role !== "member" && role !== "membro";
+          })
+          .map((m: any) => m.groupId || m.group_id)
+          .filter((id: string | null | undefined): id is string => Boolean(id))
+      )
+    );
+
+    setManagedGroupIds(managedIds);
+    setIsLider(hasAdmin || hasLeaderRole || managedIds.length > 0);
+
+    // 5. Set Routine Permissions
+    const perms: Record<string, boolean> = {};
+    (routines || []).forEach((r: any) => {
+      const key = (r.routineKey || r.routine_key || "").toLowerCase();
+      const enabled = r.isEnabled !== undefined ? r.isEnabled : r.is_enabled;
+      if (enabled === true) perms[key] = true;
+    });
+    setRoutinePermissions(perms);
+
+    // 6. Set Dashboard Data
+    if (data.counts) setCounts(data.counts);
+    if (data.siteSettings) setSiteSettings(data.siteSettings);
+    if (data.activeCheckin) setActiveCheckin(data.activeCheckin);
+    if (data.nextEvents) setNextEvents(data.nextEvents);
+    if (data.latestDevotional) setLatestDevotional(data.latestDevotional);
+  };
 
   const clearAuthData = () => {
     localStorage.removeItem("mergulho_auth_token");
@@ -140,76 +223,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // ─── checkRoles ───────────────────────────────────────────────────────────
+  // ─── checkRoles (Mantido para compatibilidade se necessário em outros lugares) ───
   const checkRoles = async (userId: string) => {
     try {
       const { data: roleData } = await api.get(`/user-roles/user/${userId}`);
-
       const currentRole = roleData?.role || "membro";
-      const rolesList = roleData ? [currentRole] : [];
-      const hasAdminCCM = rolesList.includes("admin_ccm");
-      const hasAdmin = rolesList.includes("admin") || rolesList.includes("pastor") || hasAdminCCM;
-      const hasLeaderRole = rolesList.includes("lider");
-
-      setIsAdminCCM(hasAdminCCM);
-      setIsAdmin(hasAdmin);
-
       const { data: managedGroups } = await api.get(`/member-groups/user/${userId}`);
+      
+      const allGroupIds = (managedGroups || []).map((m: any) => m.groupId || m.group_id).filter(Boolean);
+      
+      const roleMapping: Record<string, string> = {
+        "admin": "c1f324b3-45ed-453a-941c-d030e22d7721",
+        "admin_ccm": "c1f324b3-45ed-453a-941c-d030e22d7721",
+        "pastor": "c1f324b3-45ed-453a-941c-d030e22d7721",
+        "lider": "3e4bce2a-7856-4801-b466-7b8e3d12a74b",
+        "membro": "071c2037-fa67-43ab-9d1b-4480fe15fd92"
+      };
 
-      const allGroupIds: string[] = Array.from(
-        new Set<string>(
-          (managedGroups || [])
-            .map((m: any) => m.groupId || m.group_id)
-            .filter((id: string | null | undefined): id is string => Boolean(id))
-        )
-      );
-      setUserGroupIds(allGroupIds);
+      const roleId = roleMapping[currentRole] || roleMapping.membro;
+      const params: any = { groupIds: allGroupIds.join(","), roleId };
+      const { data: routines } = await api.get(`/group-routines/groups`, { params });
 
-      const managedIds: string[] = Array.from(
-        new Set<string>(
-          (managedGroups || [])
-            .filter((mg: any) => {
-              const role = (mg.role || "").toLowerCase();
-              return role !== "" && role !== "member" && role !== "membro";
-            })
-            .map((m: any) => m.groupId || m.group_id)
-            .filter((id: string | null | undefined): id is string => Boolean(id))
-        )
-      );
-
-      setManagedGroupIds(managedIds);
-      setIsLider(hasAdmin || hasLeaderRole || managedIds.length > 0);
-
-      try {
-        const roleMapping: Record<string, string> = {
-          "admin": "c1f324b3-45ed-453a-941c-d030e22d7721",
-          "admin_ccm": "c1f324b3-45ed-453a-941c-d030e22d7721",
-          "pastor": "c1f324b3-45ed-453a-941c-d030e22d7721",
-          "lider": "3e4bce2a-7856-4801-b466-7b8e3d12a74b",
-          "membro": "071c2037-fa67-43ab-9d1b-4480fe15fd92"
-        };
-
-        const roleId = roleMapping[currentRole] || roleMapping.membro;
-        
-        const params: any = {};
-        if (allGroupIds.length > 0) params.groupIds = allGroupIds.join(",");
-        if (roleId) params.roleId = roleId;
-        
-        const { data: routines } = await api.get(`/group-routines/groups`, { params });
-        const perms: Record<string, boolean> = {};
-        
-        (routines || []).forEach((r: any) => {
-          const key = (r.routineKey || r.routine_key || "").toLowerCase();
-          const enabled = r.isEnabled !== undefined ? r.isEnabled : r.is_enabled;
-          // Se qualquer regra habilitar a rotina, o usuário tem acesso
-          if (enabled === true) perms[key] = true;
-        });
-
-        setRoutinePermissions(perms);
-      } catch (e) {
-        devError("Falha silenciosa na busca de rotinas:", e);
-        setRoutinePermissions({});
-      }
+      processAuthContext({
+        user: { ...user, role: currentRole },
+        memberGroups: managedGroups,
+        routines
+      });
     } catch (err) {
       devError("Erro ao verificar roles:", err);
     }
@@ -289,8 +328,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signIn = async (email: string, pass: string) => {
     const { data } = await api.post('/auth/login', { email, password: pass });
     localStorage.setItem('mergulho_auth_token', data.access_token);
-    setUser(data.user);
-    await Promise.all([fetchProfile(data.user.id), checkRoles(data.user.id)]);
+    processAuthContext(data);
   };
 
   const signOut = async () => {
@@ -322,6 +360,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setProfile,
         routinePermissions,
         unreadAnnouncements,
+        counts,
+        siteSettings,
+        activeCheckin,
+        nextEvents,
+        latestDevotional,
         signIn,
         signOut,
         refreshProfile,

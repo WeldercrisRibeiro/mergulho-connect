@@ -9,16 +9,29 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Calendar, BookOpen, Users, MessageCircle, ArrowRight, Star, TrendingUp, ShieldCheck, Phone, Megaphone, HandHeart, BarChart3 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTheme } from "@/components/ThemeProvider";
-import { cn } from "@/lib/utils";
+import { cn, getUploadUrl } from "@/lib/utils";
 import { safeFormatMonth, safeFormatDay, safeFormatTime } from "@/lib/dateUtils";
 import { PhotoCarousel } from "@/components/PhotoCarousel";
 
 const HomePage = () => {
-  const { profile, user, isAdmin, isAdminCCM, userGroupIds, routinePermissions } = useAuth();
+  const { 
+    profile, 
+    user, 
+    isAdmin, 
+    isAdminCCM, 
+    userGroupIds, 
+    routinePermissions,
+    counts,
+    siteSettings: initialSettings,
+    activeCheckin: initialCheckin,
+    nextEvents: initialEvents,
+    latestDevotional: initialDevotional
+  } = useAuth();
   const { skin } = useTheme();
 
   const { data: myActiveCheckin } = useQuery({
     queryKey: ["my-active-checkin", user?.id],
+    initialData: initialCheckin,
     queryFn: async () => {
       if (!user) return null;
       const { data } = await api.get("/checkins", {
@@ -27,15 +40,19 @@ const HomePage = () => {
       return data?.[0] || null;
     },
     enabled: !!user,
-    refetchInterval: 60000, // 60s for home status
+    // Otimização: Se não encontrou checkin ativo inicialmente, para de consultar (conforme solicitado)
+    // Se encontrou, consulta a cada 60s para atualizar status/chamada
+    refetchInterval: (data) => (data ? 60000 : false),
   });
 
   const { data: siteSettings } = useQuery({
     queryKey: ["site-settings"],
+    initialData: initialSettings,
     queryFn: async () => {
       const { data } = await api.get("/site-settings");
       return data?.reduce((acc: any, curr: any) => ({ ...acc, [curr.id]: curr.value }), {} as any) || {};
     },
+    enabled: !initialSettings, // Só busca se não veio no login
   });
 
   const { data: homeBanners } = useQuery({
@@ -63,6 +80,7 @@ const HomePage = () => {
 
   const { data: nextEvents } = useQuery({
     queryKey: ["next-events", userGroupIds, isAdmin],
+    initialData: initialEvents,
     queryFn: async () => {
       const { data } = await api.get("/events");
       // Filtro no front-end provisório
@@ -75,16 +93,19 @@ const HomePage = () => {
       }
       return futureEvents.slice(0, 3);
     },
+    enabled: !initialEvents || initialEvents.length === 0,
   });
 
   const { data: latestDevotional } = useQuery({
     queryKey: ["latest-devotional"],
+    initialData: initialDevotional,
     queryFn: async () => {
       const statuses = isAdmin ? ["publicado", "agendado"] : ["publicado"];
       const { data } = await api.get("/devotionals", { params: { status: statuses.join(',') } });
       const valid = (data || []).filter((d: any) => new Date(d.publishDate) <= new Date());
       return valid[0] || null;
     },
+    enabled: !initialDevotional,
   });
 
   return (
