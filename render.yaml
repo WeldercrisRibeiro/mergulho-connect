@@ -17,7 +17,7 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRES_IN
-        value: 24h
+        value: 30m
       - key: FRONTEND_URL
         sync: false # URL da Vercel (ex: https://mergulho-connect.vercel.app)
       - key: UPLOADS_DIR

@@ -39,6 +39,8 @@ import { UploadModule } from './modules/upload/upload.module';
 import { MaintenanceModule } from './modules/maintenance/maintenance.module';
 import { JwtAuthGuard } from './modules/auth/jwt-auth.guard';
 import { RolesGuard } from './modules/auth/roles.guard';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+
 
 @Module({
   imports: [
@@ -78,6 +80,7 @@ import { RolesGuard } from './modules/auth/roles.guard';
     HealthModule,
     UploadModule,
     MaintenanceModule,
+    NotificationsModule,
   ],
   providers: [
     {

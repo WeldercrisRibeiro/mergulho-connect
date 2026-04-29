@@ -5,12 +5,14 @@ import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ChangePasswordWithCredentialsDto } from './dto/change-password-with-credentials.dto';
+import { TelegramService } from '../notifications/telegram.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private telegramService: TelegramService,
   ) {}
 
   async login(dto: LoginDto) {
@@ -37,6 +39,13 @@ export class AuthService {
     const payload = { sub: user.id, email: user.email, role: user.userRole?.role || 'membro' };
     //console.log(`✅ Login bem-sucedido: ${user.email} (Role: ${payload.role})`);
     
+    // Envia notificação de auditoria (sem travar o login)
+    this.telegramService.sendLoginNotification(
+      user.email,
+      user.userRole?.role || 'membro',
+      user.profile?.fullName
+    ).catch(err => console.error('Erro ao enviar notificação de login:', err));
+
     return {
       access_token: this.jwtService.sign(payload),
       user: {

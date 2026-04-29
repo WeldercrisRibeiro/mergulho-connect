@@ -1,0 +1,58 @@
+// Fragmentos do schema.prisma que devem ser integrados na branch next
+
+// 1. Novo modelo para persistência do WhatsApp
+model BaileysAuth {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionId String   @map("session_id")
+  key       String
+  value     String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([sessionId, key])
+  @@map("baileys_auth")
+}
+
+// 2. Atualização do modelo Profile (campos de endereço e nascimento)
+model Profile {
+  // ... campos existentes ...
+  birthDate          DateTime?           @map("birth_date") @db.Timestamptz(6)
+  address            String?             @map("address")
+  street             String?             @map("street")
+  number             String?             @map("number")
+  neighborhood       String?             @map("neighborhood")
+  complement         String?             @map("complement")
+  city               String?             @map("city")
+  state              String?             @map("state")
+  codCep            String?             @map("cod_cep")
+  country            String?             @default("Brazil") @map("country")
+  // ... restante do modelo ...
+}
+
+// 3. Atualização do modelo VolunteerSchedule
+model VolunteerSchedule {
+  // ... campos existentes ...
+  status       String?  @default("pending")
+}
+
+// 4. Inclusão de Log de Manutenção
+model MaintenanceLog {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  scriptId   String   @map("script_id")
+  executorId String   @map("executor_id") @db.Uuid
+  details    String?
+  status     String   @default("success")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("maintenance_logs")
+}
+
+// 5. Atualização do Enum AppRole
+enum AppRole {
+  admin
+  admin_ccm
+  lider    // Novo
+  pastor
+  membro
+  gerente
+}
