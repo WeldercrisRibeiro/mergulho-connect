@@ -134,7 +134,7 @@ const AdminScripts = () => {
           }
         }
 
-        // 2. Se digitar o Usuário, atualiza o e-mail automaticamente se ele estiver vazio ou for o padrão
+        // 2. Se digitar o Usuário, atualiza o e-mail automaticamente se ele estiver vazio ou for o padrão!!!
         if (name === 'username' && value) {
           const cleanUser = value.trim().toLowerCase().replace(/\s+/g, ".");
           if (!prev.email || prev.email.endsWith('@ccmergulho.com')) {
