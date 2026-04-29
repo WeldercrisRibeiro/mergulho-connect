@@ -33,9 +33,7 @@ import AdminScripts from "./pages/AdminScripts";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 
-// ─── InstallPrompt consolida InstallBanner + PwaPrompt em um único componente.
-// Remova os imports de InstallBanner e PwaPrompt.
-import InstallPrompt from "@/components/InstallPrompt";
+
 
 const queryClient = new QueryClient();
 
@@ -89,12 +87,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <AuthProvider>
-            {/*
-              InstallPrompt substitui InstallBanner e PwaPrompt.
-              Ele detecta a plataforma internamente e persiste o dismiss no
-              localStorage para não incomodar o usuário mais de 3 vezes.
-            */}
-            <InstallPrompt />
+
 
             {/*
               NotificationManager não renderiza nada visualmente — apenas
