@@ -7,6 +7,7 @@ import { Loader2, Send, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "@/lib/api";
 
 interface EventNotifyDialogProps {
   event: any;
@@ -102,18 +103,8 @@ export function EventNotifyDialog({ event, open, onClose }: EventNotifyDialogPro
         }
       }
 
-      const res = await fetch("/api/dispatches", { method: "POST", body: formData });
-      if (!res.ok) {
-        let err;
-        try {
-          err = await res.json();
-        } catch (e) {
-          throw new Error("Falha ao agendar aviso.");
-        }
-        const errorMsg = Array.isArray(err.message) ? err.message.join(', ') : err.message;
-        throw new Error(errorMsg || err.error || "Falha ao agendar aviso.");
-      }
-      return res.json();
+      const { data } = await api.post("/dispatches", formData);
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["wz-dispatches"] });

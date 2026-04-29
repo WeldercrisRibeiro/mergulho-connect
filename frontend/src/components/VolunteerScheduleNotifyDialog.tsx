@@ -7,6 +7,7 @@ import { Loader2, Send, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "@/lib/api";
 
 interface VolunteerScheduleNotifyDialogProps {
   schedule: any;
@@ -83,18 +84,8 @@ export function VolunteerScheduleNotifyDialog({ schedule, open, onClose }: Volun
       formData.append("scheduledAt", scheduledAt);
       if (user?.id) formData.append("createdBy", user.id);
 
-      const res = await fetch("/api/dispatches", { method: "POST", body: formData });
-      if (!res.ok) {
-        let err;
-        try {
-          err = await res.json();
-        } catch (e) {
-          throw new Error("Falha ao agendar aviso.");
-        }
-        const errorMsg = Array.isArray(err.message) ? err.message.join(', ') : err.message;
-        throw new Error(errorMsg || err.error || "Falha ao agendar aviso.");
-      }
-      return res.json();
+      const { data } = await api.post("/dispatches", formData);
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["wz-dispatches"] });
