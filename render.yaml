@@ -3,7 +3,7 @@ services:
     name: mergulho-connect-api
     runtime: node
     plan: free # Define explicitamente que queremos o plano gratuito
-    buildCommand: cd backend && npm install && npx prisma generate && npm run build
+    buildCommand: cd backend && npm install && rm -rf node_modules/.prisma && npx prisma generate && npm run build
     startCommand: cd backend && npm run start:prod
     envVars:
       - key: NODE_ENV

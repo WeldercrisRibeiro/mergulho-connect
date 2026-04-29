@@ -43,7 +43,7 @@ export class AdminUsersController {
           state: dto.state,
           codCep: dto.codCep,
           country: dto.country
-        }
+        } as any
       });
       await tx.userRole.create({
         data: { userId: u.id, role: dto.role || 'membro' }
@@ -88,7 +88,7 @@ export class AdminUsersController {
           state: dto.state,
           codCep: dto.codCep,
           country: dto.country
-        },
+        } as any,
         update: {
           fullName: dto.fullName,
           username: dto.username,
@@ -103,7 +103,7 @@ export class AdminUsersController {
           state: dto.state,
           codCep: dto.codCep,
           country: dto.country
-        }
+        } as any
       });
 
       // Update role
