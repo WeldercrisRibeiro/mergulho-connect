@@ -409,7 +409,7 @@ const Landing = () => {
               <VersionIndicator className="opacity-40 hover:opacity-100" />
             </div>
             <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest opacity-40">
-              <span>CNPJ: 00.000.000/0000-00</span>
+              <span>CNPJ: 19.017.873/0002-16</span>
               <span className="h-1 w-1 bg-zinc-500 rounded-full" />
               <span>Fortaleza - CE</span>
             </div>
