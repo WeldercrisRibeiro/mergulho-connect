@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sparkles, Wrench, Bug, History, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import pkg from "../../package.json";
 
 interface Change {
   type: "new" | "tweak" | "fix";
@@ -80,7 +81,20 @@ const TypeBadge = ({ type }: { type: Change["type"] }) => {
 };
 
 export function VersionIndicator({ className, collapsed }: { className?: string; collapsed?: boolean }) {
-  const currentVersion = versions[0].version;
+  const currentVersion = pkg.version;
+  
+  // Se a versão do package.json for mais recente que a última do array hardcoded,
+  // adicionamos uma entrada temporária para "Atualização de rotina"
+  const allVersions = [...versions];
+  if (currentVersion !== versions[0].version) {
+    allVersions.unshift({
+      version: currentVersion,
+      date: new Date().toLocaleDateString('pt-BR'),
+      changes: [
+        { type: "tweak", text: "Novas implementações e ajustes de rotina" }
+      ]
+    });
+  }
 
   return (
     <Dialog>
@@ -118,7 +132,7 @@ export function VersionIndicator({ className, collapsed }: { className?: string;
 
         <ScrollArea className="max-h-[60vh] p-6">
           <div className="space-y-8 relative before:absolute before:left-[17px] before:top-2 before:bottom-2 before:w-[2px] before:bg-zinc-100 dark:before:bg-zinc-800">
-            {versions.map((v, idx) => (
+            {allVersions.map((v, idx) => (
               <div key={v.version} className="relative pl-10 group">
                 {/* Timeline Dot */}
                 <div className={cn(
