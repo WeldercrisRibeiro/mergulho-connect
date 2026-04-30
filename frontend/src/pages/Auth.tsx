@@ -174,7 +174,7 @@ const Auth = () => {
       </div>
 
       {/* Left Column (Brand/Image) - Hidden on small screens */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center p-12 bg-gradient-to-br from-[#0052cc] via-[#0747a6] to-[#002152] shadow-[inset_-20px_0_50px_rgba(0,0,0,0.2)]">
+      <div className="hidden lg:flex lg:w-1/2 h-screen relative overflow-hidden items-center justify-center p-12 bg-gradient-to-br from-[#0052cc] via-[#0747a6] to-[#002152] shadow-[inset_-20px_0_50px_rgba(0,0,0,0.2)]">
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.4) 1px, transparent 0)', backgroundSize: '40px 40px' }} />
         
         {/* Decorative glows */}
@@ -183,34 +183,36 @@ const Auth = () => {
         
         <div className="
   group
-  z-10 glass-morphism p-20 rounded-[3rem]
+  z-10 glass-morphism
+  p-6 lg:p-10
+  rounded-[3rem]
   flex items-center justify-center
-  max-w-2xl w-full
-  transition-all duration-500 ease-out
-  hover:scale-105 hover:-translate-y-2
+  w-full max-w-lg
+  h-full
 ">
   <img
-    src="/idvmergulho/logo-white.png"
-    alt="Logo CC Mergulho"
-    className="
-  w-[120%] max-w-[750px] h-auto
-  drop-shadow-[0_30px_80px_rgba(0,0,0,0.7)]
-  transition-all duration-500
-  group-hover:scale-115
-"
-  />
+  src="/idvmergulho/logo-white.png"
+  className="
+    max-h-[70vh]
+    w-auto
+    object-contain
+    drop-shadow-[0_30px_80px_rgba(0,0,0,0.7)]
+    transition-all duration-500
+    group-hover:scale-105
+  "
+/>
 </div>
       </div>
 
       {/* Right Column (Form) */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center px-6 py-12 relative">
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-6 py-6 lg:py-8 relative">
         {/* Botão voltar à Landing */}
         <Link
           to="/landing"
           className="absolute top-8 left-8 z-30 inline-flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-primary transition-all group"
         >
           <ArrowLeft className="h-4 w-4 transform group-hover:-translate-x-1 transition-transform" />
-          <span>Voltar ao Início</span>
+          <span>Voltar</span>
         </Link>
         
         <div className="hidden lg:block absolute top-8 right-8 z-20">
@@ -247,7 +249,7 @@ const Auth = () => {
               ) : isChangingPass ? (
                 "Trocar Senha"
               ) : (
-                "Acesso ao Sistema"
+                "Bem Vindo  !"
               )}
             </CardTitle>
             <CardDescription className="text-sm font-medium mt-1 opacity-80">
