@@ -206,28 +206,19 @@ export async function sendTextMessage(phone: string, text: string): Promise<void
 export async function sendMediaMessage(
   phone: string,
   caption: string | undefined,
-  attachment: { type: string; filepath: string; mimetype: string; filename: string; audioBuffer?: Buffer },
+  attachment: { type: string; mimetype: string; filename: string; buffer: Buffer },
 ): Promise<void> {
   if (!socket || !isConnected()) throw new Error('WhatsApp não está conectado');
 
   let content: AnyMessageContent;
   switch (attachment.type) {
-    case 'image': content = { image: fs.readFileSync(attachment.filepath), caption }; break;
-    case 'video': content = { video: fs.readFileSync(attachment.filepath), caption, mimetype: attachment.mimetype }; break;
+    case 'image': content = { image: attachment.buffer, caption }; break;
+    case 'video': content = { video: attachment.buffer, caption, mimetype: attachment.mimetype }; break;
     case 'audio': {
-      let buffer = attachment.audioBuffer;
-      if (!buffer) {
-        if (needsConversion(attachment.filepath, attachment.mimetype)) {
-          console.log(`[WA] Convertendo áudio para OGG/Opus: ${attachment.filename}`);
-          buffer = await processAudioOgg(attachment.filepath);
-        } else {
-          buffer = fs.readFileSync(attachment.filepath);
-        }
-      }
-      content = { audio: buffer, mimetype: 'audio/ogg; codecs=opus', ptt: true };
+      content = { audio: attachment.buffer, mimetype: 'audio/ogg; codecs=opus', ptt: true };
       break;
     }
-    default: content = { document: fs.readFileSync(attachment.filepath), mimetype: attachment.mimetype, fileName: attachment.filename, caption };
+    default: content = { document: attachment.buffer, mimetype: attachment.mimetype, fileName: attachment.filename, caption };
   }
   await socket.sendMessage(formatJid(phone), content);
 }

@@ -25,13 +25,17 @@ if (actualFfmpegPath) {
  * Retorna um Buffer pronto para ser passado ao Baileys como `audio`.
  * Não cria arquivos temporários.
  */
-export async function processAudioOgg(audioPath: string): Promise<Buffer> {
+export async function processAudioOgg(input: string | Buffer): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     try {
-      // Lê o arquivo original como buffer e alimenta via stream
-      const inputBuffer = fs.readFileSync(audioPath);
+      // Alimenta o stream com o Buffer ou lendo o arquivo
       const inputStream = new PassThrough();
-      inputStream.end(inputBuffer);
+      if (Buffer.isBuffer(input)) {
+        inputStream.end(input);
+      } else {
+        const inputBuffer = fs.readFileSync(input);
+        inputStream.end(inputBuffer);
+      }
 
       const outputStream = new PassThrough();
       const chunks: Buffer[] = [];

@@ -6,6 +6,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ChangePasswordWithCredentialsDto } from './dto/change-password-with-credentials.dto';
 import { TelegramService } from '../notifications/telegram.service';
+import { DashboardService } from '../maintenance/dashboard.service';
 
 @Injectable()
 export class AuthService {
@@ -13,105 +14,11 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private telegramService: TelegramService,
+    private dashboardService: DashboardService,
   ) {}
 
   async getFullAuthContext(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        profile: true,
-        userRole: true,
-        // Buscamos os grupos que o usuário faz parte
-      },
-    });
-
-    if (!user) return null;
-
-    // Buscamos os grupos separadamente para garantir a estrutura
-    const memberGroups = await this.prisma.memberGroup.findMany({
-      where: { userId },
-      include: { group: true }
-    });
-
-    const currentRole = user.userRole?.role || 'membro';
-    
-    // Mapeamento de IDs de roles para busca de rotinas (baseado no frontend)
-    const roleMapping: Record<string, string> = {
-      "admin": "c1f324b3-45ed-453a-941c-d030e22d7721",
-      "admin_ccm": "c1f324b3-45ed-453a-941c-d030e22d7721",
-      "pastor": "c1f324b3-45ed-453a-941c-d030e22d7721",
-      "lider": "3e4bce2a-7856-4801-b466-7b8e3d12a74b",
-      "membro": "071c2037-fa67-43ab-9d1b-4480fe15fd92"
-    };
-
-    const roleId = roleMapping[currentRole] || roleMapping.membro;
-    const groupIds = memberGroups.map(mg => mg.groupId);
-
-    // Busca as rotinas habilitadas para os grupos do usuário OU para a role dele
-    const routines = await this.prisma.groupRoutine.findMany({
-      where: {
-        OR: [
-          { groupId: { in: groupIds }, roleId: null },
-          { roleId: roleId, groupId: null }
-        ]
-      }
-    });
-
-    // 1. Check-in Ativo
-    const activeCheckin = await this.prisma.checkin.findFirst({
-      where: { guardianId: userId, status: 'active' },
-      orderBy: { createdAt: 'desc' }
-    });
-
-    // 2. Configurações do Site (SiteSettings)
-    const rawSettings = await this.prisma.siteSetting.findMany();
-    const siteSettings = rawSettings.reduce((acc, curr) => ({ ...acc, [curr.id]: curr.value }), {});
-
-    // 3. Contadores Sumários
-    const counts = {
-      members: await this.prisma.user.count(),
-      groups: await this.prisma.group.count(),
-      events: await this.prisma.event.count({ where: { eventDate: { gte: new Date() } } }),
-      devotionals: await this.prisma.devotional.count({ where: { status: 'publicado' } }),
-    };
-
-    // 4. Próximos 3 Eventos
-    const nextEvents = await this.prisma.event.findMany({
-      where: {
-        OR: [
-          { isGeneral: true },
-          { groupId: { in: groupIds } }
-        ],
-        eventDate: { gte: new Date() }
-      },
-      orderBy: { eventDate: 'asc' },
-      take: 3
-    });
-
-    // 5. Devocional mais recente
-    const latestDevotional = await this.prisma.devotional.findFirst({
-      where: { 
-        status: 'publicado',
-        publishDate: { lte: new Date() }
-      },
-      orderBy: { publishDate: 'desc' }
-    });
-
-    return {
-      user: {
-        id: user.id,
-        email: user.email,
-        role: currentRole,
-        profile: user.profile,
-      },
-      memberGroups,
-      routines,
-      activeCheckin,
-      siteSettings,
-      counts,
-      nextEvents,
-      latestDevotional
-    };
+    return this.dashboardService.getFullAuthContext(userId);
   }
 
   async login(dto: LoginDto) {

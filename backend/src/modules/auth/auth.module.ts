@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { AdminUsersController } from './admin-users.controller';
 import { JwtStrategy } from './jwt.strategy';
+import { DashboardModule } from '../maintenance/dashboard.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { JwtStrategy } from './jwt.strategy';
         },
       }),
     }),
+    DashboardModule,
   ],
   controllers: [AuthController, AdminUsersController],
   providers: [AuthService, JwtStrategy],

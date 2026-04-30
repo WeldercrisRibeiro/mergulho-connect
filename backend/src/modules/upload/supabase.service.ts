@@ -46,4 +46,16 @@ export class SupabaseService {
 
     return publicUrlData.publicUrl;
   }
+
+  async getFileBuffer(url: string): Promise<Buffer> {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Status ${response.status}`);
+      const arrayBuffer = await response.arrayBuffer();
+      return Buffer.from(arrayBuffer);
+    } catch (error) {
+      this.logger.error(`Erro ao baixar arquivo da URL ${url}: ${error.message}`);
+      throw error;
+    }
+  }
 }

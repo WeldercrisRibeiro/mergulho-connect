@@ -229,6 +229,8 @@ model WzDispatch {
   attachments   WzDispatchAttachment[]
   logs          WzDispatchLog[]
 
+  @@index([status])
+  @@index([scheduledAt])
   @@map("wz_dispatches")
 }
 
@@ -336,6 +338,8 @@ model Event {
   group           Group?              @relation(fields: [groupId], references: [id])
 
   @@index([isPublic], map: "idx_events_is_public")
+  @@index([groupId])
+  @@index([eventDate])
   @@map("events")
 }
 
@@ -353,6 +357,8 @@ model Checkin {
   updatedAt        DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
   guardian         Profile?  @relation(fields: [guardianId], references: [userId], onDelete: Cascade)
 
+  @@index([guardianId])
+  @@index([status])
   @@map("kids_checkins")
 }
 

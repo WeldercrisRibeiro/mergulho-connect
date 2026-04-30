@@ -333,8 +333,9 @@ const { data: conversations } = useQuery({
 
   useEffect(() => {
     if (!user) return;
-    const WS_URL = import.meta.env.VITE_API_URL?.replace('http', 'ws') || `ws://${window.location.hostname}:3001`;
-    const socket = io(WS_URL + "/chat");
+    const socket = io("/chat", {
+      path: "/socket.io"
+    });
     socket.on("new_message", (payload: any) => {
       // payload structure emitted from Nest is { new: message_obj_in_camelCase }
       const newMsg = payload.new;

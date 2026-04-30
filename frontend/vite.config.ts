@@ -20,6 +20,10 @@ export default defineConfig(({ mode }) => {
           // Em produção, a URL seria https://mergulho-connect-eh6j.onrender.com
           changeOrigin: true,
         },
+        "/socket.io": {
+          target: "http://localhost:3001",
+          ws: true,
+        },
       },
     },
 
