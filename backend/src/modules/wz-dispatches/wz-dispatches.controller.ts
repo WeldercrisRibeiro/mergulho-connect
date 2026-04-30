@@ -3,41 +3,37 @@ import {
   UseInterceptors, UploadedFiles, BadRequestException,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiBearerAuth, ApiQuery, ApiConsumes, ApiBody } from '@nestjs/swagger';
-import { diskStorage } from 'multer';
-import { extname, join } from 'path';
-import { v4 as uuidv4 } from 'uuid';
-import * as fs from 'fs';
+import { ApiTags, ApiBearerAuth, ApiQuery, ApiConsumes } from '@nestjs/swagger';
+import { memoryStorage } from 'multer';
 import { WzDispatchesService } from './wz-dispatches.service';
 import { CreateWzDispatchDto } from './dto/create-wz-dispatch.dto';
 import { UpdateWzDispatchDto } from './dto/update-wz-dispatch.dto';
-
-const uploadsDir = process.env.UPLOADS_DIR || './uploads';
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+import { SupabaseService } from '../upload/supabase.service';
 
 @ApiTags('WZ Dispatches')
 @ApiBearerAuth()
 @Controller('dispatches')
 export class WzDispatchesController {
-  constructor(private readonly service: WzDispatchesService) {}
+  constructor(
+    private readonly service: WzDispatchesService,
+    private readonly supabaseService: SupabaseService,
+  ) {}
 
   @Post()
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FilesInterceptor('files', 10, {
-    storage: diskStorage({
-      destination: uploadsDir,
-      filename: (_req, file, cb) => cb(null, `${uuidv4()}${extname(file.originalname)}`),
-    }),
+    storage: memoryStorage(),
   }))
   async create(@Body() dto: CreateWzDispatchDto, @UploadedFiles() files: Express.Multer.File[]) {
     const dispatch = await this.service.create(dto);
     if (files?.length) {
       for (const file of files) {
+        const publicUrl = await this.supabaseService.uploadFile(file);
         await this.service.createAttachment({
           dispatchId: dispatch.id,
           type: getAttachmentType(file.mimetype),
           filename: file.originalname,
-          filepath: file.path,
+          filepath: publicUrl,
           mimetype: file.mimetype,
         });
       }
@@ -56,10 +52,7 @@ export class WzDispatchesController {
   @Patch(':id')
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FilesInterceptor('files', 10, {
-    storage: diskStorage({
-      destination: uploadsDir,
-      filename: (_req, file, cb) => cb(null, `${uuidv4()}${extname(file.originalname)}`),
-    }),
+    storage: memoryStorage(),
   }))
   async update(
     @Param('id') id: string,
@@ -78,11 +71,12 @@ export class WzDispatchesController {
 
     if (files?.length) {
       for (const file of files) {
+        const publicUrl = await this.supabaseService.uploadFile(file);
         await this.service.createAttachment({
           dispatchId: id,
           type: getAttachmentType(file.mimetype),
           filename: file.originalname,
-          filepath: file.path,
+          filepath: publicUrl,
           mimetype: file.mimetype,
         });
       }
