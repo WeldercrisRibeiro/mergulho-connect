@@ -163,7 +163,7 @@ const Auth = () => {
 
   return (
     <div className={cn(
-      "min-h-screen flex w-full relative overflow-hidden transition-colors duration-500",
+      "min-h-screen flex w-full relative overflow-x-hidden overflow-y-auto transition-colors duration-500",
       theme === 'light' ? "bg-[#f8faff]" : "bg-[#0a0c10]"
     )}>
       {/* Dynamic Animated Background */}

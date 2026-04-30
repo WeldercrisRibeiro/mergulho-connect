@@ -17,5 +17,8 @@ export class DevotionalsService {
   findActive() { return this.prisma.devotional.findMany({ where: { isActive: true, status: 'publicado' }, orderBy: { publishDate: 'desc' } }); }
   findOne(id: string) { return this.prisma.devotional.findUnique({ where: { id }, include: { likes: true } }); }
   update(id: string, dto: UpdateDevotionalDto) { return this.prisma.devotional.update({ where: { id }, data: dto as any }); }
-  remove(id: string) { return this.prisma.devotional.delete({ where: { id } }); }
+  async remove(id: string) {
+    await this.prisma.devotionalLike.deleteMany({ where: { devotionalId: id } });
+    return this.prisma.devotional.delete({ where: { id } });
+  }
 }

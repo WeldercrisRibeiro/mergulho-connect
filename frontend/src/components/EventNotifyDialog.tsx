@@ -94,10 +94,20 @@ export function EventNotifyDialog({ event, open, onClose }: EventNotifyDialogPro
       if (bannerUrl) {
         try {
           const response = await fetch(bannerUrl);
-          const blob = await response.blob();
-          const ext = bannerUrl.split('.').pop()?.split('?')[0] || 'jpg';
-          const file = new File([blob], `banner.${ext}`, { type: blob.type });
-          formData.append("files", file);
+          if (!response.ok) {
+            console.warn(`Banner download failed with status ${response.status}. Sending without banner.`);
+          } else {
+            const blob = await response.blob();
+            
+            // Valida se é realmente uma imagem
+            if (blob.type.startsWith('image/')) {
+              const ext = bannerUrl.split('.').pop()?.split('?')[0] || 'jpg';
+              const file = new File([blob], `banner.${ext}`, { type: blob.type });
+              formData.append("files", file);
+            } else {
+              console.warn(`Banner URL returned non-image content (${blob.type}). Sending without banner.`);
+            }
+          }
         } catch (e) {
           console.error("Falha ao anexar banner:", e);
         }
