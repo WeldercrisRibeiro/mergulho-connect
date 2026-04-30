@@ -40,6 +40,7 @@ import { MaintenanceModule } from './modules/maintenance/maintenance.module';
 import { JwtAuthGuard } from './modules/auth/jwt-auth.guard';
 import { RolesGuard } from './modules/auth/roles.guard';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { PixModule } from './modules/pix/pix.module';
 
 
 @Module({
@@ -81,6 +82,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     UploadModule,
     MaintenanceModule,
     NotificationsModule,
+    PixModule,
   ],
   providers: [
     {
