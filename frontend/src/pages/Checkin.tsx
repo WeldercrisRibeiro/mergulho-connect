@@ -145,7 +145,7 @@ const Checkin = () => {
             <ShieldCheck className="h-8 w-8" />
           </div>
           <div>
-            <h1 className="text-2xl font-black tracking-tight">Check-in</h1>
+            <h1 className="text-2xl font-black tracking-tight">Validação de Fluxo</h1>
             <p className="text-muted-foreground text-sm">Segurança de crianças e controle de pertences.</p>
           </div>
         </div>
@@ -168,7 +168,7 @@ const Checkin = () => {
           <Tabs value={category} onValueChange={(v: any) => setCategory(v)} className="w-full sm:w-auto">
             <TabsList className="grid grid-cols-2 h-10 p-1 bg-muted/50 rounded-xl">
               <TabsTrigger value="checkin" className="rounded-lg gap-2">
-                <ShieldCheck className="h-4 w-4" /> Check-in
+                <ShieldCheck className="h-4 w-4" /> checkin
               </TabsTrigger>
               <TabsTrigger value="volume" className="rounded-lg gap-2">
                 <Package className="h-4 w-4" /> Volumes
@@ -181,11 +181,11 @@ const Checkin = () => {
       <Tabs defaultValue="entrada" className="w-full">
         <TabsList className="grid grid-cols-2 w-full max-w-md bg-muted/50 p-1 rounded-2xl h-12 mb-8">
           <TabsTrigger value="entrada" className="rounded-xl font-bold flex items-center gap-2">
-            <UserPlus className="h-4 w-4" /> Novo Check-in
+            <UserPlus className="h-4 w-4" /> Entrada / Nova Liberação
           </TabsTrigger>
           <TabsTrigger value="retirada" className="rounded-xl font-bold flex items-center gap-2 relative group">
             <ClipboardList className="h-4 w-4" />
-            <span>Realizar Checkout</span>
+            <span>Ativos / Retirada</span>
             {activeCheckins && activeCheckins.length > 0 && (
               <Badge
                 variant="destructive"

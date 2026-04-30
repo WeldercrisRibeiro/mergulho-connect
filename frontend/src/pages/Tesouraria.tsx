@@ -13,11 +13,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { DashboardStatBox } from "@/components/DashboardStatBox";
-import { DollarSign, Wallet, Heart, BarChart3, TrendingUp, Users, Plus, Filter, Download, ArrowUpRight, Search, FileText, Copy, CheckCheck, Baby, QrCode, CalendarDays, Trash2, Edit2, ClipboardList, ChevronDown, RefreshCw } from "lucide-react";
+import { DollarSign, Wallet, Heart, BarChart3, TrendingUp, Users, Plus, Filter, Download, ArrowUpRight, Search, FileText, Copy, CheckCheck, Baby, QrCode, CalendarDays, Trash2, Edit2, ClipboardList, ChevronDown } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { safeFormat } from "@/lib/dateUtils";
 import { useToast } from "@/hooks/use-toast";
-import { PixGenerator } from "@/components/PixGenerator";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type PaymentType = "dizimo" | "oferta";
@@ -72,18 +71,15 @@ const PixCopyButton = ({ pixKey }: { pixKey: string }) => {
 // ─── Member View ──────────────────────────────────────────────────────────────
 const MemberTesouraria = ({
   pixKey,
-  pixQRCode,
   user,
 }: {
   pixKey: string;
-  pixQRCode: string;
   user: any;
 }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const [open, setOpen] = useState(false);
-  const [pixGenOpen, setPixGenOpen] = useState(false);
   const [paymentType, setPaymentType] = useState<PaymentType>("dizimo");
   const [memberName, setMemberName] = useState(user?.user_metadata?.full_name || "");
   const [amount, setAmount] = useState<number | "">("");
@@ -134,25 +130,14 @@ const MemberTesouraria = ({
         <Card className="border-0 shadow-xl rounded-3xl overflow-hidden">
           <div className="h-1.5 bg-emerald-500" />
           <CardContent className="p-6">
-            <div className="flex flex-col sm:flex-row items-start gap-4">
-              {pixQRCode ? (
-                <div className="shrink-0 mx-auto sm:mx-0 p-1.5 bg-white rounded-2xl border-2 border-emerald-100 dark:border-emerald-900/50 shadow-sm">
-                  <img src={pixQRCode} alt="QR Code PIX" className="h-28 w-28 object-contain rounded-xl" />
-                </div>
-              ) : (
-                <div className="h-14 w-14 rounded-2xl bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
-                  <QrCode className="h-7 w-7 text-emerald-600" />
-                </div>
-              )}
-              <div className="flex-1 space-y-1.5 w-full">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="h-14 w-14 rounded-2xl bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
+                <QrCode className="h-7 w-7 text-emerald-600" />
+              </div>
+              <div className="flex-1 space-y-1">
                 <p className="font-bold text-base">Chave PIX da Igreja</p>
-                <p className="text-xs text-muted-foreground">Copie a chave abaixo ou escaneie o QR Code para realizar sua contribuição.</p>
-                <div className="pt-1 flex flex-wrap gap-2">
-                  <PixCopyButton pixKey={pixKey} />
-                  <Button variant="outline" size="sm" onClick={() => setPixGenOpen(true)} className="h-9 rounded-xl border-emerald-200 dark:border-emerald-800 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30">
-                    <RefreshCw className="h-3.5 w-3.5 mr-1.5" /> Gerar com Valor
-                  </Button>
-                </div>
+                <p className="text-xs text-muted-foreground">Copie a chave abaixo para realizar sua contribuição no app do banco.</p>
+                <PixCopyButton pixKey={pixKey} />
               </div>
             </div>
             <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl text-xs text-amber-700 dark:text-amber-400">
@@ -311,15 +296,6 @@ const MemberTesouraria = ({
               {saveMutation.isPending ? "Salvando..." : "Confirmar"}
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Pix Generator Dialog */}
-      <Dialog open={pixGenOpen} onOpenChange={setPixGenOpen}>
-        <DialogContent className="sm:max-w-2xl rounded-3xl border-0 shadow-2xl p-0 overflow-hidden bg-background">
-          <div className="max-h-[85vh] overflow-y-auto p-6 custom-scrollbar">
-            <PixGenerator />
-          </div>
         </DialogContent>
       </Dialog>
     </div>
@@ -884,7 +860,6 @@ const Tesouraria = () => {
   });
 
   const pixKey = siteSettings?.pix_key || "";
-  const pixQRCode = siteSettings?.pix_qrcode || "";
   const canManage = isAdmin || routinePermissions.tesouraria === true;
 
   if (!canManage) {
@@ -893,7 +868,7 @@ const Tesouraria = () => {
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Wallet className="h-6 w-6 text-primary" /> Tesouraria
         </h1>
-        <MemberTesouraria pixKey={pixKey} pixQRCode={pixQRCode} user={user} />
+        <MemberTesouraria pixKey={pixKey} user={user} />
       </div>
     );
   }
@@ -919,7 +894,7 @@ const Tesouraria = () => {
         </TabsContent>
 
         <TabsContent value="membro" className="pt-4">
-          <MemberTesouraria pixKey={pixKey} pixQRCode={pixQRCode} user={user} />
+          <MemberTesouraria pixKey={pixKey} user={user} />
         </TabsContent>
       </Tabs>
     </div>

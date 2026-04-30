@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { Settings, ImagePlus, MessageSquareQuote, Trash2, Plus, Edit2, ChevronLeft, ChevronRight, Upload, Mail, CheckCircle, Archive, Video, Youtube, Shield, Users, Calendar, BookOpen, HandHeart, BarChart3, MessageCircle, ShieldCheck, Megaphone, Lock, ChevronRight as ChevronRightIcon, Bell, ArrowRight, Wallet, FileSearch, QrCode } from "lucide-react";
+import { Settings, ImagePlus, MessageSquareQuote, Trash2, Plus, Edit2, ChevronLeft, ChevronRight, Upload, Mail, CheckCircle, Archive, Video, Youtube, Shield, Users, Calendar, BookOpen, HandHeart, BarChart3, MessageCircle, ShieldCheck, Megaphone, Lock, ChevronRight as ChevronRightIcon, Bell, ArrowRight, Wallet, FileSearch } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import VideoPlayer from "@/components/VideoPlayer";
 import { format } from "date-fns";
@@ -121,7 +121,6 @@ const SettingsPage = () => {
   const [editInstagram, setEditInstagram] = useState("");
   const [editFacebook, setEditFacebook] = useState("");
   const [editPixKey, setEditPixKey] = useState("");
-  const [editPixQRCode, setEditPixQRCode] = useState("");
   const [editYoutube, setEditYoutube] = useState("");
   const [editMapsUrl, setEditMapsUrl] = useState("");
 
@@ -132,7 +131,6 @@ const SettingsPage = () => {
       setEditFacebook(siteSettings.facebook_url || "");
       setEditYoutube(siteSettings.youtube_url || "");
       setEditPixKey(siteSettings.pix_key || "");
-      setEditPixQRCode(siteSettings.pix_qrcode || "");
       setEditMapsUrl(siteSettings.maps_embed_url || "");
       setTempVideoUrl(siteSettings.about_us_video_url || "");
       setTempIsVideoUpload(siteSettings.about_us_video_is_upload === "true");
@@ -149,7 +147,6 @@ const SettingsPage = () => {
         { id: "facebook_url", value: editFacebook },
         { id: "youtube_url", value: editYoutube },
         { id: "pix_key", value: editPixKey },
-        { id: "pix_qrcode", value: editPixQRCode },
         { id: "maps_embed_url", value: editMapsUrl },
       ];
       for (const u of updates) {
@@ -658,39 +655,6 @@ const SettingsPage = () => {
                 <div className="space-y-2">
                   <Label>Chave PIX (Telefone/Email/CPF)</Label>
                   <Input value={editPixKey} onChange={(e) => setEditPixKey(e.target.value)} placeholder="Ex: financeiro@igreja.com" />
-                </div>
-                <div className="space-y-2">
-                  <Label>QR Code PIX (Imagem)</Label>
-                  <div className="flex gap-2">
-                    <Input placeholder="URL da imagem..." value={editPixQRCode} onChange={(e) => setEditPixQRCode(e.target.value)} className="flex-1 rounded-xl" />
-                    <label className="cursor-pointer bg-primary/10 hover:bg-primary/20 text-primary h-10 px-4 py-2 rounded-xl flex items-center justify-center transition-colors shrink-0">
-                      <QrCode className="h-4 w-4 mr-2" /> Upload
-                      <input type="file" className="hidden" accept="image/*" onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        setUploading(true);
-                        try {
-                          const formData = new FormData();
-                          formData.append('file', file);
-                          const { data: uploadData } = await api.post('/upload', formData);
-                          setEditPixQRCode(uploadData.url);
-                          toast({ title: "QR Code carregado!" });
-                        } catch (err: any) {
-                          toast({ title: "Erro no upload", description: getErrorMessage(err), variant: "destructive" });
-                        } finally {
-                          setUploading(false);
-                        }
-                      }} />
-                    </label>
-                  </div>
-                  {editPixQRCode && (
-                    <div className="mt-2 relative w-32 h-32 rounded-2xl overflow-hidden border bg-white p-1">
-                      <img src={getUploadUrl(editPixQRCode)} className="w-full h-full object-contain" />
-                      <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6 rounded-full" onClick={() => setEditPixQRCode("")}>
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  )}
                 </div>
                 <div className="space-y-2">
                   <Label>Instagram URL</Label>

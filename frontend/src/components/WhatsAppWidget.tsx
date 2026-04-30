@@ -39,14 +39,12 @@ export const WhatsAppWidget = ({ phoneNumber, className }: WhatsAppWidgetProps) 
   };
 
   return (
-    <div className={cn("fixed bottom-6 right-6 z-[60]", className)}>
+    <div className={cn("fixed bottom-6 right-6 z-[60] flex flex-col items-end gap-3", className)}>
       {/* Popup */}
       <div
         className={cn(
-          "absolute bottom-full right-0 mb-3 w-[320px] max-w-[calc(100vw-2rem)] bg-white dark:bg-zinc-950 rounded-3xl shadow-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 transition-all duration-300 transform origin-bottom-right",
-          isOpen
-            ? "scale-100 opacity-100 translate-y-0 pointer-events-auto"
-            : "scale-50 opacity-0 translate-y-10 pointer-events-none"
+          "w-[320px] bg-white dark:bg-zinc-950 rounded-3xl shadow-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 transition-all duration-300 transform origin-bottom-right",
+          isOpen ? "scale-100 opacity-100 translate-y-0" : "scale-50 opacity-0 translate-y-10 pointer-events-none"
         )}
       >
         {/* Header */}
@@ -63,7 +61,7 @@ export const WhatsAppWidget = ({ phoneNumber, className }: WhatsAppWidgetProps) 
               </div>
             </div>
           </div>
-          <button onClick={() => setIsOpen(false)} className="hover:bg-white/10 p-1 rounded-full transition-colors pointer-events-auto">
+          <button onClick={() => setIsOpen(false)} className="hover:bg-white/10 p-1 rounded-full transition-colors">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -96,7 +94,7 @@ export const WhatsAppWidget = ({ phoneNumber, className }: WhatsAppWidgetProps) 
       </div>
 
       {/* Toggle Button */}
-      <div className="relative pointer-events-auto">
+      <div className="relative">
         {!isOpen ? (
           <button
             onClick={() => setIsOpen(true)}

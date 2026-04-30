@@ -44,7 +44,7 @@ const moreMenuItems: MoreMenuItem[] = [
   { path: "/relatorios", icon: BarChart3, label: "Relatórios", colorScheme: "cyan" },
   { path: "/configuracoes", icon: Settings, label: "Ajustes", colorScheme: "navy" },
   { path: "/whatsapp", icon: WhatsAppIcon, label: "WhatsApp", colorScheme: "cyan" },
-  { path: "/checkin", icon: ShieldCheck, label: "Check-in", colorScheme: "navy" },
+  { path: "/checkin", icon: ShieldCheck, label: "Validação", colorScheme: "navy" },
   { path: "/Disparos", icon: Megaphone, label: "Disparos", colorScheme: "cyan", showBadge: true },
   { path: "/gestao-rotinas", icon: ShieldCheck, label: "Acessos", colorScheme: "navy" },
 ];

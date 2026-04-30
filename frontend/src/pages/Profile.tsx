@@ -205,7 +205,7 @@ const Profile = () => {
                   )}
                 </div>
 
-                {/* {myGroups && myGroups.length > 0 && (
+                {myGroups && myGroups.length > 0 && (
                   <div className="w-full pt-6 space-y-3">
                     <p className="text-xs font-semibold text-muted-foreground text-center">Departamentos</p>
                     <div className="flex gap-2 flex-wrap justify-center">
@@ -216,7 +216,7 @@ const Profile = () => {
                       ))}
                     </div>
                   </div>
-                )} */}
+                )}
 
                 <div className="w-full pt-6 flex flex-col gap-2 md:flex md:hidden">
                 </div>

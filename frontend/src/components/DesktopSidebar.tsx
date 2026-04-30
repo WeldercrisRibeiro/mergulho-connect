@@ -34,7 +34,7 @@ const navGroups: {
         { path: "/devocionais", icon: BookOpen, label: "Devocionais", routine: "devocionais" },
         { path: "/tesouraria", icon: Wallet, label: "Tesouraria", routine: "tesouraria" },
         { path: "/voluntarios", icon: HandHeart, label: "Voluntários", routine: "voluntarios" },
-        { path: "/checkin", icon: ShieldCheck, label: "Check-in", routine: "checkin" },
+        { path: "/checkin", icon: ShieldCheck, label: "Validação", routine: "checkin" },
       ]
     },
     {
