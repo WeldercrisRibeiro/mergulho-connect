@@ -19,7 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useEvents } from "@/hooks/useEvents";
 
 const Agenda = () => {
-  const { user, isAdmin, IsLider, managedGroupIds } = useAuth();
+  const { user, isAdmin, IsLider, managedGroupIds, userGroupIds } = useAuth();
   const { toast } = useToast();
   const [filter, setFilter] = useState<string>("all");
   
@@ -66,7 +66,11 @@ const Agenda = () => {
     enabled: !!user,
   });
 
-  const showFilters = isAdmin || (groups && (groups as any[]).length > 1);
+  const visibleGroups = isAdmin 
+    ? groups 
+    : groups?.filter((g: any) => userGroupIds.includes(g.id));
+
+  const showFilters = isAdmin || (visibleGroups && (visibleGroups as any[]).length > 1);
 
   const handleSave = (payload: any) => {
     saveMutation.mutate({ payload, id: editingEvent?.id }, {
@@ -97,7 +101,7 @@ const Agenda = () => {
       {showFilters && (
         <div className="flex gap-2 pb-2 overflow-x-auto no-scrollbar">
           <Button variant={filter === "all" ? "default" : "outline"} size="sm" onClick={() => setFilter("all")}>Todos</Button>
-          {groups?.map((g: any) => (
+          {visibleGroups?.map((g: any) => (
             <Button key={g.id} variant={filter === g.id ? "default" : "outline"} size="sm" onClick={() => setFilter(g.id)} className="shrink-0">
               {g.name}
             </Button>
