@@ -19,12 +19,22 @@ async function bootstrap() {
   // ─── CORS ─────────────────────────────────────────────────────────────────
   app.enableCors({
     origin: (origin, callback) => {
-      // Em desenvolvimento, permite tudo para evitar problemas de porta (5173, 5174, 8080, etc)
+      // Em desenvolvimento, permite tudo
       if (!origin || process.env.NODE_ENV === 'development') {
         return callback(null, true);
       }
 
-      const isAllowed = corsOrigins.includes(origin);
+      // Adicionando a URL da Vercel explicitamente para garantir que não dê erro de CORS
+      const allowedOrigins = [
+        ...corsOrigins,
+        'https://ccmmanager.vercel.app',
+        'https://mergulho-connect.vercel.app' // caso tenha outro frontend
+      ];
+
+      const isAllowed = allowedOrigins.includes(origin);
+      if (!isAllowed) {
+        console.warn(`⚠️ CORS bloqueado para a origem: ${origin}`);
+      }
       return callback(null, isAllowed);
     },
     credentials: true,
