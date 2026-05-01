@@ -648,7 +648,7 @@ const Volunteers = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Data da Escala</Label>
-                <Input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)} className="rounded-xl h-11" />
+                <Input type="date" max="9999-12-31" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)} className="rounded-xl h-11" />
               </div>
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Função / Atividade</Label>

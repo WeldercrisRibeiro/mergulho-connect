@@ -355,11 +355,11 @@ const Reports = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs">De</Label>
-                <Input type="date" value={filterFrom} onChange={e => setFilterFrom(e.target.value)} />
+                <Input type="date" max="9999-12-31" value={filterFrom} onChange={e => setFilterFrom(e.target.value)} />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Até</Label>
-                <Input type="date" value={filterTo} onChange={e => setFilterTo(e.target.value)} />
+                <Input type="date" max="9999-12-31" value={filterTo} onChange={e => setFilterTo(e.target.value)} />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Grupo</Label>
@@ -598,7 +598,7 @@ const Reports = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Data</Label>
-                  <Input type="date" value={reportDate} onChange={e => setReportDate(e.target.value)} />
+                  <Input type="date" max="9999-12-31" value={reportDate} onChange={e => setReportDate(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label>Tipo</Label>

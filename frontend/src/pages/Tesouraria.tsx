@@ -272,6 +272,7 @@ const MemberTesouraria = ({
                 <Label>Data do Pagamento</Label>
                 <Input
                   type="date"
+                  max="9999-12-31"
                   value={paymentDate}
                   onChange={e => setPaymentDate(e.target.value)}
                   className="h-11 rounded-xl"
@@ -712,7 +713,7 @@ const AdminTesouraria = ({ pixKey, user, isAdminCCM }: { pixKey: string; user: a
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Data</Label>
-                <Input type="date" value={reportDate} onChange={e => setReportDate(e.target.value)} className="h-11 rounded-xl" />
+                <Input type="date" max="9999-12-31" value={reportDate} onChange={e => setReportDate(e.target.value)} className="h-11 rounded-xl" />
               </div>
               <div className="space-y-2">
                 <Label>Tipo</Label>
