@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import AppLayout from "@/components/AppLayout";
+import { PasswordPrompt } from "@/components/PasswordPrompt";
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
@@ -94,6 +95,7 @@ const App = () => (
               escuta eventos e dispara toasts.
             */}
             <NotificationManager />
+            <PasswordPrompt />
 
             <Routes>
               <Route path="/" element={<Index />} />

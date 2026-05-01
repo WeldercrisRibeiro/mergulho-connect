@@ -10,7 +10,7 @@ Corrigir Bugs CEP, ainda apresenta erro em PROD ao consultar CEPs válidos.
 
 Limitar ano de nascimento para 4 dígitos. (Limitar todos os campso de anos da plataforma)
 
-Membros pré-selecionados  estão aparecendo ao vincular membros em outro departamentos
+
 
 Melhorar possibilidade desativar/ativar funções como: Desativar Validação, chat para geral.
 

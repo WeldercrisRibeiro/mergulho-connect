@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ROLE_MAPPING } from '../../utils/constants';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class DashboardService {
@@ -73,12 +74,15 @@ export class DashboardService {
     // Format site settings as a key-value object
     const siteSettings = rawSettings.reduce((acc, curr) => ({ ...acc, [curr.id]: curr.value }), {});
 
+    const needsPasswordChange = await bcrypt.compare('123456', user.password);
+
     return {
       user: {
         id: user.id,
         email: user.email,
         role: currentRole,
         profile: user.profile,
+        needsPasswordChange,
       },
       memberGroups,
       routines,

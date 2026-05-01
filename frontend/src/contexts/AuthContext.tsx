@@ -11,6 +11,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isAdminCCM: boolean;
   IsLider: boolean;
+  needsPasswordChange: boolean;
   managedGroupIds: string[];
   userGroupIds: string[];
   profile: { fullName: string; avatarUrl: string | null; whatsappPhone: string | null; username: string | null; createdAt: string | null } | null;
@@ -34,6 +35,7 @@ const AuthContext = createContext<AuthContextType>({
   isAdmin: false,
   isAdminCCM: false,
   IsLider: false,
+  needsPasswordChange: false,
   managedGroupIds: [],
   userGroupIds: [],
   profile: null,
@@ -74,6 +76,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isAdminCCM, setIsAdminCCM] = useState(false);
   const [IsLider, setIsLider] = useState(false);
+  const [needsPasswordChange, setNeedsPasswordChange] = useState(false);
   const [managedGroupIds, setManagedGroupIds] = useState<string[]>([]);
   const [userGroupIds, setUserGroupIds] = useState<string[]>([]);
   const [profile, setProfile] = useState<AuthContextType["profile"]>(null);
@@ -127,6 +130,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     // 1. Set basic User
     setUser(userData);
+    if (userData.needsPasswordChange !== undefined) {
+      setNeedsPasswordChange(userData.needsPasswordChange);
+    }
 
     // 2. Set Profile
     if (userData.profile) {
@@ -354,6 +360,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isAdmin,
         isAdminCCM,
         IsLider,
+        needsPasswordChange,
         managedGroupIds: managedGroupIds || [],
         userGroupIds: userGroupIds || [],
         profile,
