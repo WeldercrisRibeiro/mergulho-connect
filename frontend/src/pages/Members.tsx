@@ -28,6 +28,7 @@ const Members = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [nivelFilter, setNivelFilter] = useState("all");
+  const [groupFilter, setGroupFilter] = useState("all");
 
   const [editingMember, setEditingMember] = useState<any>(null);
   const [creatingMember, setCreatingMember] = useState(false);
@@ -115,7 +116,8 @@ const Members = () => {
   const filtered = members?.filter((m: any) => {
     const matchesSearch = (m.fullName || "").toLowerCase().includes(search.toLowerCase());
     const matchesNivel = nivelFilter === "all" || m.roles?.some((r: any) => r.role === nivelFilter);
-    return matchesSearch && matchesNivel;
+    const matchesGroup = groupFilter === "all" || m.groupIds?.some((g: any) => g.id === groupFilter);
+    return matchesSearch && matchesNivel && matchesGroup;
   });
 
   const handleEdit = (m: any) => {
@@ -317,103 +319,116 @@ const Members = () => {
             <SelectItem value="membro">Membros</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={groupFilter} onValueChange={setGroupFilter}>
+          <SelectTrigger className="w-full sm:w-[180px] h-11 rounded-xl bg-background border-muted-foreground/20">
+            <SelectValue placeholder="Departamento" />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl">
+            <SelectItem value="all">Todos os Deptos</SelectItem>
+            {allGroups?.map((g: any) => (
+              <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 items-start">
+      <div className="flex flex-col gap-3">
         {filtered?.map((member: any) => (
-          <Card key={member.id} className="border border-border/50 bg-card/60 backdrop-blur-sm shadow-md hover:shadow-xl transition-all duration-300 rounded-3xl overflow-hidden group">
-            <CardContent className="p-5 flex flex-col h-full relative">
-
-              <div className="flex items-start justify-between gap-3 mb-4">
-                <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center shrink-0 shadow-inner border border-primary/20">
-                    {member.avatarUrl ? (
-                      <img src={getUploadUrl(member.avatarUrl) || ""} alt="" className="h-full w-full rounded-full object-cover" />
-                    ) : (
-                      <span className="text-primary font-black text-lg sm:text-xl">
-                        {(member.fullName || "?").charAt(0).toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-black text-sm sm:text-base text-foreground uppercase tracking-tight leading-tight line-clamp-2">
-                      {member.fullName || "Sem nome"}
-                    </p>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      {(member.username || member.fullName) && (
-                        <div className="flex items-center gap-1 text-primary text-[10px] sm:text-xs font-bold min-w-0">
-                          <User className="h-3 w-3 shrink-0" />
-                          <span className="truncate">
-                            @{((member.username && !/^\d{8,}$/.test(member.username))
-                              ? member.username
-                              : (member.fullName?.trim().toLowerCase().replace(/\s+/g, ".") || member.username)).toLowerCase()}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {isAdmin && (
-                  <div className="flex items-center shrink-0 -mt-2 -mr-2 sm:-mt-1 sm:-mr-1">
-                    <Button variant="ghost" size="icon"
-                      className="h-10 w-10 sm:h-8 sm:w-8 rounded-full hover:bg-amber-500/10 text-amber-500/80 hover:text-amber-500 transition-colors"
-                      onClick={() => setResettingPasswordMember(member)}
-                      title="Resetar Senha"
-                    >
-                      <Key className="h-5 w-5 sm:h-4 sm:w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon"
-                      className="h-10 w-10 sm:h-8 sm:w-8 rounded-full hover:bg-primary/10 text-primary/80 hover:text-primary transition-colors"
-                      onClick={() => handleEdit(member)}>
-                      <Edit2 className="h-5 w-5 sm:h-4 sm:w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon"
-                      className="h-10 w-10 sm:h-8 sm:w-8 rounded-full hover:bg-destructive/10 text-destructive/80 hover:text-destructive transition-colors"
-                      onClick={() => setDeletingMember(member)}
-                      disabled={deleteMutation.isPending}
-                    >
-                      <Trash2 className="h-5 w-5 sm:h-4 sm:w-4" />
-                    </Button>
-                  </div>
+          <div key={member.id} className="flex flex-col sm:flex-row sm:items-center p-3 sm:p-4 bg-card/60 backdrop-blur-sm border border-border/50 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl sm:rounded-[1.25rem] group">
+            
+            {/* Esquerda: Avatar, Nome e Telefone */}
+            <div className="flex items-center gap-4 min-w-0 sm:w-[45%]">
+              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center shrink-0 shadow-inner border border-primary/20">
+                {member.avatarUrl ? (
+                  <img src={getUploadUrl(member.avatarUrl) || ""} alt="" className="h-full w-full rounded-full object-cover" />
+                ) : (
+                  <span className="text-primary font-black text-lg">
+                    {(member.fullName || "?").charAt(0).toUpperCase()}
+                  </span>
                 )}
               </div>
-
-              {member.whatsappPhone && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3 bg-muted/40 p-2 rounded-xl border border-border/40 inline-flex w-max max-w-full">
-                  <Phone className="h-3 w-3 text-primary shrink-0" />
-                  <span className="font-medium truncate">{formatPhoneForDisplay(member.whatsappPhone || "")}</span>
+              <div className="min-w-0 flex flex-col justify-center">
+                <p className="font-bold text-sm sm:text-base text-foreground uppercase tracking-tight leading-none truncate mb-1">
+                  {member.fullName || "Sem nome"}
+                </p>
+                <div className="flex items-center gap-3">
+                  {(member.username || member.fullName) && (
+                    <span className="text-muted-foreground text-xs font-medium truncate">
+                      @{((member.username && !/^\d{8,}$/.test(member.username))
+                        ? member.username
+                        : (member.fullName?.trim().toLowerCase().replace(/\s+/g, ".") || member.username)).toLowerCase()}
+                    </span>
+                  )}
+                  {member.whatsappPhone && (
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
+                      <Phone className="h-3 w-3 text-primary shrink-0" />
+                      <span className="truncate">{formatPhoneForDisplay(member.whatsappPhone || "")}</span>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
+            </div>
 
-              <div className="flex flex-wrap gap-1.5 mt-auto pt-2 border-t border-border/40">
+            {/* Centro: Badges */}
+            <div className="flex flex-col items-start sm:items-center justify-center mt-3 sm:mt-0 sm:flex-1">
+              <div className="flex flex-wrap items-center justify-start sm:justify-center gap-1.5">
                 {member.roles?.some((r: any) => r.role === "admin_ccm") ? (
-                  <Badge variant="default" className="bg-rose-600 text-white hover:bg-rose-700 uppercase text-[9px] px-2 py-0.5 rounded-md font-black shadow-sm">ADM CCM</Badge>
+                  <Badge variant="default" className="bg-rose-600 text-white hover:bg-rose-700 uppercase text-[9px] px-2 py-0.5 rounded-full font-black shadow-sm">ADM CCM</Badge>
                 ) : member.roles?.some((r: any) => r.role === "admin") ? (
-                  <Badge variant="default" className="bg-slate-800 text-white uppercase text-[9px] px-2 py-0.5 rounded-md font-black shadow-sm">Admin</Badge>
+                  <Badge variant="default" className="bg-slate-800 text-white uppercase text-[9px] px-2 py-0.5 rounded-full font-black shadow-sm">Admin</Badge>
                 ) : null}
                 {member.roles?.some((r: any) => r.role === "pastor") && (
-                  <Badge variant="default" className="bg-indigo-600 text-white hover:bg-indigo-700 uppercase text-[9px] px-2 py-0.5 rounded-md font-black shadow-sm">
+                  <Badge variant="default" className="bg-indigo-600 text-white hover:bg-indigo-700 uppercase text-[9px] px-2 py-0.5 rounded-full font-black shadow-sm">
                     Pastor
                   </Badge>
                 )}
                 {member.roles?.some((r: any) => r.role === "lider") && (
-                  <Badge variant="secondary" className="bg-emerald-500/15 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 uppercase text-[9px] px-2 py-0.5 rounded-md font-black border-0">
+                  <Badge variant="secondary" className="bg-emerald-500/15 text-emerald-700 uppercase text-[9px] px-2 py-0.5 rounded-full font-black border-0">
                     Líder
                   </Badge>
                 )}
                 {(!member.roles || member.roles.length === 0 || member.roles.every((r: any) => r.role === "membro")) && (
-                  <Badge variant="outline" className="uppercase text-[9px] px-2 py-0.5 rounded-md text-muted-foreground font-bold border-muted-foreground/30">
+                  <Badge variant="outline" className="uppercase text-[9px] px-2 py-0.5 rounded-full text-muted-foreground font-bold border-muted-foreground/30 bg-muted/40">
                     Membro
                   </Badge>
                 )}
                 {member.groups?.map((name: string) => (
-                  <Badge key={name} variant="outline" className="text-[9px] px-2 py-0.5 rounded-md bg-muted/30 font-medium border-muted-foreground/20 text-foreground">{name}</Badge>
+                  <Badge key={name} variant="outline" className="uppercase text-[9px] px-2 py-0.5 rounded-full bg-muted/30 font-bold border-muted-foreground/20 text-muted-foreground">
+                    {name}
+                  </Badge>
                 ))}
               </div>
+            </div>
 
-            </CardContent>
-          </Card>
+            {/* Direita: Ações */}
+            {isAdmin && (
+              <div className="flex items-center justify-end gap-2 shrink-0 mt-3 sm:mt-0 sm:w-1/4">
+                <Button variant="outline" size="icon"
+                  className="h-8 w-8 rounded-lg border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-600 transition-colors"
+                  onClick={() => setResettingPasswordMember(member)}
+                  title="Resetar Senha"
+                >
+                  <Key className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="icon"
+                  className="h-8 w-8 rounded-lg border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-600 transition-colors"
+                  onClick={() => handleEdit(member)}
+                  title="Editar Membro"
+                >
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="icon"
+                  className="h-8 w-8 rounded-lg border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors"
+                  onClick={() => setDeletingMember(member)}
+                  disabled={deleteMutation.isPending}
+                  title="Excluir Membro"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+            
+          </div>
         ))}
       </div>
 

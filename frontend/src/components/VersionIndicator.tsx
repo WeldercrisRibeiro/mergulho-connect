@@ -101,7 +101,7 @@ export function VersionIndicator({ className, collapsed }: { className?: string;
       <DialogTrigger asChild>
         <button
           className={cn(
-            "flex items-center gap-2 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-muted-foreground/60 bg-muted/20 border border-muted-foreground/5 hover:border-primary/20 hover:bg-primary/5 hover:text-primary transition-all rounded-full group",
+            "flex items-center gap-2 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-primary bg-muted/20 border border-muted-foreground/5 hover:border-primary/20 hover:bg-primary/5 transition-all rounded-full group",
             collapsed && "justify-center px-0 w-8 h-8",
             className
           )}

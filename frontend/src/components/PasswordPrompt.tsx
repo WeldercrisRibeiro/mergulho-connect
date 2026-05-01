@@ -12,9 +12,9 @@ export const PasswordPrompt = () => {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
+    console.log("[PasswordPrompt] user:", user?.email, "needsChange:", needsPasswordChange, "path:", location.pathname);
     if (user && needsPasswordChange && location.pathname !== "/perfil") {
-      const t = setTimeout(() => setOpen(true), 1500);
-      return () => clearTimeout(t);
+      setOpen(true);
     } else {
       setOpen(false);
     }
