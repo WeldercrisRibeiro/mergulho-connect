@@ -17,10 +17,10 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "create-admin": "ts-node create-admin-user.ts",
-    "create-admin:js": "node create-admin-user.js",
-    "change-password": "ts-node change-password.ts",
-    "change-password:js": "node change-password.js"
+    "create-admin": "ts-node scripts/create-admin-user.ts",
+    "create-admin:js": "node scripts/create-admin-user.js",
+    "change-password": "ts-node scripts/change-password.ts",
+    "change-password:js": "node scripts/change-password.js"
   },
   "dependencies": {
     "@hapi/boom": "^10.0.1",
