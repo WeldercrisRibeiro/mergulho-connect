@@ -39,11 +39,11 @@ export const WhatsAppWidget = ({ phoneNumber, className }: WhatsAppWidgetProps) 
   };
 
   return (
-    <div className={cn("fixed bottom-6 right-6 z-[60] flex flex-col items-end gap-3", className)}>
+    <div className={cn("fixed bottom-6 right-6 z-[60] flex flex-col items-end gap-3 pointer-events-none", className)}>
       {/* Popup */}
       <div
         className={cn(
-          "w-[320px] bg-white dark:bg-zinc-950 rounded-3xl shadow-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 transition-all duration-300 transform origin-bottom-right",
+          "w-[320px] bg-white dark:bg-zinc-950 rounded-3xl shadow-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 transition-all duration-300 transform origin-bottom-right pointer-events-auto",
           isOpen ? "scale-100 opacity-100 translate-y-0" : "scale-50 opacity-0 translate-y-10 pointer-events-none"
         )}
       >
@@ -94,7 +94,7 @@ export const WhatsAppWidget = ({ phoneNumber, className }: WhatsAppWidgetProps) 
       </div>
 
       {/* Toggle Button */}
-      <div className="relative">
+      <div className="relative pointer-events-auto">
         {!isOpen ? (
           <button
             onClick={() => setIsOpen(true)}

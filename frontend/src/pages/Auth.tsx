@@ -163,7 +163,7 @@ const Auth = () => {
 
   return (
     <div className={cn(
-      "min-h-screen flex w-full relative overflow-x-hidden overflow-y-auto transition-colors duration-500",
+      "min-h-dvh flex w-full relative overflow-x-hidden transition-colors duration-500",
       theme === 'light' ? "bg-[#f8faff]" : "bg-[#0a0c10]"
     )}>
       {/* Dynamic Animated Background */}
@@ -174,7 +174,7 @@ const Auth = () => {
       </div>
 
       {/* Left Column (Brand/Image) - Hidden on small screens */}
-      <div className="hidden lg:flex lg:w-1/2 h-screen relative overflow-hidden items-center justify-center p-12 bg-gradient-to-br from-[#0052cc] via-[#0747a6] to-[#002152] shadow-[inset_-20px_0_50px_rgba(0,0,0,0.2)]">
+      <div className="hidden lg:flex lg:w-1/2 h-screen sticky top-0 relative overflow-hidden items-center justify-center p-12 bg-gradient-to-br from-[#0052cc] via-[#0747a6] to-[#002152] shadow-[inset_-20px_0_50px_rgba(0,0,0,0.2)]">
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.4) 1px, transparent 0)', backgroundSize: '40px 40px' }} />
         
         {/* Decorative glows */}
@@ -205,7 +205,7 @@ const Auth = () => {
       </div>
 
       {/* Right Column (Form) */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center px-6 py-6 lg:py-8 relative">
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-6 py-8 lg:py-10 min-h-dvh overflow-y-auto relative">
         {/* Botão voltar à Landing */}
         <Link
           to="/landing"

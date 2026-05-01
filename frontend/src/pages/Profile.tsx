@@ -2,12 +2,13 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/components/ThemeProvider";
 import api from "@/lib/api";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useMutation } from "@tanstack/react-query";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+
 import { User, LogOut, Save, Camera, Loader2, Sun, Moon, Smartphone, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { normalizePhoneForDB, formatPhoneForDisplay, maskPhone } from "@/lib/phoneUtils";
@@ -18,7 +19,6 @@ const Profile = () => {
   const { user, profile, setProfile, signOut, isAdmin, IsLider, refreshProfile } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const initializedRef = useRef(false);
 
@@ -29,9 +29,6 @@ const Profile = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [isNotifGranted, setIsNotifGranted] = useState(
-    typeof window !== "undefined" && "Notification" in window && (window as any).Notification.permission === "granted"
-  );
 
   useEffect(() => {
     if (profile && !initializedRef.current) {
@@ -66,14 +63,6 @@ const Profile = () => {
 
   const initials = (fullName || "M").charAt(0).toUpperCase();
 
-  const { data: myGroups } = useQuery({
-    queryKey: ["my-profile-groups"],
-    queryFn: async () => {
-      const { data } = await api.get('/member-groups/my');
-      return (data || []).map((mg: any) => mg.group?.name).filter(Boolean);
-    },
-    enabled: !!user,
-  });
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -119,7 +108,6 @@ const Profile = () => {
     onSuccess: async () => {
       await refreshProfile();
       initializedRef.current = false; // Permite re-inicializar com os dados salvos se necessário
-      queryClient.invalidateQueries({ queryKey: ["my-profile-groups"] });
       toast({ title: "Perfil atualizado!" });
     },
     onError: (err: any) => {
@@ -205,21 +193,7 @@ const Profile = () => {
                   )}
                 </div>
 
-                {myGroups && myGroups.length > 0 && (
-                  <div className="w-full pt-6 space-y-3">
-                    <p className="text-xs font-semibold text-muted-foreground text-center">Departamentos</p>
-                    <div className="flex gap-2 flex-wrap justify-center">
-                      {Array.from(new Set(myGroups)).map((name: string) => (
-                        <Badge key={name} variant="secondary" className="text-[10px] px-2 py-0.5">
-                          {name}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
-                <div className="w-full pt-6 flex flex-col gap-2 md:flex md:hidden">
-                </div>
                 
                 <div className="hidden md:flex w-full pt-6 flex-col gap-2 border-t border-border/50">
                   <Button variant="outline" size="sm" onClick={toggleTheme} className="w-full gap-2 text-xs h-10">
