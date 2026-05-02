@@ -10,11 +10,11 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: mergulho123
     ports:
-      - "5433:5434"
+      - "5433:5434"  # ← Configuração de teste local do dev
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d mergulho"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ccm_dev"]  # ← nome correto do banco
       interval: 10s
       timeout: 5s
       retries: 5

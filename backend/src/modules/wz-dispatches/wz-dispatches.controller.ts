@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Body, Patch, Param, Delete, Query,
-  UseInterceptors, UploadedFiles, BadRequestException,
+  UseInterceptors, UploadedFiles, BadRequestException, UseGuards,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiBearerAuth, ApiQuery, ApiConsumes } from '@nestjs/swagger';
@@ -9,6 +9,9 @@ import { WzDispatchesService } from './wz-dispatches.service';
 import { CreateWzDispatchDto } from './dto/create-wz-dispatch.dto';
 import { UpdateWzDispatchDto } from './dto/update-wz-dispatch.dto';
 import { SupabaseService } from '../upload/supabase.service';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('WZ Dispatches')
 @ApiBearerAuth()
@@ -20,9 +23,19 @@ export class WzDispatchesController {
   ) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'admin_ccm', 'lider')
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FilesInterceptor('files', 10, {
     storage: memoryStorage(),
+    limits: { fileSize: 16 * 1024 * 1024 }, // 16 MB (limite WhatsApp)
+    fileFilter: (req, file, cb) => {
+      const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'audio/mpeg', 'audio/ogg', 'application/pdf'];
+      if (!allowed.includes(file.mimetype)) {
+        return cb(new BadRequestException('Tipo de arquivo não permitido.'), false);
+      }
+      cb(null, true);
+    },
   }))
   async create(@Body() dto: CreateWzDispatchDto, @UploadedFiles() files: Express.Multer.File[]) {
     const dispatch = await this.service.create(dto);
@@ -50,9 +63,19 @@ export class WzDispatchesController {
   @Get(':id/logs') findLogs(@Param('id') id: string) { return this.service.findLogs(id); }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'admin_ccm', 'lider')
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FilesInterceptor('files', 10, {
     storage: memoryStorage(),
+    limits: { fileSize: 16 * 1024 * 1024 }, // 16 MB (limite WhatsApp)
+    fileFilter: (req, file, cb) => {
+      const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'audio/mpeg', 'audio/ogg', 'application/pdf'];
+      if (!allowed.includes(file.mimetype)) {
+        return cb(new BadRequestException('Tipo de arquivo não permitido.'), false);
+      }
+      cb(null, true);
+    },
   }))
   async update(
     @Param('id') id: string,
@@ -86,9 +109,13 @@ export class WzDispatchesController {
   }
 
   @Post(':id/retry')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'admin_ccm', 'lider')
   retry(@Param('id') id: string) { return this.service.retry(id); }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'admin_ccm')
   remove(@Param('id') id: string) { return this.service.remove(id); }
 }
 

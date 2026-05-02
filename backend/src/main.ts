@@ -65,25 +65,27 @@ async function bootstrap() {
   // DEVE ser definido ANTES do Swagger para que os paths sejam gerados corretamente
   app.setGlobalPrefix('api');
 
-  // ─── Swagger ──────────────────────────────────────────────────────────────
-  const config = new DocumentBuilder()
-    .setTitle('Mergulho Connect API')
-    .setDescription('Backend NestJS completo — Prisma + PostgreSQL + Baileys')
-    .setVersion('1.0')
-    .addServer(`http://localhost:${process.env.PORT || 3001}/api`, 'Local (com prefixo /api)')
-    .addBearerAuth(
-      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT', in: 'header' }
-    )
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document, {
-    swaggerOptions: { persistAuthorization: true },
-  });
+  // ─── Swagger — apenas fora de produção ────────────────────────────────────
+  if (process.env.NODE_ENV !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('Mergulho Connect API')
+      .setDescription('Backend NestJS completo — Prisma + PostgreSQL + Baileys')
+      .setVersion('1.0')
+      .addServer(`http://localhost:${process.env.PORT || 3001}/api`, 'Local (com prefixo /api)')
+      .addBearerAuth(
+        { type: 'http', scheme: 'bearer', bearerFormat: 'JWT', in: 'header' }
+      )
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('docs', app, document, {
+      swaggerOptions: { persistAuthorization: true },
+    });
+    console.log(`📚 Swagger em:     http://localhost:${process.env.PORT || 3001}/docs`);
+  }
 
   const port = process.env.PORT || 3001;
   await app.listen(port, '0.0.0.0');
   console.log(`🚀 API rodando em: http://localhost:${port}/api`);
-  console.log(`📚 Swagger em:     http://localhost:${port}/docs`);
 }
 
 bootstrap();

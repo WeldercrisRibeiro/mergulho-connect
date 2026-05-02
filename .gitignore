@@ -25,4 +25,13 @@ dist-ssr
 *.env
 .env
 .env.local  
-.env.example    
+.env.example
+
+# ─── Banco de dados: dumps e backups sensíveis ───────────────────────────────
+# Nunca versionar dumps reais — use scripts/seed anonimizado
+database/*.sql
+database/*.dump
+database/*.backup
+*.sql.gz
+*.pg_dump
+*.ps1

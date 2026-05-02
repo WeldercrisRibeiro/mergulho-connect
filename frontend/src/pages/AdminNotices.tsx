@@ -1,4 +1,5 @@
 import { useState } from "react";
+import DOMPurify from "dompurify";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -58,13 +59,18 @@ const AdminNotices = () => {
 
   const renderWhatsAppText = (text: string) => {
     if (!text) return null;
-    const html = text
+    const rawHtml = text
       .replace(/\*([^\*]+)\*/g, "<strong>$1</strong>")
       .replace(/_([^_]+)_/g, "<em>$1</em>")
       .replace(/~([^~]+)~/g, "<del>$1</del>")
       .replace(/```(.*?)```/g, "<code class='bg-black/10 px-1 py-[2px] rounded text-[13px] font-mono'>$1</code>")
       .replace(/\n/g, "<br />");
-    return <span dangerouslySetInnerHTML={{ __html: html }} />;
+    // Sanitiza para prevenir XSS antes de injetar HTML
+    const sanitizedHtml = DOMPurify.sanitize(rawHtml, {
+      ALLOWED_TAGS: ['strong', 'em', 'del', 'code', 'br'],
+      ALLOWED_ATTR: ['class'],
+    });
+    return <span dangerouslySetInnerHTML={{ __html: sanitizedHtml }} />;
   };
 
   const canCreate = isAdmin || IsLider;
