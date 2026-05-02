@@ -114,9 +114,16 @@ const Members = () => {
   });
 
   const filtered = members?.filter((m: any) => {
-    const matchesSearch = (m.fullName || "").toLowerCase().includes(search.toLowerCase());
+    const searchLower = search.toLowerCase();
+    const searchDigits = search.replace(/\D/g, "");
+
+    const matchesName = (m.fullName || "").toLowerCase().includes(searchLower);
+    const matchesPhone = searchDigits.length > 0 && m.whatsappPhone ? m.whatsappPhone.includes(searchDigits) : false;
+    
+    const matchesSearch = matchesName || matchesPhone;
     const matchesNivel = nivelFilter === "all" || m.roles?.some((r: any) => r.role === nivelFilter);
     const matchesGroup = groupFilter === "all" || m.groupIds?.some((g: any) => g.id === groupFilter);
+    
     return matchesSearch && matchesNivel && matchesGroup;
   });
 
@@ -197,7 +204,7 @@ const Members = () => {
       setCreatingMember(false);
       setEditName(""); setEditUsername(""); setEditPhone(""); setEditRole("membro"); setSelectedGroups([]);
       setEditBirthDate(""); setEditAddress(""); setEditStreet(""); setEditNumber(""); setEditNeighborhood(""); setEditComplement(""); setEditCity(""); setEditState(""); setEditCodCep(""); setEditCountry("Brazil");
-      toast({ title: "Membro criado!", description: `Usuário (Login): ${editUsername} | Senha: 123456` });
+      toast({ title: "Usuário criado!", description: `Login: ${editUsername} | Senha: 123456` });
     },
     onError: (err: any) => {
       toast({ title: "Erro ao criar", description: getErrorMessage(err), variant: "destructive" });
@@ -302,7 +309,7 @@ const Members = () => {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar membros..."
+            placeholder="Buscar por nome ou telefone..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10 h-11 rounded-xl"
@@ -678,7 +685,7 @@ const Members = () => {
             </div>
 
             <div className="space-y-3">
-              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">departamentos (Opcional)</Label>
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Departamentos (Opcional)</Label>
               <GroupCheckboxes />
             </div>
           </div>

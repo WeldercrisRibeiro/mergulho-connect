@@ -26,7 +26,7 @@ import ArchivedChats from "./pages/ArchivedChats";
 import Checkin from "./pages/Checkin";
 import AdminNotices from "./pages/AdminNotices";
 import Admin from "./pages/Admin";
-import GroupPermissions from "./pages/GroupPermissions";
+
 import NotFound from "./pages/NotFound";
 import AdminWhatsApp from "./pages/AdminWhatsApp";
 import Tesouraria from "./pages/Tesouraria";
@@ -116,7 +116,7 @@ const App = () => (
               <Route path="/Disparos" element={<ProtectedRoute><AdminNotices /></ProtectedRoute>} />
 
               <Route path="/whatsapp" element={<ProtectedRoute><AdminWhatsApp /></ProtectedRoute>} />
-              <Route path="/gestao-rotinas" element={<ProtectedRoute><GroupPermissions /></ProtectedRoute>} />
+
               <Route path="/tesouraria" element={<ProtectedRoute><Tesouraria /></ProtectedRoute>} />
               <Route path="/admin/scripts" element={<ProtectedRoute><AdminScripts /></ProtectedRoute>} />
               <Route path="/privacidade" element={<Privacy />} />

@@ -23,6 +23,5 @@ git add .
 # 3. Commit com a nova versão
 Write-Host "Realizando commit: ${newVersion} - $Message" -ForegroundColor Green
 git commit -m "${newVersion}: $Message"
-git push origin main
 
 Write-Host "Pronto! Versão atualizada e commit realizado." -ForegroundColor Yellow

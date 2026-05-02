@@ -37,7 +37,7 @@ node create-admin-user.js
 #### Método 1: Via npm (recomendado - TypeScript)
 ```bash
 cd backend
-USER_EMAIL="usuario@exemplo.com" NEW_PASSWORD="novaSenha123" npm run change-password
+USER_EMAIL="admin@ccmergulho.com" NEW_PASSWORD="123456789" npm run change-password
 ```
 
 #### Método 2: Via npm (JavaScript compilado)
@@ -49,7 +49,7 @@ USER_EMAIL="usuario@exemplo.com" NEW_PASSWORD="novaSenha123" npm run change-pass
 #### Método 3: Via ts-node diretamente
 ```bash
 cd backend
-USER_EMAIL="usuario@exemplo.com" NEW_PASSWORD="novaSenha123" npx ts-node change-password.ts
+USER_EMAIL="admin@ccmergulho.com" NEW_PASSWORD="123456789" npx ts-node change-password.ts
 ```
 
 #### Método 4: Via node diretamente
@@ -61,20 +61,20 @@ USER_EMAIL="usuario@exemplo.com" NEW_PASSWORD="novaSenha123" node change-passwor
 ### Exemplo prático (Windows PowerShell):
 ```powershell
 cd backend
-$env:USER_EMAIL="admin@mergulho.com"
-$env:NEW_PASSWORD="minhaNovaSenhaSegura123"
+$env:USER_EMAIL="admin@ccmergulho.com"
+$env:NEW_PASSWORD="123456789"
 npm run change-password
 ```
 
 ### Exemplo prático (Linux/Mac):
 ```bash
 cd backend
-USER_EMAIL="admin@mergulho.com" NEW_PASSWORD="minhaNovaSenhaSegura123" npm run change-password
+USER_EMAIL="admin@ccmergulho.com" NEW_PASSWORD="minhaNovaSenhaSegura123" npm run change-password
 ```
 
 ## 📋 Valores padrão (Criar Admin)
 
-- **E-mail**: `admin@mergulho.com`
+- **E-mail**: `admin@ccmergulho.com`
 - **Senha**: `123456`
 - **Nome completo**: `Administrador`
 - **Username**: `admin`
@@ -139,7 +139,7 @@ npm run create-admin
 
 ## Valores padrão
 
-- **E-mail**: `admin@mergulho.com`
+- **E-mail**: `admin@ccmergulho.com`
 - **Senha**: `123456`
 - **Nome completo**: `Administrador`
 - **Username**: `admin`

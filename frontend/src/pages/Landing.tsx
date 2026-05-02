@@ -387,6 +387,13 @@ const Landing = () => {
                 <a href="#inicio" className="hover:text-primary transition-colors">Início</a>
                 <a href="#sobre" className="hover:text-primary transition-colors">Sobre Nós</a>
                 <a href="#agenda" className="hover:text-primary transition-colors">Agenda</a>
+                <a href="https://mergulho-connect-eh6j.onrender.com/api/health" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors flex items-center gap-2">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  Status do Sistema
+                </a>
               </nav>
             </div>
 

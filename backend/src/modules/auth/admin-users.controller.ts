@@ -13,7 +13,7 @@ import { ResetAdminPasswordDto } from './dto/reset-admin-password.dto';
 @ApiBearerAuth()
 @Controller('admin/users')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin_ccm')
+@Roles('admin_ccm', 'admin')
 export class AdminUsersController {
   constructor(private prisma: PrismaService) {}
 

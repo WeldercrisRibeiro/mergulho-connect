@@ -12,8 +12,9 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { Settings, ImagePlus, MessageSquareQuote, Trash2, Plus, Edit2, ChevronLeft, ChevronRight, Upload, Mail, CheckCircle, Archive, Video, Youtube, Shield, Users, Calendar, BookOpen, HandHeart, BarChart3, MessageCircle, ShieldCheck, Megaphone, Lock, ChevronRight as ChevronRightIcon, Bell, ArrowRight, Wallet, FileSearch } from "lucide-react";
+import { Settings, ImagePlus, MessageSquareQuote, Trash2, Plus, Edit2, ChevronLeft, ChevronRight, Upload, Mail, CheckCircle, Archive, Video, Youtube, Shield, Users, Calendar, BookOpen, HandHeart, BarChart3, MessageCircle, ShieldCheck, Megaphone, Lock, ChevronRight as ChevronRightIcon, Bell, ArrowRight, Wallet, FileSearch, LayoutGrid, UserCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 import VideoPlayer from "@/components/VideoPlayer";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -376,6 +377,7 @@ const SettingsPage = () => {
         <TabsList className="mb-6 bg-muted/60 border border-border/40 p-1 rounded-2xl flex-wrap h-auto gap-1 w-full sm:w-auto">
           <TabsTrigger value="landing" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all px-4">🌐 Site Público</TabsTrigger>
           <TabsTrigger value="social" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all px-4">📱 Redes Sociais</TabsTrigger>
+          <TabsTrigger value="features" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all px-4">⚙️ Funcionalidades</TabsTrigger>
           <TabsTrigger value="inbox" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all px-4 relative">
             ✉️ Inbox
             {contactMessages?.some((m: any) => m.status !== "archived") && (
@@ -389,6 +391,11 @@ const SettingsPage = () => {
 
         <TabsContent value="inbox" className="space-y-6">
           <InboxMessages />
+        </TabsContent>
+
+        {/* ── Funcionalidades / Acessos ── */}
+        <TabsContent value="features" className="space-y-6">
+          <RoutinePermissionsPanel />
         </TabsContent>
 
         <TabsContent value="landing" className="space-y-6">
@@ -914,6 +921,232 @@ function QuoteIcon(props: any) {
     <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
       <path d="M10 11h-4a3 3 0 0 1 3-3v-2a5 5 0 0 0-5 5v5h6v-5zm10 0h-4a3 3 0 0 1 3-3v-2a5 5 0 0 0-5 5v5h6v-5z" />
     </svg>
+  );
+}
+
+// ── Funcionalidades / Acessos Panel ──────────────────────────────────────────
+const ROUTINES = [
+  { id: "agenda", label: "Agenda", icon: Calendar, description: "Gestão de eventos e compromissos" },
+  { id: "devocionais", label: "Devocionais", icon: BookOpen, description: "Leituras e meditações diárias" },
+  { id: "voluntarios", label: "Voluntários", icon: HandHeart, description: "Escalas e gestão de equipes" },
+  { id: "membros", label: "Membros", icon: Users, description: "Acesso ao cadastro de pessoas" },
+  { id: "relatorios", label: "Relatórios", icon: BarChart3, description: "Dados, gráficos e estatísticas" },
+  { id: "chat", label: "Chat", icon: MessageCircle, description: "Mensagens e comunicação interna" },
+  { id: "checkin", label: "Check-in & Segurança", icon: ShieldCheck, description: "Validação e proteção infantil" },
+  { id: "disparos", label: "Disparos", icon: Megaphone, description: "Mural de avisos e notificações WhatsApp" },
+];
+
+const ROLE_TYPES = [
+  { id: "c1f324b3-45ed-453a-941c-d030e22d7721", label: "Administrador", description: "Acesso total ao sistema", color: "bg-primary" },
+  { id: "3e4bce2a-7856-4801-b466-7b8e3d12a74b", label: "Líder", description: "Líderes de departamento", color: "bg-emerald-500" },
+  { id: "071c2037-fa67-43ab-9d1b-4480fe15fd92", label: "Membro", description: "Acesso básico", color: "bg-slate-500" },
+];
+
+function RoutinePermissionsPanel() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("groups");
+
+  const { data: groups } = useQuery({
+    queryKey: ["all-groups"],
+    queryFn: async () => {
+      const { data } = await api.get('/groups');
+      return data || [];
+    },
+  });
+
+  const { data: permissions, isLoading: loadingPerms } = useQuery({
+    queryKey: ["all-role-routines"],
+    queryFn: async () => {
+      const { data } = await api.get('/group-routines', { params: { includeRoles: true } });
+      return data || [];
+    },
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: async ({ id, routineKey, enabled, isRole }: { id: string, routineKey: string, enabled: boolean, isRole: boolean }) => {
+      const normalizedRoutineKey = routineKey.toLowerCase();
+      const existing = permissions?.find((p: any) =>
+        isRole
+          ? (p.roleId === id && String(p.routineKey || p.routine_key).toLowerCase() === normalizedRoutineKey)
+          : ((p.groupId || p.group_id) === id && String(p.routineKey || p.routine_key).toLowerCase() === normalizedRoutineKey)
+      );
+
+      if (existing) {
+        await api.patch(`/group-routines/${existing.id}`, { isEnabled: enabled });
+      } else {
+        const payload = isRole
+          ? { roleId: id, routineKey: normalizedRoutineKey, isEnabled: enabled }
+          : { groupId: id, routineKey: normalizedRoutineKey, isEnabled: enabled };
+        await api.post('/group-routines', payload);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["all-role-routines"] });
+      toast({ title: "Permissão atualizada com sucesso!" });
+    },
+    onError: (err: any) => toast({ title: "Erro ao salvar", description: getErrorMessage(err), variant: "destructive" }),
+  });
+
+  const getPermStatus = (id: string, routineKey: string, isRole: boolean): boolean => {
+    const normalizedRoutineKey = routineKey.toLowerCase();
+    const perm = permissions?.find((p: any) =>
+      isRole
+        ? (p.roleId === id && String(p.routineKey || p.routine_key).toLowerCase() === normalizedRoutineKey)
+        : ((p.groupId || p.group_id) === id && String(p.routineKey || p.routine_key).toLowerCase() === normalizedRoutineKey)
+    );
+    if (!perm) return false;
+    return (p => p.isEnabled ?? p.is_enabled ?? false)(perm);
+  };
+
+  const selectedName = activeTab === "groups"
+    ? groups?.find((g: any) => g.id === selectedId)?.name
+    : ROLE_TYPES.find(r => r.id === selectedId)?.label;
+
+  if (loadingPerms) {
+    return (
+      <Card className="border-0 shadow-lg ring-1 ring-border/30 p-8 space-y-6">
+        <Skeleton className="h-10 w-64" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="border-0 shadow-lg overflow-hidden ring-1 ring-border/30">
+      <CardHeader className="bg-gradient-to-r from-slate-500/10 to-zinc-500/5 border-b py-5">
+        <CardTitle className="text-lg flex items-center gap-2">
+          <div className="p-1.5 bg-slate-500/15 rounded-lg">
+            <ShieldCheck className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+          </div>
+          Funcionalidades & Acessos
+        </CardTitle>
+        <p className="text-sm text-muted-foreground mt-1">
+          Gerencie quais rotinas do sistema estão ativas para cada departamento ou perfil (nível de acesso).
+        </p>
+      </CardHeader>
+      <CardContent className="pt-6 space-y-6">
+        <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setSelectedId(null); }} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 max-w-md bg-muted/50 p-1 rounded-xl">
+            <TabsTrigger value="groups" className="rounded-lg flex gap-2">
+              <LayoutGrid className="h-4 w-4" /> Departamentos
+            </TabsTrigger>
+            <TabsTrigger value="roles" className="rounded-lg flex gap-2">
+              <UserCircle className="h-4 w-4" /> Perfis (Níveis)
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="groups" className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {groups?.map((group: any) => (
+                <div
+                  key={group.id}
+                  className={cn(
+                    "cursor-pointer transition-all border-2 rounded-2xl p-4",
+                    selectedId === group.id ? "border-primary bg-primary/5" : "border-transparent bg-card shadow-sm hover:shadow-md hover:bg-muted/50 ring-1 ring-border"
+                  )}
+                  onClick={() => setSelectedId(group.id)}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="h-10 w-10 rounded-xl flex items-center justify-center text-primary bg-primary/10">
+                      <Users className="h-5 w-5" />
+                    </div>
+                    {selectedId === group.id && <ChevronRight className="h-5 w-5 text-primary" />}
+                  </div>
+                  <h3 className="font-semibold">{group.name}</h3>
+                </div>
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="roles" className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {ROLE_TYPES.map((role) => (
+                <div
+                  key={role.id}
+                  className={cn(
+                    "cursor-pointer transition-all border-2 rounded-2xl p-4",
+                    selectedId === role.id ? "border-primary bg-primary/5" : "border-transparent bg-card shadow-sm hover:shadow-md hover:bg-muted/50 ring-1 ring-border"
+                  )}
+                  onClick={() => setSelectedId(role.id)}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className={cn("px-2 py-0.5 rounded-md text-[10px] font-bold uppercase text-white shadow-sm", role.color)}>
+                      {role.label}
+                    </div>
+                    {selectedId === role.id && <ChevronRight className="h-5 w-5 text-primary" />}
+                  </div>
+                  <h3 className="font-semibold">{role.label}</h3>
+                  <p className="text-xs text-muted-foreground mt-1">{role.description}</p>
+                </div>
+              ))}
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        {selectedId ? (
+          <div key={selectedId} className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pt-4 border-t border-dashed">
+            <div>
+              <h3 className="text-lg font-bold">Configurando: <span className="text-primary">{selectedName}</span></h3>
+              <p className="text-sm text-muted-foreground">Ative ou desative o acesso aos módulos.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {ROUTINES.map((routine) => {
+                const isEnabled = getPermStatus(selectedId, routine.id, activeTab === "roles");
+                return (
+                  <div key={routine.id} className="p-4 bg-muted/30 rounded-2xl border flex items-center justify-between hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "h-10 w-10 rounded-xl flex items-center justify-center transition-all shrink-0",
+                        isEnabled ? "bg-primary text-white shadow-md shadow-primary/20" : "bg-background text-muted-foreground"
+                      )}>
+                        <routine.icon className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm leading-tight">{routine.label}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{routine.description}</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <Switch
+                        checked={isEnabled}
+                        disabled={toggleMutation.isPending}
+                        onCheckedChange={(checked) => toggleMutation.mutate({
+                          id: selectedId,
+                          routineKey: routine.id,
+                          enabled: checked,
+                          isRole: activeTab === "roles"
+                        })}
+                      />
+                      <span className={cn("text-[9px] font-bold uppercase tracking-widest", isEnabled ? "text-emerald-500" : "text-muted-foreground")}>
+                        {isEnabled ? "Ativo" : "Off"}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            
+            <div className="bg-amber-500/10 rounded-xl p-4 border border-amber-500/20 flex items-start gap-3">
+              <Shield className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-700 dark:text-amber-400">
+                <strong>Regra:</strong> As permissões são cumulativas. Se uma funcionalidade estiver ativa no <b>Nível (Perfil)</b> OU no <b>Departamento</b> do usuário, ele terá acesso.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="h-40 flex flex-col items-center justify-center text-center border-2 border-dashed rounded-3xl bg-muted/10 p-6 mt-4">
+            <Lock className="h-8 w-8 text-muted-foreground/30 mb-2" />
+            <p className="text-sm font-medium text-muted-foreground">Escolha um departamento ou perfil acima para gerenciar os acessos</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

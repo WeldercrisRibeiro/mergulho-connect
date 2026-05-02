@@ -11,10 +11,10 @@ import { Roles } from '../auth/roles.decorator';
 @Controller('member-groups')
 export class MemberGroupsController {
   constructor(private readonly service: MemberGroupsService) {}
-  @Post() @Roles('admin_ccm') create(@Body() dto: CreateMemberGroupDto) { return this.service.create(dto); }
+  @Post() @Roles('admin_ccm', 'admin') create(@Body() dto: CreateMemberGroupDto) { return this.service.create(dto); }
   
   @Post('bulk')
-  @Roles('admin_ccm')
+  @Roles('admin_ccm', 'admin')
   async createBulk(@Body() data: { groupId: string, userIds: string[] }) {
     return this.service.createBulk(data.groupId, data.userIds);
   }
@@ -68,11 +68,11 @@ export class MemberGroupsController {
   @Get('my')
   @UseGuards(JwtAuthGuard)
   findMy(@Request() req) { return this.service.findByUser(req.user.id); }
-  @Patch(':id') @Roles('admin_ccm') update(@Param('id') id: string, @Body() dto: UpdateMemberGroupDto) { return this.service.update(id, dto); }
+  @Patch(':id') @Roles('admin_ccm', 'admin') update(@Param('id') id: string, @Body() dto: UpdateMemberGroupDto) { return this.service.update(id, dto); }
 
   @Delete()
   @ApiQuery({ name: 'groupId', required: false })
-  @Roles('admin_ccm')
+  @Roles('admin_ccm', 'admin')
   async removeBulk(@Query('groupId') groupId?: string) {
     if (groupId) {
       return this.service.removeByGroup(groupId);
@@ -80,7 +80,7 @@ export class MemberGroupsController {
     return { success: false, message: 'groupId is required' };
   }
 
-  @Delete(':id') @Roles('admin_ccm') remove(@Param('id') id: string) { return this.service.remove(id); }
+  @Delete(':id') @Roles('admin_ccm', 'admin') remove(@Param('id') id: string) { return this.service.remove(id); }
   @Delete('leave/:userId/:groupId')
   leave(@Param('userId') userId: string, @Param('groupId') groupId: string, @Request() req: any) {
     const isAdmin = req.user?.role === 'admin' || req.user?.role === 'admin_ccm';

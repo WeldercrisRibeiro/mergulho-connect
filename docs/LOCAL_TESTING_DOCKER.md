@@ -11,7 +11,7 @@ Na raiz do projeto, execute o comando abaixo para iniciar o container do Postgre
 ```bash
 docker-compose up -d
 ```
-*Isso criará o banco `mergulho_postgres` na porta `5432` da sua máquina, rodando em background (`-d`).*
+*Isso criará o banco `ccm_dev` na porta `5434` da sua máquina, rodando em background (`-d`).*
 
 ## 2. Configurando o Ambiente (Variáveis)
 Para que o sistema passe a utilizar o seu banco de dados local, altere temporariamente os apontamentos de banco no arquivo `backend/.env`.
@@ -19,8 +19,8 @@ Para que o sistema passe a utilizar o seu banco de dados local, altere temporari
 **No arquivo `backend/.env`, altere (ou comente as credenciais do Supabase e adicione):**
 ```env
 # Banco de Dados (Local Docker)
-DATABASE_URL="postgresql://postgres:mergulho123@localhost:5432/mergulho?schema=public"
-DIRECT_URL="postgresql://postgres:mergulho123@localhost:5432/mergulho?schema=public"
+DATABASE_URL="postgresql://postgres:mergulho123@localhost:5434/ccm_dev?schema=public"
+DIRECT_URL="postgresql://postgres:mergulho123@localhost:5434/ccm_dev?schema=public"
 ```
 *(Nota: Lembre-se de não alterar as chaves do `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY`, pois o storage de imagens continuará usando o Supabase mesmo em desenvolvimento).*
 
@@ -49,3 +49,14 @@ docker-compose stop
 Quando for fazer deploy ou quiser que seu código aponte novamente para os dados reais (Supabase):
 1. Restaure o `DATABASE_URL` e o `DIRECT_URL` no seu arquivo `backend/.env` para as chaves originais do Supabase (use o arquivo de backup `.env.production` caso tenha criado um).
 2. Não há necessidade de parar o Docker se não quiser, pois o NestJS passará a ignorá-lo e conectará diretamente no Supabase.
+
+
+PARA TESTAR O PROJETO LOCAL FAÇA
+```bash
+1 - cd backend
+2 - docker-compose up -d
+3 - npx prisma db push
+4 - npm run create-admin
+5 - cd ..
+6 - npm run start:dev
+```

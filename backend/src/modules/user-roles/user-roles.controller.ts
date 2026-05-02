@@ -10,8 +10,8 @@ import { Roles } from '../auth/roles.decorator';
 @Controller('user-roles')
 export class UserRolesController {
   constructor(private readonly service: UserRolesService) {}
-  @Post() @Roles('admin_ccm') upsert(@Body() dto: CreateUserRoleDto) { return this.service.upsert(dto); }
-  @Get() @Roles('admin_ccm') findAll() { return this.service.findAll(); }
+  @Post() @Roles('admin_ccm', 'admin') upsert(@Body() dto: CreateUserRoleDto) { return this.service.upsert(dto); }
+  @Get() @Roles('admin_ccm', 'admin') findAll() { return this.service.findAll(); }
   @Get('user/:userId')
   findByUser(@Param('userId') userId: string, @Request() req: any) {
     const isAdmin = req.user?.role === 'admin' || req.user?.role === 'admin_ccm';
@@ -20,6 +20,6 @@ export class UserRolesController {
     }
     return this.service.findByUser(userId);
   }
-  @Patch(':id') @Roles('admin_ccm') update(@Param('id') id: string, @Body() dto: UpdateUserRoleDto) { return this.service.update(id, dto); }
-  @Delete(':id') @Roles('admin_ccm') remove(@Param('id') id: string) { return this.service.remove(id); }
+  @Patch(':id') @Roles('admin_ccm', 'admin') update(@Param('id') id: string, @Body() dto: UpdateUserRoleDto) { return this.service.update(id, dto); }
+  @Delete(':id') @Roles('admin_ccm', 'admin') remove(@Param('id') id: string) { return this.service.remove(id); }
 }

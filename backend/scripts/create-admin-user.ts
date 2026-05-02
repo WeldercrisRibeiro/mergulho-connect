@@ -7,8 +7,8 @@ dotenv.config({ path: '.env' });
 const prisma = new PrismaClient();
 
 async function main() {
-  const email = process.env.ADMIN_EMAIL || 'admin@mergulho.com';
-  const password = process.env.ADMIN_PASSWORD || '123456';
+  const email = process.env.ADMIN_EMAIL || 'admin@ccmergulho.com';
+  const password = process.env.ADMIN_PASSWORD || '123456789';
   const fullName = process.env.ADMIN_FULL_NAME || 'Administrador';
   const username = process.env.ADMIN_USERNAME || 'admin';
   const whatsappPhone = process.env.ADMIN_WHATSAPP_PHONE || null;

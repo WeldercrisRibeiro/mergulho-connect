@@ -3,14 +3,14 @@ version: "3.9"
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: mergulho_postgres
+    container_name: ccm_dev
     restart: unless-stopped
     environment:
-      POSTGRES_DB: mergulho
+      POSTGRES_DB: ccm_dev
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: mergulho123
     ports:
-      - "5432:5432"
+      - "5433:5434"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:

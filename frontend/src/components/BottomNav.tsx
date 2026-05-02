@@ -46,7 +46,7 @@ const moreMenuItems: MoreMenuItem[] = [
   { path: "/whatsapp", icon: WhatsAppIcon, label: "WhatsApp", colorScheme: "cyan" },
   { path: "/checkin", icon: ShieldCheck, label: "Validação", colorScheme: "navy" },
   { path: "/Disparos", icon: Megaphone, label: "Disparos", colorScheme: "cyan", showBadge: true },
-  { path: "/gestao-rotinas", icon: ShieldCheck, label: "Acessos", colorScheme: "navy" },
+
 ];
 
 const NavItemButton = ({ path, icon: Icon, label, active, onNavigate }: { path: string; icon: NavItem['icon']; label: string; active: boolean; onNavigate?: () => void }) => (
@@ -144,7 +144,7 @@ const BottomNav = () => {
     "/whatsapp",
     "/checkin",
     "/Disparos",
-    "/gestao-rotinas",
+
   ].some((path) => isPathActive(path));
 
   const leftNav = filteredNavItems.slice(0, 2);

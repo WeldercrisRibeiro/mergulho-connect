@@ -52,7 +52,6 @@ const navGroups: {
         { path: "/departamentos", icon: Shield, label: "Departamentos", adminOnly: true },
         { path: "/relatorios", icon: BarChart3, label: "Relatórios", adminOnly: true, routine: "relatorios" },
         { path: "/whatsapp", icon: Smartphone, label: "WhatsApp", adminOnly: true },
-        { path: "/gestao-rotinas", icon: ShieldCheck, label: "Acessos", adminOnly: true },
         { path: "/configuracoes", icon: Settings, label: "Ajustes", adminOnly: true },
       ]
     }

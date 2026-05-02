@@ -75,7 +75,7 @@ const TopBar = ({ onToggleSidebar }: TopBarProps) => {
     "/whatsapp": { label: "WhatsApp", icon: WhatsAppIcon },
     "/checkin": { label: "Validação", icon: ShieldCheck },
     "/Disparos": { label: "Disparos", icon: Megaphone },
-    "/gestao-rotinas": { label: "Acessos", icon: ShieldCheck },
+
   };
 
   const config =
